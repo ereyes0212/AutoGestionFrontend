@@ -6,7 +6,7 @@ export const EmpleadoSchema = z.object({
   apellido: z.string().min(1, "El apellido es requerido"),
   correo: z.string().email("Correo no válido"),
   genero: z.string().min(1, "El género es requerido"),
-  activo: z.boolean().optional().default(true),
+  activo: z.boolean().optional(), 
   usuarioNombre: z.string().optional().nullable(),
   edad: z.number().min(18, "La edad debe ser mayor o igual a 18 años").max(100, "La edad debe ser menor o igual a 100 años"), // Validación de edad
 });

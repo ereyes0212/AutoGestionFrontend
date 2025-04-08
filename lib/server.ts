@@ -104,39 +104,29 @@ class ApiService {
       const status = error.response?.status;
       const data = error.response?.data;
   
-      if (status === 400 && data?.errors) {
-        // Mapear los errores de validación
-        const validationErrors: Record<string, string[]> = data.errors;
-        const formattedErrors = Object.entries(validationErrors).map(
-          ([field, messages]) => ({
-            field,
-            messages,
-          })
-        );
-  
-        return {
-          status,
-          title: data.title,
-          type: data.type,
-          traceId: data.traceId,
-          validationErrors: formattedErrors,
-        };
+      let message = '';
+      if (status === 400) {
+        // Error de validación (status 400)
+        message = 'Error en los campos proporcionados.';
+      } else if (status === 500) {
+        // Error del servidor (status 500)
+        message = 'Error del servidor. Por favor, intente más tarde.';
+      } else {
+        message = 'Ocurrió un error inesperado.';
       }
   
-      return {
-        status,
-        title: data?.title,
-        detail: data?.detail,
-        traceId: data?.traceId,
-        data,
-      };
+      // Lanza un error personalizado con el mensaje y el status
+      const customError = new Error(message);
+      (customError as any).status = status; // Agregamos el status al error
+      (customError as any).data = data; // Agregamos los datos del error
+  
+      throw customError;
     } else {
-      return {
-        status: 500,
-        message: 'Ocurrió un error inesperado en el cliente.',
-      };
+      // Si no es un error de Axios
+      throw new Error('Ocurrió un error inesperado.');
     }
   }
-}  
+  
+}
 
 export default ApiService;

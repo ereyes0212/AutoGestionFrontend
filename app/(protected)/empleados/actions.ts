@@ -53,6 +53,7 @@ export async function postEmpleado({ empleado }: { empleado: Empleado }) {
     return response.data;
   } catch (error) {
     console.error("Error al crear empleado:", error);
-    throw error;
+    throw error; 
   }
 }
+

@@ -24,7 +24,7 @@ export type Empleado = {
   edad: number;
   genero: string;
   correo: string;
-  activo: boolean;
+  activo?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   usuarioNombre?: string | null;
@@ -69,6 +69,22 @@ export type UsuarioCreate = Omit<UsuarioBase, "id" | "activo"> & {
 
 // UsuarioUpdate: Para actualizar un usuario existente (requiere 'id' y 'activo')
 export type UsuarioUpdate = Required<UsuarioBase> & { usuario: string };
+
+export interface ValidationError {
+  type: string;  // Usualmente una URL que describe el tipo de error
+  title: string;  // Título del error
+  status: number;  // Código de estado HTTP (por ejemplo, 400)
+  errors: Record<string, string[]>;  // Los errores de validación (campos con sus respectivos mensajes)
+  traceId: string;  // ID de rastreo para el seguimiento del error
+}
+
+export type Empresa = {
+  id?:     string;
+  nombre: string;
+  activo?: boolean;
+}
+
+
 
 
 

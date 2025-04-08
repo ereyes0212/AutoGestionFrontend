@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form"; // Importamos useForm
 import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 
 import { z } from "zod";
-import { Empleado, EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
-import { postEmpleado, putEmpleado } from "../actions"; // Tu función para enviar datos
+import { EmpresaSchema } from "../schema"; // Tu esquema de Zod para empresa
+import { postEmpresa, putEmpresa } from "../actions"; // Tu función para enviar datos
 import {
   Form,
   FormControl,
@@ -28,20 +28,20 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-export function EmpleadoFormulario({
+export function EmpresaFormulario({
   isUpdate,
   initialData,
 }: {
   isUpdate: boolean;
-  initialData?: z.infer<typeof EmpleadoSchema>;
+  initialData?: z.infer<typeof EmpresaSchema>;
 }) {
   const { toast } = useToast();
   const router = useRouter();
 
   // Usamos Zod para resolver la validación
-  const form = useForm<z.infer<typeof EmpleadoSchema>>({
-    resolver: zodResolver(EmpleadoSchema), // Pasamos el esquema Zod al resolver
-    defaultValues: initialData || {}, // Valores iniciales si es actualización
+  const form = useForm<z.infer<typeof EmpresaSchema>>({
+    resolver: zodResolver(EmpresaSchema), 
+    defaultValues: initialData || {}, 
   });
 
   // Verificación de validez antes del submit
@@ -50,30 +50,30 @@ export function EmpleadoFormulario({
   // const isValid = formState.errors;
   // console.log("isValid");
   // console.log(isValid);
-  async function onSubmit(data: z.infer<typeof EmpleadoSchema>) {
+  async function onSubmit(data: z.infer<typeof EmpresaSchema>) {
 
-    const empleadoData = {
+    const empresaData = {
       id: initialData?.id, // Aquí pasamos el ID si es actualización
-      empleado: data,
+      empresa: data,
     };
 
 
     try {
       if (isUpdate) {
-        await putEmpleado(empleadoData); // Llamada a la API para actualizar
+        await putEmpresa(empresaData); // Llamada a la API para actualizar
       } else {
-        await postEmpleado(empleadoData); // Llamada a la API para crear un nuevo empleado
+        await postEmpresa(empresaData); // Llamada a la API para crear un nuevo empresa
       }
 
       // Notificación de éxito
       toast({
         title: isUpdate ? "Actualización Exitosa" : "Creación Exitosa",
         description: isUpdate
-          ? "El empleado ha sido actualizado."
-          : "El empleado ha sido creado.",
+          ? "El empresa ha sido actualizado."
+          : "El empresa ha sido creado.",
       });
 
-      router.push("/empleados"); // Redirige después de la acción
+      router.push("/empresas"); // Redirige después de la acción
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);
@@ -112,95 +112,7 @@ export function EmpleadoFormulario({
               </FormItem>
             )}
           />
-          {/* Apellido */}
-          <FormField
-            control={form.control}
-            name="apellido"
-            render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
-                <FormLabel>Apellido</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ingresa tu apellido" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Por favor ingresa tu apellido.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {/* Edad */}
-          <FormField
-            control={form.control}
-            name="edad"
-            render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
-                <FormLabel>Edad</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription>Por favor ingresa tu edad.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          {/* Género */}
-          <FormField
-            control={form.control}
-            name="genero"
-            render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
-                <FormLabel>Género</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un género" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Masculino">Masculino</SelectItem>
-                      <SelectItem value="Femenino">Femenino</SelectItem>
-                      <SelectItem value="Otro">Otro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormDescription>Indica tu género.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-
-        {/* Correo */}
-        <FormField
-          control={form.control}
-          name="correo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Correo electrónico</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="Ingresa tu correo electrónico"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Debes ingresar un correo electrónico válido.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         {/* Estado Activo (solo si es actualización) */}
         {isUpdate && (
