@@ -54,7 +54,7 @@ export const columns: ColumnDef<Empleado>[] = [
     ),
   },
   {
-    accessorKey: "usuarioNombre",
+    accessorKey: "usuario",
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -66,19 +66,45 @@ export const columns: ColumnDef<Empleado>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const usuarioNombre = row.getValue("usuarioNombre");
-      return usuarioNombre ? usuarioNombre : <UserX className="text-gray-500 w-5 h-5" />;
+      const usuario = row.getValue("usuario");
+      return usuario ? usuario : <UserX className="text-gray-500 w-5 h-5" />;
     },
   }, 
   {
-    accessorKey: "correo",
+    accessorKey: "puesto",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-left"
       >
-        Correo
+        Puesto
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "jefe",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Jefe
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "empresa",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Empresa
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),

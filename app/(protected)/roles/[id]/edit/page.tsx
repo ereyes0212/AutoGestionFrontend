@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 import { getSession, getSessionPermisos } from "@/auth";
 import { redirect } from "next/navigation";
 import { FormularioRol } from "../../components/Formulario";
-import { getRolesPermisoById, getRolesPermisos } from "../../actions";
+import { getRolsPermisoById } from "../../actions";
 import NoAcceso from "@/components/noAccess";
 import { getPermisosActivos } from "@/app/(protected)/permisos/actions";
 
@@ -18,10 +18,11 @@ export default async function Edit({ params }: { params: { id: string } }) {
   }
 
   // Obtener el cliente por su ID
-  const roles = await getRolesPermisoById(params.id);
+  const roles = await getRolsPermisoById(params.id);
   if (!roles) {
     redirect("/roles"); // Redirige si no se encuentra el cliente
   }
+
 
   const permisosData = await getPermisosActivos();
 

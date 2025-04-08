@@ -44,13 +44,13 @@ export function FormularioRol({
  
   const form = useForm<z.infer<typeof RolSchema>>({
     resolver: zodResolver(RolSchema), 
-    defaultValues: initialData || { permisosRol: [] },
+    defaultValues: initialData || { permisos: [] },
   });
 
   async function onSubmit(data: z.infer<typeof RolSchema>) {
     const rolData = {
       rol: data,
-      permisosRol: data.permisosRol.map((permiso: PermisosRol) => permiso.id),
+      permisosRol: data.permisos.map((permiso: PermisosRol) => permiso.id),
     };
 
     try {
@@ -126,7 +126,7 @@ export function FormularioRol({
         {/* Checkbox de permisos */}
         <FormField
           control={form.control}
-          name="permisosRol"
+          name="permisos"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Permisos del Rol</FormLabel>

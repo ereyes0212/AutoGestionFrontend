@@ -1,37 +1,37 @@
 "use server";
 
-import { EstadoServicio, PermisosRol, Rol } from "@/lib/Types";
+import {  PermisosRol, Rol } from "@/lib/Types";
 import apiService from "../../../lib/server";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getRolesPermisos() {
   try {
-    const response = await apiService.get<Rol[]>("/Role");
+    const response = await apiService.get<Rol[]>("/Rol");
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los roles y permisos:", error);
+    console.error("Error al obtener los Rols y permisos:", error);
     return [];
   }
 }
-export async function getRolesActivos() {
+export async function getRolsActivos() {
   try {
-    const response = await apiService.get<Rol[]>("/Role/active");
+    const response = await apiService.get<Rol[]>("/Rol/active");
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los roles y permisos:", error);
+    console.error("Error al obtener los Rols y permisos:", error);
     return [];
   }
 }
 
 export async function putRol({ rol }: { rol: Rol }) {
-  const permisosIds = rol.permisosRol.map((permiso: PermisosRol) => permiso.id);
+  const permisosIds = rol.permisos.map((permiso: PermisosRol) => permiso.id);
 
   const rolData = {
     ...rol,
     permisosRol: permisosIds, 
   };
   try {
-    const response = await apiService.put(`/Role/${rol.id}`, rolData);
+    const response = await apiService.put(`/Rol/${rol.id}`, rolData);
 
     return response.data;
   } catch (error) {
@@ -40,9 +40,9 @@ export async function putRol({ rol }: { rol: Rol }) {
   }
 }
 
-export async function getRolesPermisoById(id: string) {
+export async function getRolsPermisoById(id: string) {
   try {
-    const response = await apiService.get<Rol>(`/Role/${id}`);
+    const response = await apiService.get<Rol>(`/Rol/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error al obtener el estado servicio:", error);
@@ -51,15 +51,7 @@ export async function getRolesPermisoById(id: string) {
 }
 export async function postRol({ rol }: { rol: Rol }) {
   try {
-    const permisosIds = rol.permisosRol.map((permiso: PermisosRol) => permiso.id);
-
-    const rolData = {
-      ...rol,
-      permisosRol: permisosIds, 
-    };
-
-
-    const response = await apiService.post("/Role", rolData); // Envía el rol con los IDs
+    const response = await apiService.post("/Rol", rol); // Envía el rol con los IDs
     return response.data;
   } catch (error) {
     console.error("Error al crear el rol en el servicio:", error);

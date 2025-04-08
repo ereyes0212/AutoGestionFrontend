@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Mail, User, UserX, Search, Plus } from "lucide-react";
+import { Pencil, Mail, User, UserX, Search, Plus, Home, HomeIcon } from "lucide-react";
 import type { Empleado } from "@/lib/Types";
 
 interface EmployeeListProps {
@@ -48,9 +48,8 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center">
               <span
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  empleado.activo ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`w-2 h-2 rounded-full mr-2 ${empleado.activo ? "bg-green-500" : "bg-red-500"
+                  }`}
               ></span>
               <h3 className="text-sm font-medium truncate">
                 {empleado.nombre} {empleado.apellido}
@@ -65,10 +64,10 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
                 <User className="h-3 w-3 mr-1" />
                 {empleado.edad} años, {empleado.genero}
               </p>
-              {empleado.usuarioNombre ? (
+              {empleado.usuario ? (
                 <p className="text-xs flex items-center">
                   <User className="h-3 w-3 mr-1" />
-                  {empleado.usuarioNombre}
+                  {empleado.usuario}
                 </p>
               ) : (
                 <p className="text-xs flex items-center">
@@ -76,6 +75,10 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
                   <span>Sin usuario</span>
                 </p>
               )}
+              <p className="text-xs flex items-center">
+                <HomeIcon className="h-3 w-3 mr-1" />
+                {empleado.empresa} años - {empleado.puesto} - {empleado.jefe}
+              </p>
             </div>
           </div>
           <div className="flex items-center ml-4">

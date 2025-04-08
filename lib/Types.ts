@@ -25,17 +25,19 @@ export type Empleado = {
   genero: string;
   correo: string;
   activo?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-  usuarioNombre?: string | null;
+  usuario?: string | null;
+  puesto:   string;
+  empresa:   string;
+  jefe?:     string;
 };
+
 
 export type Rol = {
   id?: string;
   nombre: string;
   descripcion: string;
-  activo: boolean;
-  permisosRol: PermisosRol[];
+  activo?: boolean;
+  permisos: PermisosRol[];
 };
 
 export type PermisosRol = {

@@ -4,6 +4,7 @@ import {
   Car,
   ChartSplineIcon,
   Home,
+  House,
   LayersIcon,
   List,
   ListCheck,
@@ -49,6 +50,12 @@ const items = [
     url: "/empleados",
     icon: UsersIcon,
     permiso: "ver_empleados",
+  },
+  {
+    title: "Empresas",
+    url: "/empresas",
+    icon: House,
+    permiso: "ver_empresas",
   },
   {
     title: "Permisos",

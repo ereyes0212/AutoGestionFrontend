@@ -6,30 +6,20 @@ import apiService from "../../../lib/server";
 
 export async function getPermisos() {
   try {
-    const response = await apiService.get<Permiso[]>("/Permiso");
+    const response = await apiService.get<Permiso[]>("Rol/permisos");
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los Perisos:", error);
+    console.error("Error al obtener los Permisos:", error);
     return [];
   }
 }
 export async function getPermisosActivos() {
   try {
-    const response = await apiService.get<PermisosRol[]>("/Permiso/active");
+    const response = await apiService.get<PermisosRol[]>("Rol/permisosrol");
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los Perisos:", error);
+    console.error("Error al obtener los Permisos:", error);
     return [];
   }
 }
 
-
-export async function getEstadoservicioById(id: string) {
-  try {
-    const response = await apiService.get<Permiso>(`/Permiso/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el estado servicio:", error);
-    return null;
-  }
-}
