@@ -25,20 +25,24 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Empleado, Rol, UsuarioCreate, UsuarioUpdate } from "@/lib/Types";
+import { Empresa, Rol } from "@/lib/Types";
 import { Loader2 } from "lucide-react";
+import { Empleado } from "../../empleados/type";
+import { UsuarioCreate, UsuarioUpdate } from "../type";
 
 export function Formulario({
   isUpdate,
   initialData,
   empleados, // Lista de empleados sin usuario asignado
   roles, // Lista de roles
+  empresas, // Lista de empresas
   empleadoAsignado, // Empleado asignado, si existe
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof UsuarioSchema>;
   empleados: Empleado[]; // Lista de empleados sin usuario asignado
   roles: Rol[]; // Lista de roles
+  empresas: Empresa[]; // Lista de roles
   empleadoAsignado?: Empleado | null; // Empleado asignado, si es actualización
 }) {
   const { toast } = useToast();
@@ -47,17 +51,19 @@ export function Formulario({
   // Usamos Zod para resolver la validación
   const form = useForm<z.infer<typeof UsuarioSchema>>({
     resolver: zodResolver(UsuarioSchema), // Pasamos el esquema Zod al resolver
-    defaultValues: initialData || {}, // Valores iniciales si es actualización
+    defaultValues: initialData || {}, 
   });
 
   async function onSubmit(data: z.infer<typeof UsuarioSchema>) {
+    console.log("🚀 ~ onSubmit ~ data:", form.getValues())
     const usuarioData = {
-      usuario1: data.usuario,
+      usuario: data.usuario,
       contrasena: data.contrasena || undefined,
       empleado_id: data.empleado_id,
-      role_id: data.role_id,
+      rol_id: data.rol_id,
       activo: isUpdate ? data.activo : undefined,
       id: isUpdate ? data.id : undefined,
+      empresa_id: data.empresa_id,
     };
 
     try {
@@ -165,7 +171,7 @@ export function Formulario({
         {/* Rol */}
         <FormField
           control={form.control}
-          name="role_id"
+          name="rol_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Rol</FormLabel>
@@ -187,7 +193,34 @@ export function Formulario({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> 
+        {/* Empresa */}
+        <FormField
+          control={form.control}
+          name="empresa_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {empresas.map((empresa) => (
+                      <SelectItem key={empresa.id} value={empresa.id || ''}>
+                        {empresa.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormDescription>Selecciona la empresa del usuario.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        /> 
+
 
         {/* Estado Activo (solo si es actualización) */}
         {isUpdate && (
@@ -222,7 +255,7 @@ export function Formulario({
 
         {/* Enviar */}
         <div className="flex justify-end">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,7 +1,8 @@
 "use server";
 
-import {  Usuario, UsuarioCreate, UsuarioUpdate } from "@/lib/Types";
+
 import apiService from "../../../lib/server";
+import { Usuario, UsuarioCreate, UsuarioUpdate } from "./type";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getUsuarios() {
@@ -39,9 +40,9 @@ export async function putUsuario({ usuario }: { usuario: UsuarioUpdate }): Promi
 }
 
 
-export async function getUsuarioById(id: string): Promise<UsuarioUpdate | null> {
+export async function getUsuarioById(id: string): Promise<Usuario | null> {
   try {
-    const response = await apiService.get<UsuarioUpdate>(`/Usuario/${id}`);
+    const response = await apiService.get<Usuario>(`/Usuario/${id}`);
     // Aseguramos que si alguno de los campos opcionales está ausente, se maneje correctamente
     const usuarioData = response.data;
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Pencil, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import type { Usuario } from "@/lib/Types"; // Asegúrate de tener definida la interfaz Usuario
+import { Usuario } from "../type";
 
 interface UserListProps {
   usuarios: Usuario[];
@@ -15,8 +15,8 @@ export default function UserListMobile({ usuarios }: UserListProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredUsuarios = usuarios.filter((user) =>
-    user.usuario.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.empleadoNombre.toLowerCase().includes(searchTerm.toLowerCase())
+    user.usuario?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.empleado?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -51,7 +51,7 @@ export default function UserListMobile({ usuarios }: UserListProps) {
               ></span>
               <h3 className="text-sm font-medium truncate">{user.usuario}</h3>
             </div>
-            <p className="text-xs mt-1 truncate">Empleado: {user.empleadoNombre}</p>
+            <p className="text-xs mt-1 truncate">Empleado: {user.empleado}</p>
           </div>
           <div className="flex items-center ml-4">
             <Link href={`/usuarios/${user.id}/edit`}>

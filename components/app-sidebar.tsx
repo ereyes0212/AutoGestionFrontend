@@ -15,6 +15,7 @@ import {
   TornadoIcon,
   User,
   UserIcon,
+  UserRoundCheck,
   Users2,
   UsersIcon,
 } from "lucide-react";
@@ -56,6 +57,12 @@ const items = [
     url: "/empresas",
     icon: House,
     permiso: "ver_empresas",
+  },
+  {
+    title: "Puestos",
+    url: "/puestos",
+    icon: UserRoundCheck,
+    permiso: "ver_puestos",
   },
   {
     title: "Permisos",

@@ -27,13 +27,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Empresa } from "@/lib/Types";
+import { Puesto } from "../../puestos/types";
+import { Empleado as EmpleadoModel } from "../type";
 
 export function EmpleadoFormulario({
   isUpdate,
   initialData,
+  empresas,
+  puestos,
+  jefe
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof EmpleadoSchema>;
+  empresas: Empresa[];
+  puestos: Puesto[];
+  jefe: EmpleadoModel[];
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -45,7 +54,7 @@ export function EmpleadoFormulario({
   });
 
   // Verificación de validez antes del submit
-  const { formState } = form;
+  // const { formState } = form;
   //forma de saber si un form esta valido o no
   // const isValid = formState.errors;
   // console.log("isValid");
@@ -174,6 +183,81 @@ export function EmpleadoFormulario({
                   </Select>
                 </FormControl>
                 <FormDescription>Indica tu género.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="empresa_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((empresa) => (
+                        <SelectItem key={empresa.id} value={empresa.id || ''} >
+                          {empresa.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>Selecciona la empresa del usuario.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="puesto_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Puestos</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un puesto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {puestos.map((puesto) => (
+                        <SelectItem key={puesto.id} value={puesto.id || ''} >
+                          {puesto.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>Selecciona el puesto del empleado.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="jefe_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Jefe</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un jefe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jefe.map((jefeSelected) => (
+                        <SelectItem key={jefeSelected.id} value={jefeSelected.id || ''} >
+                          {jefeSelected.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>Selecciona el jefe directo del empleado.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Mail, User, UserX, Search, Plus, Home, HomeIcon } from "lucide-react";
-import type { Empleado } from "@/lib/Types";
+import { Empleado } from "../type";
 
 interface EmployeeListProps {
   empleados: Empleado[];
@@ -77,7 +77,7 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
               )}
               <p className="text-xs flex items-center">
                 <HomeIcon className="h-3 w-3 mr-1" />
-                {empleado.empresa} años - {empleado.puesto} - {empleado.jefe}
+                {empleado.empresa} - {empleado.puesto} - {empleado.jefe}
               </p>
             </div>
           </div>

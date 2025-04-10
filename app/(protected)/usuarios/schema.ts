@@ -6,6 +6,7 @@ export const UsuarioSchema = z.object({
   usuario: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
   contrasena: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
   empleado_id: z.string().uuid("Empleado ID debe ser un UUID válido"),
-  role_id: z.string().uuid("Role ID debe ser un UUID válido"),
+  rol_id: z.string().uuid("Role ID debe ser un UUID válido"),
+  empresa_id: z.string().optional(),
   activo: z.boolean().optional(),
 });

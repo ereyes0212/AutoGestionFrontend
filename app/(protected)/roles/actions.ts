@@ -15,7 +15,7 @@ export async function getRolesPermisos() {
 }
 export async function getRolsActivos() {
   try {
-    const response = await apiService.get<Rol[]>("/Rol/active");
+    const response = await apiService.get<Rol[]>("/Rol/activos");
     return response.data;
   } catch (error) {
     console.error("Error al obtener los Rols y permisos:", error);

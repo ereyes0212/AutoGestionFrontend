@@ -1,7 +1,8 @@
 "use server";
 
-import { Empleado } from "@/lib/Types";
+
 import apiService from "../../../lib/server";
+import { Empleado } from "./type";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getEmpleados() {

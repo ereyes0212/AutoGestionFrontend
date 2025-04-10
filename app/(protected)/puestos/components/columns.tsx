@@ -14,69 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { Empleado } from "../type";
+import { Puesto } from "../types";
 
-export const columns: ColumnDef<Empleado>[] = [
-
+export const columns: ColumnDef<Puesto>[] = [
   {
-    accessorKey: "nombre", // La columna principal, que será 'nombre'
+    accessorKey: "nombre",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Nombre
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      // Concatenar 'nombre' y 'apellido' usando row.original
-      const nombre = row.original.nombre || "";
-      const apellido = row.original.apellido || ""; // Acceder al apellido desde row.original
-      const nombreCompleto = `${nombre} ${apellido}`.trim(); // Concatenar y eliminar espacios extras
-      return nombreCompleto; // Mostrar el nombre completo
-    },
-  },
-  
-  
-  {
-    accessorKey: "edad",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-center" 
-      >
-        Edad
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-  {
-    accessorKey: "usuario",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Usuario
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const usuario = row.getValue("usuario");
-      return usuario ? usuario : <UserX className="text-gray-500 w-5 h-5" />;
-    },
-  }, 
-  {
-    accessorKey: "puesto",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
+        className="text-center"
       >
         Puesto
         <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -84,14 +31,14 @@ export const columns: ColumnDef<Empleado>[] = [
     ),
   },
   {
-    accessorKey: "jefe",
+    accessorKey: "descripcion",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
+        className="text-center"
       >
-        Jefe
+        Descripción
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -102,22 +49,9 @@ export const columns: ColumnDef<Empleado>[] = [
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
+        className="text-center"
       >
         Empresa
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-  {
-    accessorKey: "genero",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Genero
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -156,7 +90,7 @@ export const columns: ColumnDef<Empleado>[] = [
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const empleado = row.original;
+      const empresa = row.original;
 
       return (
         <DropdownMenu>
@@ -168,7 +102,7 @@ export const columns: ColumnDef<Empleado>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/empleados/${empleado.id}/edit`}>
+            <Link href={`/puestos/${empresa.id}/edit`}>
               <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

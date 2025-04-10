@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form"; // Importamos useForm
 import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 
 import { z } from "zod";
-import { EmpresaSchema } from "../schema"; // Tu esquema de Zod para empresa
-import { postEmpresa, putEmpresa } from "../actions"; // Tu función para enviar datos
+import { PuestoSchema } from "../schema"; // Tu esquema de Zod para puesto
+import { postPuesto, putPuesto } from "../actions"; // Tu función para enviar datos
 import {
   Form,
   FormControl,
@@ -27,51 +27,56 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Empresa } from "@/lib/Types";
 
-export function EmpresaFormulario({
+export function PuestoFormulario({
   isUpdate,
+  empresas,
   initialData,
 }: {
   isUpdate: boolean;
-  initialData?: z.infer<typeof EmpresaSchema>;
+  empresas: Empresa[];
+  initialData: z.infer<typeof PuestoSchema>;
 }) {
   const { toast } = useToast();
   const router = useRouter();
 
   // Usamos Zod para resolver la validación
-  const form = useForm<z.infer<typeof EmpresaSchema>>({
-    resolver: zodResolver(EmpresaSchema), 
-    defaultValues: initialData || {}, 
+  const form = useForm<z.infer<typeof PuestoSchema>>({
+    resolver: zodResolver(PuestoSchema),
+    defaultValues: initialData,
   });
 
   // Verificación de validez antes del submit
   const { formState } = form;
-  //forma de saber si un form esta valido o no
-  // const isValid = formState.errors;
-  // console.log("isValid");
-  // console.log(isValid);
-  async function onSubmit(data: z.infer<typeof EmpresaSchema>) {
 
-    const empresaData = {
-      id: initialData?.id, // Aquí pasamos el ID si es actualización
-      empresa: data,
+  //forma de saber si un form esta valido o no
+  const isValid = formState.errors;
+  console.log("isValid");
+  console.log(isValid);
+  async function onSubmit(data: z.infer<typeof PuestoSchema>) {
+    console.log("formState", formState); // Verificamos el estado del formulario
+    const puestoData = {
+      puesto: data,
     };
+
+
     try {
       if (isUpdate) {
-        await putEmpresa(empresaData); // Llamada a la API para actualizar
+        await putPuesto(puestoData); // Llamada a la API para actualizar
       } else {
-        await postEmpresa(empresaData); // Llamada a la API para crear un nuevo empresa
+        await postPuesto(puestoData); // Llamada a la API para crear un nuevo puesto
       }
 
       // Notificación de éxito
       toast({
         title: isUpdate ? "Actualización Exitosa" : "Creación Exitosa",
         description: isUpdate
-          ? "El empresa ha sido actualizado."
-          : "El empresa ha sido creado.",
+          ? "El puesto ha sido actualizado."
+          : "El puesto ha sido creado.",
       });
 
-      router.push("/empresas"); // Redirige después de la acción
+      router.push("/puestos"); // Redirige después de la acción
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);
@@ -106,6 +111,50 @@ export function EmpresaFormulario({
                 <FormDescription>
                   Por favor ingresa tu nombre completo.
                 </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Nombre */}
+          <FormField
+            control={form.control}
+            name="descripcion"
+            render={({ field }) => (
+              <FormItem className="col-span-1 sm:col-span-1">
+                {" "}
+                {/* Asignamos el ancho adecuado */}
+                <FormLabel>Descripción</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ingresa tu nombre" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Por favor ingresa la descripción de puesto.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="empresa_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Empresa</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((empresa) => (
+                        <SelectItem key={empresa.id} value={empresa.id || ''} >
+                          {empresa.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>Selecciona la empresa del usuario.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -145,7 +194,7 @@ export function EmpresaFormulario({
 
         {/* Enviar */}
         <div className="flex justify-end">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
