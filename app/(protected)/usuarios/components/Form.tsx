@@ -63,7 +63,6 @@ export function Formulario({
       rol_id: data.rol_id,
       activo: isUpdate ? data.activo : undefined,
       id: isUpdate ? data.id : undefined,
-      empresa_id: data.empresa_id,
     };
 
     try {
@@ -194,32 +193,7 @@ export function Formulario({
             </FormItem>
           )}
         /> 
-        {/* Empresa */}
-        <FormField
-          control={form.control}
-          name="empresa_id"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Empresa</FormLabel>
-              <FormControl>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una empresa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {empresas.map((empresa) => (
-                      <SelectItem key={empresa.id} value={empresa.id || ''}>
-                        {empresa.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormDescription>Selecciona la empresa del usuario.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> 
+
 
 
         {/* Estado Activo (solo si es actualización) */}

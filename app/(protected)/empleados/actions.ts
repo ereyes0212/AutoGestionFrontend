@@ -28,8 +28,11 @@ export async function getEmpleadosSinUsuario() {
 export async function putEmpleado({ empleado }: { empleado: Empleado }) {
 
   try {
-
-    const response = await apiService.put(`/Empleado/${empleado.id}`, empleado);
+    const empleados = {
+      ...empleado,
+      empresaIds: empleado.empresas?.map((empresa) => empresa.id) || []
+    }
+    const response = await apiService.put(`/Empleado/${empleado.id}`, empleados);
 
     return response.data;
   } catch (error) {
@@ -50,7 +53,11 @@ export async function getEmpleadoId(id: string) {
 
 export async function postEmpleado({ empleado }: { empleado: Empleado }) {
   try {
-    const response = await apiService.post("/Empleado", empleado);
+    const empleados = {
+      ...empleado,
+      empresaIds: empleado.empresas?.map((empresa) => empresa.id) || []
+    }
+    const response = await apiService.post("/Empleado", empleados);
     return response.data;
   } catch (error) {
     console.error("Error al crear empleado:", error);

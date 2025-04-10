@@ -43,8 +43,10 @@ export default async function Edit({ params }: { params: { id: string } }) {
     nombreUsuario: empleado.usuario,
     jefe_id: empleado.jefe_id || "", 
     puesto_id: empleado.puesto_id || "", 
-    empresa_id: empleado.empresa_id || "", 
-
+    empresas: empleado.empresas!.map(cliente => ({
+      id: cliente.id,
+      nombre: cliente.nombre,
+    }))
   };
 
   return (

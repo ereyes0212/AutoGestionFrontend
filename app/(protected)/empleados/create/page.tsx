@@ -45,7 +45,7 @@ export default async function Create() {
     nombreUsuario: "",
     jefe_id:"",
     puesto_id:"",
-    empresa_id:"",
+    empresa_id: undefined,
   };
 
   return (

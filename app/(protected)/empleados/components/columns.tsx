@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { Empleado } from "../type";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const columns: ColumnDef<Empleado>[] = [
 
@@ -38,15 +39,15 @@ export const columns: ColumnDef<Empleado>[] = [
       return nombreCompleto; // Mostrar el nombre completo
     },
   },
-  
-  
+
+
   {
     accessorKey: "edad",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-center" 
+        className="text-center"
       >
         Edad
         <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -69,7 +70,7 @@ export const columns: ColumnDef<Empleado>[] = [
       const usuario = row.getValue("usuario");
       return usuario ? usuario : <UserX className="text-gray-500 w-5 h-5" />;
     },
-  }, 
+  },
   {
     accessorKey: "puesto",
     header: ({ column }) => (
@@ -104,10 +105,35 @@ export const columns: ColumnDef<Empleado>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-left"
       >
-        Empresa
+        Empresas
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: ({ row }) => {
+      const empresas = row.original.empresas || [];
+
+      return (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="default" className="text-left w-full">
+              {empresas.length > 0 ? "Ver empresas" : "Sin empresas"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full">
+            {empresas.length > 0 ? (
+              empresas.map((cliente) => (
+                <div key={cliente.id} className="flex items-center space-x-2">
+                  <CheckCircleIcon className="text-green-500" />
+                  <span>{cliente.nombre}</span>
+                </div>
+              ))
+            ) : (
+              <div>No hay empresas asociadas</div>
+            )}
+          </PopoverContent>
+        </Popover>
+      );
+    },
   },
   {
     accessorKey: "genero",

@@ -30,19 +30,22 @@ import { Loader2 } from "lucide-react";
 import { Empresa } from "@/lib/Types";
 import { Puesto } from "../../puestos/types";
 import { Empleado as EmpleadoModel } from "../type";
+import { CheckboxEmpresas } from "./ComboBox";
 
 export function EmpleadoFormulario({
   isUpdate,
   initialData,
   empresas,
   puestos,
-  jefe
+  jefe,
+  empresaSeleccionada,
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof EmpleadoSchema>;
   empresas: Empresa[];
   puestos: Puesto[];
   jefe: EmpleadoModel[];
+  empresaSeleccionada?: Empresa;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -187,31 +190,38 @@ export function EmpleadoFormulario({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="empresa_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Empresa</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empresas.map((empresa) => (
-                        <SelectItem key={empresa.id} value={empresa.id || ''} >
-                          {empresa.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormDescription>Selecciona la empresa del usuario.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+             <FormField
+              control={form.control}
+              name="empresas"
+              render={({ field }) => {
+                const clientesIniciales = empresaSeleccionada
+                  ? [{ id: empresaSeleccionada.id, nombre: empresaSeleccionada.nombre }]
+                  : empresas;
+
+                return (
+                  <FormItem>
+                    <FormLabel>Selecciona Clientes</FormLabel>
+                    <FormControl>
+                      {empresaSeleccionada ? (
+                        <Input value={empresaSeleccionada.nombre} disabled />
+                      ) : (
+                        <CheckboxEmpresas
+                          clientes={clientesIniciales}
+                          selectedClientes={field.value?.map((cliente) => cliente.id) || []}
+                          onChange={(selected) => {
+                            const selectedClientes = empresas.filter((c) => selected.includes(c.id || ""));
+                            field.onChange(selectedClientes);
+                          }}
+                        />
+                      )}
+                    </FormControl>
+                    <FormDescription>Selecciona los clientes que deseas asignar.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
           <FormField
             control={form.control}
             name="puesto_id"
@@ -319,7 +329,7 @@ export function EmpleadoFormulario({
 
         {/* Enviar */}
         <div className="flex justify-end">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

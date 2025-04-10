@@ -6,8 +6,6 @@ export type Usuario = {
     rol_id: string;
     empleado?: string;
     empleado_id: string;
-    empresa_id: string;
-    empresa?: string;
     activo: boolean;
 }
 

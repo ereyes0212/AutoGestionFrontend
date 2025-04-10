@@ -1,6 +1,5 @@
 "use client";
 import { ArrowUpDown, CheckCircleIcon } from "lucide-react";
-import { Usuario } from "@/lib/Types";
 // import { FormateadorFecha } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { Usuario } from "../type";
 
 export const columns: ColumnDef<Usuario>[] = [
 
@@ -53,19 +53,6 @@ export const columns: ColumnDef<Usuario>[] = [
         className="text-left"
       >
         Rol
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-  {
-    accessorKey: "empresa",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Empresa
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
