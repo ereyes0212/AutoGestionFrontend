@@ -1,6 +1,5 @@
 "use client";
 import { ArrowUpDown, Check, CheckCircleIcon, UserX } from "lucide-react";
-import {  Empleado, Empresa } from "@/lib/Types";
 // import { FormateadorFecha } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { Empresa } from "@/lib/Types";
 
 export const columns: ColumnDef<Empresa>[] = [
   {
