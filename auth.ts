@@ -5,18 +5,45 @@ import { type JWTPayload, SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { RedirectType, redirect } from "next/navigation";
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
-interface UsuarioSesion {
-    User:   string;
-    IdUser: string; 
-    IdEmpleado: string; 
-    Rol:       string;
-    IdEmpresa:       string;
-    IdRol:       string;
-    Permiso:   string[];
-    exp:       number;
-    iss:       string;
-    aud:       string;
+interface UsuarioSesion  {
+    IdUser:     string;
+    User:       string;
+    Rol:        string;
+    IdRol:      string;
+    IdEmpleado: string;
+    Empresas:   string[];
+    Permiso:    string[];
+    exp:        number;
+    iss:        string;
+    aud:        string;
 }
+export type Empresa = {
+    id: string;
+    nombre: string;
+  };
+  
+  export const getSessionEmpresas = async (): Promise<Empresa[]> => {
+    // Obtener el token de la cookie
+    const session = cookies().get("session")?.value;
+    if (!session) return [];
+    
+    // Desencriptar el token (usar tu función decrypt)
+    const usuarioSesion = await decrypt(session); // Esto devuelve un objeto UsuarioSesion
+  
+    let empresas: Empresa[] = [];
+    // Según tu interface de UsuarioSesion, "Empresas" viene como string (JSON serializado)
+    if (typeof usuarioSesion.Empresas === "string") {
+      try {
+        empresas = JSON.parse(usuarioSesion.Empresas) as Empresa[];
+      } catch (error) {
+        console.error("Error al parsear Empresas del token", error);
+      }
+    } else if (Array.isArray(usuarioSesion.Empresas)) {
+      empresas = usuarioSesion.Empresas as unknown as Empresa[];
+    }
+    return empresas;
+  };
+
 export async function encrypt(payload: JWTPayload | undefined) {
     return await new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
@@ -31,7 +58,7 @@ export const decrypt = async (input: string): Promise<UsuarioSesion> => {
         IdUser: payload.IdUser as string,
         User: payload.User as string,
         IdEmpleado: payload.empleadoId as string,
-        IdEmpresa: payload.IdEmpresa as string,
+        Empresas: payload.IdEmpresa as string[] || [],
         IdRol: payload.IdRol as string,
         Permiso: payload.Permiso as string[] || [],
         exp: payload.exp as number,
@@ -70,6 +97,7 @@ export const getSession = async () => {
     }
     return await decrypt(session);
 };
+
 export const getSessionUsuario = async (): Promise<UsuarioSesion | null> => {
     const session = cookies().get("session")?.value;
     if (!session) {
@@ -78,6 +106,7 @@ export const getSessionUsuario = async (): Promise<UsuarioSesion | null> => {
     const usuario = await decrypt(session);
     return usuario; 
 };
+
 
 export const getSessionPermisos = async (): Promise<string[] | null> => {
     const session = cookies().get("session")?.value;

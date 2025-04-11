@@ -7,6 +7,7 @@ import {
     CreditCard,
     LogOut,
     Sparkles,
+    User,
 } from "lucide-react"
 
 import {
@@ -30,22 +31,23 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import LogoutButton from "./signOut"
+import Link from "next/link"
 
 export function NavUser({
     usuario,
 }: {
     usuario: {
 
-        User: string;
-        IdUser: string;
+        IdUser:     string;
+        User:       string;
+        Rol:        string;
+        IdRol:      string;
         IdEmpleado: string;
-        IdRol: string;
-        IdEmpresa: string;
-        Rol: string;
-        Permiso: string[];
-        exp: number;
-        iss: string;
-        aud: string;
+        Empresas:   string[];
+        Permiso:    string[];
+        exp:        number;
+        iss:        string;
+        aud:        string;
 
     }
 }) {
@@ -75,7 +77,13 @@ export function NavUser({
                     align="end"
                     sideOffset={4}
                 >
-
+                <DropdownMenuItem asChild></DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex justify-between">
+                            <span>Perfil</span>
+                            <User className="ml-2 h-4 w-40 text-muted-foreground" />
+                        </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem>
                         <LogoutButton />
                     </DropdownMenuItem>
