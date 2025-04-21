@@ -16,7 +16,8 @@ export const EmpleadoSchema = z.object({
   empresas: z.array(EmpresaSchema).optional(), // Lista de empresas asociadas al empleado
   puesto_id: z.string(),
   jefe_id: z.string(),
-  edad: z.number().min(18, "La edad debe ser mayor o igual a 18 años").max(100, "La edad debe ser menor o igual a 100 años"), // Validación de edad
+  fechaNacimiento: z.date(),
+  vacaciones: z.number().min(0, "Las vacaciones no pueden ser negativas").optional(),
 });
 
 export type Empleado = z.infer<typeof EmpleadoSchema>;

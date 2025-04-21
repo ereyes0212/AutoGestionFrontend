@@ -3,7 +3,8 @@ export type Empleado = {
     nombre: string;
     apellido: string;
     correo: string;
-    edad: number;
+    fechaNacimiento: Date;
+    vacaciones?: number;
     genero: string;
     activo?: boolean;
     usuario?: string | null;

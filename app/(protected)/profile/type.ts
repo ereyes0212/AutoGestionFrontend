@@ -8,11 +8,12 @@ export interface Company {
     nombre: string
     apellido: string
     correo: string
-    edad: number
+    fechaNacimiento: Date
     genero: string
     activo: boolean
     usuario_id: string
     usuario: string
+    vacaciones: number
     puesto: string
     puesto_id: string
     jefe: string

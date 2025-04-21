@@ -25,7 +25,6 @@ export default async function ConfiguracionAprobacionPage({ params }: { params: 
         puestos={puestos}
         initialItems={configuraciones}
         empresaId={empresaId}
-        puestoId={puestoId}
       />
     </div>
   );

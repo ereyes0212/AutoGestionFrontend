@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Building2, Mail } from "lucide-react"
 import { Employee } from "../type"
+import { calcularEdad } from "@/lib/utils"
 
 interface EmployeeProfileProps {
     employee: Employee
@@ -11,6 +12,7 @@ interface EmployeeProfileProps {
 
 export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
     // Get initials for avatar
+    console.log("🚀 ~ Employee:", employee)
     const initials = `${employee.nombre.charAt(0)}${employee.apellido.charAt(0)}`
 
     return (
@@ -46,13 +48,16 @@ export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
                             <dd>{employee.usuario}</dd>
 
                             <dt className="font-medium text-muted-foreground">Edad:</dt>
-                            <dd>{employee.edad} años</dd>
+                            <dd>{calcularEdad(new Date(employee.fechaNacimiento))} años</dd>
 
                             <dt className="font-medium text-muted-foreground">Género:</dt>
                             <dd>{employee.genero}</dd>
 
                             <dt className="font-medium text-muted-foreground">Jefe:</dt>
                             <dd>{employee.jefe}</dd>
+
+                            <dt className="font-medium text-muted-foreground">Disas de vacaciones disponibles:</dt>
+                            <dd>{employee.vacaciones}</dd>
                         </dl>
                     </div>
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Mail, User, UserX, Search, Plus, Home, HomeIcon } from "lucide-react";
 import { Empleado } from "../type";
+import { calcularEdad } from "@/lib/utils";
 
 interface EmployeeListProps {
   empleados: Empleado[];
@@ -62,8 +63,9 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
               </p>
               <p className="text-xs flex items-center">
                 <User className="h-3 w-3 mr-1" />
-                {empleado.edad} años, {empleado.genero}
+                {calcularEdad(new Date(empleado.fechaNacimiento))} años, {empleado.genero}
               </p>
+
               {empleado.usuario ? (
                 <p className="text-xs flex items-center">
                   <User className="h-3 w-3 mr-1" />
@@ -77,8 +79,14 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
               )}
               <p className="text-xs flex items-center">
                 <HomeIcon className="h-3 w-3 mr-1" />
-                {empleado.empresa} - {empleado.puesto} - {empleado.jefe}
+                {empleado.empresas?.map((empresa, index) => (
+                  <span key={empresa.id}>
+                    {empresa.nombre}{index < empleado.empresas!.length - 1 && ", "}
+                  </span>
+                ))}
+                - {empleado.puesto} - {empleado.jefe}
               </p>
+
             </div>
           </div>
           <div className="flex items-center ml-4">

@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import { Empleado } from "../type";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { calcularEdad } from "@/lib/utils";
 
 export const columns: ColumnDef<Empleado>[] = [
 
@@ -39,10 +40,8 @@ export const columns: ColumnDef<Empleado>[] = [
       return nombreCompleto; // Mostrar el nombre completo
     },
   },
-
-
   {
-    accessorKey: "edad",
+    accessorKey: "fechaNacimiento",
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -53,6 +52,27 @@ export const columns: ColumnDef<Empleado>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: ({ row }) => {
+      const fechaNacimiento = row.original.fechaNacimiento as Date | string;
+  
+      // Si viene como string la convierto a Date
+      const fecha = typeof fechaNacimiento === "string" ? new Date(fechaNacimiento) : fechaNacimiento;
+  
+      const edad = calcularEdad(fecha);
+  
+      // Formatear fecha
+      const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+  
+      return (
+        <div className="text-center">
+          {fechaFormateada} ({edad} años)
+        </div>
+      );
+    },
   },
   {
     accessorKey: "usuario",
