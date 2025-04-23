@@ -43,7 +43,6 @@ export function NavUser({
         Rol:        string;
         IdRol:      string;
         IdEmpleado: string;
-        Empresas:   string[];
         Permiso:    string[];
         exp:        number;
         iss:        string;

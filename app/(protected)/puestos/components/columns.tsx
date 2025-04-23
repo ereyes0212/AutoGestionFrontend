@@ -43,19 +43,7 @@ export const columns: ColumnDef<Puesto>[] = [
       </Button>
     ),
   },
-  {
-    accessorKey: "empresa",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-center"
-      >
-        Empresa
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
+
 
   {
     accessorKey: "activo",
@@ -90,7 +78,7 @@ export const columns: ColumnDef<Puesto>[] = [
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const empresa = row.original;
+      const puesto = row.original;
 
       return (
         <DropdownMenu>
@@ -102,7 +90,7 @@ export const columns: ColumnDef<Puesto>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/puestos/${empresa.id}/edit`}>
+            <Link href={`/puestos/${puesto.id}/edit`}>
               <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

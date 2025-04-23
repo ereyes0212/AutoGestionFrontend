@@ -1,36 +1,23 @@
-import { ListCheck, Settings, User, Users } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
-import HeaderComponent from "@/components/HeaderComponent";
-import NoAcceso from "@/components/noAccess";
-// import PermissionListMobile from "./components/permisos-list-mobile";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
-import CompanyButtons from "./components/botones-empresa";
-import { getEmpresasActivas } from "../empresas/actions";
-
-export default async function EstadoServicio() {
-
-    const permisos = await getSessionPermisos();
+// app/(protected)/configuracion-permisos/[empresaId]/config/page.tsx
+import React from "react";
+import { getPuestosActivas } from "@/app/(protected)/puestos/actions";
+import { getConfiguracionAprobacion } from "./actions";
+import { ConfigItem } from "./type";
+import DragAndDropConfigurator from "./components/drag-and-drop";
 
 
+export default async function ConfiacionAprobacionPage() {
 
-    if (!permisos?.includes("ver_permisos")) {
-        return <NoAcceso />;
-    }
+  const configuraciones: ConfigItem[] = await getConfiguracionAprobacion();
+  const puestos = await getPuestosActivas()
 
-    const empresas = await getEmpresasActivas();
-    if (!empresas) {
-        return <NoAcceso />;
-    }
-    return (
-        <div className="container mx-auto py-2">
-            <HeaderComponent
-                Icon={Settings}
-                description="En este apartado podrá configurar la autorización de permisos."
-                screenName="Configuracion de permisos"
-            />
-
-            <CompanyButtons companies={empresas} />
-        </div>
-    );
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-4">Configurar Orden de Aprobación</h1>
+      <DragAndDropConfigurator
+        puestos={puestos}
+        initialItems={configuraciones}
+      />
+    </div>
+  );
 }

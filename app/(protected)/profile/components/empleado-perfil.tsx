@@ -11,8 +11,6 @@ interface EmployeeProfileProps {
 }
 
 export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
-    // Get initials for avatar
-    console.log("🚀 ~ Employee:", employee)
     const initials = `${employee.nombre.charAt(0)}${employee.apellido.charAt(0)}`
 
     return (
@@ -56,22 +54,11 @@ export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
                             <dt className="font-medium text-muted-foreground">Jefe:</dt>
                             <dd>{employee.jefe}</dd>
 
-                            <dt className="font-medium text-muted-foreground">Disas de vacaciones disponibles:</dt>
+                            <dt className="font-medium text-muted-foreground">Dias de vacaciones disponibles:</dt>
                             <dd>{employee.vacaciones}</dd>
                         </dl>
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Empresas</h3>
-                        <div className="space-y-2">
-                            {employee.empresas.map((company) => (
-                                <div key={company.id} className="flex items-center gap-2 rounded-md border p-2">
-                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                    <span>{company.nombre}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </CardContent>
         </Card>

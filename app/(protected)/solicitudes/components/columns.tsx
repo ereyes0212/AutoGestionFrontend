@@ -1,6 +1,6 @@
 "use client";
 import { ArrowUpDown, Check, CheckCircleIcon, UserX } from "lucide-react";
-// import { FormateadorFecha } from "@/lib/utils";
+
 import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
 
@@ -14,149 +14,111 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { Empleado } from "../type";
+import { SolicitudPermiso } from "../type";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { calcularEdad } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
-export const columns: ColumnDef<Empleado>[] = [
-
+export const columns: ColumnDef<SolicitudPermiso>[] = [
   {
-    accessorKey: "nombre", // La columna principal, que será 'nombre'
+    accessorKey: "fechaSolicitud",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-left"
       >
-        Nombre
+        Fecha Solicitud
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
-      // Concatenar 'nombre' y 'apellido' usando row.original
-      const nombre = row.original.nombre || "";
-      const apellido = row.original.apellido || ""; // Acceder al apellido desde row.original
-      const nombreCompleto = `${nombre} ${apellido}`.trim(); // Concatenar y eliminar espacios extras
-      return nombreCompleto; // Mostrar el nombre completo
+      const fechaSolicitud = row.getValue<string>("fechaSolicitud");
+      const fechaFormateada = new Date(fechaSolicitud).toLocaleDateString();
+      return <span>{fechaFormateada}</span>;
     },
   },
   {
-    accessorKey: "fechaNacimiento",
+    accessorKey: "fechaInicio",
     header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-center"
+        className="text-left"
       >
-        Edad
+        Fecha Inicio
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
-      const fechaNacimiento = row.original.fechaNacimiento as Date | string;
-  
-      // Si viene como string la convierto a Date
-      const fecha = typeof fechaNacimiento === "string" ? new Date(fechaNacimiento) : fechaNacimiento;
-  
-      const edad = calcularEdad(fecha);
-  
-      // Formatear fecha
-      const fechaFormateada = fecha.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
-  
+      const fechaInicio = row.getValue<string>("fechaInicio");
+      const fechaFormateada = new Date(fechaInicio).toLocaleDateString();
+      return <span>{fechaFormateada}</span>;
+    },
+  },
+  {
+    accessorKey: "fechaFin",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Fecha Fin
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const fechaFin = row.getValue<string>("fechaFin");
+      const fechaFormateada = new Date(fechaFin).toLocaleDateString();
+      return <span>{fechaFormateada}</span>;
+    },
+  },
+  {
+    accessorKey: "descripcion",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Descripción
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "diasSolicitados",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Dias Solicitidados
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "aprobado",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-left"
+      >
+        Estado
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const aprobado = row.getValue<boolean | null>("aprobado");
+
       return (
-        <div className="text-center">
-          {fechaFormateada} ({edad} años)
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "usuario",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Usuario
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const usuario = row.getValue("usuario");
-      return usuario ? usuario : <UserX className="text-gray-500 w-5 h-5" />;
-    },
-  },
-  {
-    accessorKey: "puesto",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Puesto
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-  {
-    accessorKey: "jefe",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Jefe
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-  {
-    accessorKey: "genero",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Genero
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-  },
-
-  {
-    accessorKey: "activo",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Activo
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const isActive = row.getValue("activo");
-      return (
-        <div className="">
-          {isActive ? (
-            <div className="flex gap-2">
-              <CheckCircleIcon color="green" /> Activo{" "}
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <XCircleIcon color="red" /> Inactivo{" "}
-            </div>
-          )}
-        </div>
+        <Badge>
+          {aprobado === null ? "Pendiente" : aprobado ? "Aprobado" : "Rechazado"}
+        </Badge>
       );
     },
   },
@@ -164,8 +126,7 @@ export const columns: ColumnDef<Empleado>[] = [
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const empleado = row.original;
-
+      const solicitud = row.original;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -176,8 +137,8 @@ export const columns: ColumnDef<Empleado>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/empleados/${empleado.id}/edit`}>
-              <DropdownMenuItem>Editar</DropdownMenuItem>
+            <Link href={`/solicitudes/${solicitud.id}/detalle`}>
+              <DropdownMenuItem>Ver Detalle</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>
         </DropdownMenu>

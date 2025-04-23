@@ -11,38 +11,14 @@ interface UsuarioSesion  {
     Rol:        string;
     IdRol:      string;
     IdEmpleado: string;
-    Empresas:   string[];
     Permiso:    string[];
+    Puesto:     string;
+    PuestoId:  string;
     exp:        number;
     iss:        string;
     aud:        string;
 }
-export type Empresa = {
-    id: string;
-    nombre: string;
-  };
-  
-  export const getSessionEmpresas = async (): Promise<Empresa[]> => {
-    // Obtener el token de la cookie
-    const session = cookies().get("session")?.value;
-    if (!session) return [];
-    
-    // Desencriptar el token (usar tu función decrypt)
-    const usuarioSesion = await decrypt(session); // Esto devuelve un objeto UsuarioSesion
-  
-    let empresas: Empresa[] = [];
-    // Según tu interface de UsuarioSesion, "Empresas" viene como string (JSON serializado)
-    if (typeof usuarioSesion.Empresas === "string") {
-      try {
-        empresas = JSON.parse(usuarioSesion.Empresas) as Empresa[];
-      } catch (error) {
-        console.error("Error al parsear Empresas del token", error);
-      }
-    } else if (Array.isArray(usuarioSesion.Empresas)) {
-      empresas = usuarioSesion.Empresas as unknown as Empresa[];
-    }
-    return empresas;
-  };
+
 
 export async function encrypt(payload: JWTPayload | undefined) {
     return await new SignJWT(payload)
@@ -58,9 +34,10 @@ export const decrypt = async (input: string): Promise<UsuarioSesion> => {
         IdUser: payload.IdUser as string,
         User: payload.User as string,
         IdEmpleado: payload.empleadoId as string,
-        Empresas: payload.IdEmpresa as string[] || [],
         IdRol: payload.IdRol as string,
         Permiso: payload.Permiso as string[] || [],
+        Puesto: payload.Puesto as string,
+        PuestoId: payload.PuestoId as string,
         exp: payload.exp as number,
         aud: payload.aud as string,
         iss: payload.iss as string,

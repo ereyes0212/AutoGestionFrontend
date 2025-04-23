@@ -77,16 +77,6 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
                   <span>Sin usuario</span>
                 </p>
               )}
-              <p className="text-xs flex items-center">
-                <HomeIcon className="h-3 w-3 mr-1" />
-                {empleado.empresas?.map((empresa, index) => (
-                  <span key={empresa.id}>
-                    {empresa.nombre}{index < empleado.empresas!.length - 1 && ", "}
-                  </span>
-                ))}
-                - {empleado.puesto} - {empleado.jefe}
-              </p>
-
             </div>
           </div>
           <div className="flex items-center ml-4">

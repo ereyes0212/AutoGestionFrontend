@@ -18,13 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface DragAndDropConfiguratorProps {
   initialItems: ConfigItem[]
-  empresaId: string
   puestos: Puesto[]
 }
 
 export default function DragAndDropConfigurator({
   initialItems,
-  empresaId,
   puestos,
 }: DragAndDropConfiguratorProps) {
   // Estado para elementos del drag and drop
@@ -90,10 +88,10 @@ export default function DragAndDropConfigurator({
   const handleSave = async () => {
     const outputConfigs: OutputConfig[] = items.map((item, index) => {
       const config: OutputConfig = {
-        Empresa_id: empresaId,
         nivel: index + 1,
         tipo: item.tipo,
         descripcion: item.descripcion,
+        puesto_id: item.tipo === "Fijo" ? item.puesto_id : null
       }
 
       return config
@@ -129,8 +127,7 @@ export default function DragAndDropConfigurator({
       id: Date.now().toString(),
       descripcion: newDescripcion,
       tipo: newTipo,
-      empresa: "",
-      puesto: newPuestoSeleccionado,
+      puesto_id: newPuestoSeleccionado,
       nivel: 0,
       activo: false
     }

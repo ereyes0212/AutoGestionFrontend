@@ -18,6 +18,5 @@ export interface Company {
     puesto_id: string
     jefe: string
     jefe_id: string | null
-    empresas: Company[]
   }
   

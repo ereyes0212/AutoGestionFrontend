@@ -7,7 +7,6 @@ import NoAcceso from "@/components/noAccess";
 import HeaderComponent from "@/components/HeaderComponent";
 import { getEmpleadosSinUsuario } from "../../empleados/actions";
 import { getRolsActivos } from "../../roles/actions";
-import { getEmpresasActivas } from "../../empresas/actions";
 
 export default async function Create() {
 
@@ -24,10 +23,8 @@ export default async function Create() {
     empleado_id: "",
     rol_id: "",
     activo: true,
-    empresa_id: ""
   };
   const empleados = await getEmpleadosSinUsuario();
-  const empresas = await getEmpresasActivas();
   const roles = await getRolsActivos();
 
   return (
@@ -37,7 +34,7 @@ export default async function Create() {
         description="En este apartado podrás crear un nuevo usuario"
         screenName="Usuarios"
       />
-      <Formulario isUpdate={false} initialData={initialData} empleados={empleados} roles={roles} empresas={empresas} />
+      <Formulario isUpdate={false} initialData={initialData} empleados={empleados} roles={roles} />
     </div>
   );
 }

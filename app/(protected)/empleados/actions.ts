@@ -29,8 +29,7 @@ export async function putEmpleado({ empleado }: { empleado: Empleado }) {
 
   try {
     const empleados = {
-      ...empleado,
-      empresaIds: empleado.empresas?.map((empresa) => empresa.id) || []
+      ...empleado
     }
     const response = await apiService.put(`/Empleado/${empleado.id}`, empleados);
 
@@ -54,8 +53,7 @@ export async function getEmpleadoId(id: string) {
 export async function postEmpleado({ empleado }: { empleado: Empleado }) {
   try {
     const empleados = {
-      ...empleado,
-      empresaIds: empleado.empresas?.map((empresa) => empresa.id) || []
+      ...empleado
     }
     const response = await apiService.post("/Empleado", empleados);
     return response.data;

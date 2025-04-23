@@ -5,7 +5,6 @@ export const PuestoSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   activo: z.boolean().optional(), 
   descripcion: z.string(),
-  empresa_id: z.string(), 
   });
 
 export type Puesto = z.infer<typeof PuestoSchema>;

@@ -1,4 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -23,5 +25,12 @@ export function calcularEdad(fechaNacimiento: Date) {
   }
   return edad;
 }
-
+export const formatearFecha = (fecha: string) => {
+  if (!fecha) return "N/A"
+  try {
+    return format(new Date(fecha), "dd 'de' MMMM 'de' yyyy", { locale: es })
+  } catch (error) {
+    return "Fecha inválida"
+  }
+}
 

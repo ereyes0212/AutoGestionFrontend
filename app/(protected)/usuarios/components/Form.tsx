@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Empresa, Rol } from "@/lib/Types";
+import {  Rol } from "@/lib/Types";
 import { Loader2 } from "lucide-react";
 import { Empleado } from "../../empleados/type";
 import { UsuarioCreate, UsuarioUpdate } from "../type";
@@ -35,14 +35,12 @@ export function Formulario({
   initialData,
   empleados, // Lista de empleados sin usuario asignado
   roles, // Lista de roles
-  empresas, // Lista de empresas
   empleadoAsignado, // Empleado asignado, si existe
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof UsuarioSchema>;
   empleados: Empleado[]; // Lista de empleados sin usuario asignado
   roles: Rol[]; // Lista de roles
-  empresas: Empresa[]; // Lista de roles
   empleadoAsignado?: Empleado | null; // Empleado asignado, si es actualización
 }) {
   const { toast } = useToast();

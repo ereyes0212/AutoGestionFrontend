@@ -49,11 +49,6 @@ export interface ValidationError {
   traceId: string;  // ID de rastreo para el seguimiento del error
 }
 
-export type Empresa = {
-  id?:     string;
-  nombre:  string;
-  activo?: boolean;
-}
 
 
 

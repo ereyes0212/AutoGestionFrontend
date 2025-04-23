@@ -15,9 +15,9 @@ export async function getConfiguracionAprobacion() {
     return [];
   }
 }
-export async function getConfiguracionAprobacionByEmpresaId(id:string) {
+export async function getConfiguracionAprobacionByEmpresaId() {
   try {
-    const response = await apiService.get<ConfigItem[]>(`/ConfiguracionAprobacion/empresa/${id}`);
+    const response = await apiService.get<ConfigItem[]>(`/ConfiguracionAprobacion/`);
     return response.data;
   } catch (error) {
     console.error("Error al obtener los puestos:", error);
@@ -48,24 +48,7 @@ export async function getPuestoId(id: string) {
     return null;
   }
 }
-export async function getPuestoByEmpresaId() {
-  try {
-    const response = await apiService.get<OutputConfig>(`/Puesto/empresaId`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
-}
-export async function getPuestoActivosByEmpresaId() {
-  try {
-    const response = await apiService.get<OutputConfig[]>(`/Puesto/activos/empresa`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
-}
+
 
 export async function postPuesto({ puesto }: { puesto: OutputConfig[] }) {
   try {

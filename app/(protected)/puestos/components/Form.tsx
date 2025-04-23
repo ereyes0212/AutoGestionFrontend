@@ -27,15 +27,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { Empresa } from "@/lib/Types";
 
 export function PuestoFormulario({
   isUpdate,
-  empresas,
   initialData,
 }: {
   isUpdate: boolean;
-  empresas: Empresa[];
   initialData: z.infer<typeof PuestoSchema>;
 }) {
   const { toast } = useToast();
@@ -130,31 +127,6 @@ export function PuestoFormulario({
                 <FormDescription>
                   Por favor ingresa la descripción de puesto.
                 </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="empresa_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Empresa</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una empresa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {empresas.map((empresa) => (
-                        <SelectItem key={empresa.id} value={empresa.id || ''} >
-                          {empresa.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormDescription>Selecciona la empresa del usuario.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

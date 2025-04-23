@@ -12,7 +12,6 @@ import {
   getEmpleadosSinUsuario,
 } from "@/app/(protected)/empleados/actions";
 import { getRolsActivos } from "@/app/(protected)/roles/actions";
-import { getEmpresasActivas } from "@/app/(protected)/empresas/actions";
 
 export default async function Edit({ params }: { params: { id: string } }) {
 
@@ -27,7 +26,6 @@ export default async function Edit({ params }: { params: { id: string } }) {
   const usuario = await getUsuarioById(params.id);
   const empleados = await getEmpleadosSinUsuario();
   const roles = await getRolsActivos();
-  const empresas = await getEmpresasActivas();
   const empleadoAsignado = await getEmpleadoId(usuario?.empleado_id ?? "");
 
 
@@ -40,8 +38,7 @@ export default async function Edit({ params }: { params: { id: string } }) {
     contrasena: "",
     empleado_id: usuario.empleado_id ?? "",
     rol_id: usuario.rol_id,
-    activo: usuario.activo,
-    empresa_id: usuario.empresa_id
+    activo: usuario.activo
 
   };
 
@@ -53,7 +50,6 @@ export default async function Edit({ params }: { params: { id: string } }) {
         screenName="Editar Usuario"
       />
       <Formulario
-        empresas={empresas}
         isUpdate={true}
         initialData={initialData}
         empleados={empleados}

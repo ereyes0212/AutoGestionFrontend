@@ -6,8 +6,7 @@ import { redirect } from "next/navigation";
 import { EmpleadoFormulario } from "../../components/Form";
 import { getEmpleadoId, getEmpleados } from "../../actions";
 import NoAcceso from "@/components/noAccess";
-import { getEmpresasActivas } from "@/app/(protected)/empresas/actions";
-import { getPuestoActivosByEmpresaId, getPuestosActivas } from "@/app/(protected)/puestos/actions";
+import { getPuestosActivas } from "@/app/(protected)/puestos/actions";
 
 export default async function Edit({ params }: { params: { id: string } }) {
   // Verificar si hay una sesión activa
@@ -17,16 +16,10 @@ export default async function Edit({ params }: { params: { id: string } }) {
   if (!permisos?.includes("editar_empleado")) {
     return <NoAcceso />;
   }
-  const puestos =
-    sesion?.Rol === "Administrador"
-      ? await getPuestosActivas()
-      : await getPuestoActivosByEmpresaId();
-  const empleados =
-    sesion?.Rol === "Administrador"
-      ? await getEmpleados()
-      : await getEmpleados();
+  const puestos = await getPuestosActivas()
+  const empleados = await getEmpleados()
 
-  const empresas = await getEmpresasActivas()
+
   // Obtener el cliente por su ID
   const empleado = await getEmpleadoId(params.id);
   if (!empleado) {
@@ -39,14 +32,10 @@ export default async function Edit({ params }: { params: { id: string } }) {
     correo: empleado.correo,
     genero: empleado.genero, // Valor por defecto
     activo: empleado.activo,
-    edad: empleado.edad,
+    fechaNacimiento: new Date(empleado.fechaNacimiento), 
     nombreUsuario: empleado.usuario,
     jefe_id: empleado.jefe_id || "", 
-    puesto_id: empleado.puesto_id || "", 
-    empresas: empleado.empresas!.map(cliente => ({
-      id: cliente.id,
-      nombre: cliente.nombre,
-    }))
+    puesto_id: empleado.puesto_id || ""
   };
 
   return (
@@ -59,7 +48,6 @@ export default async function Edit({ params }: { params: { id: string } }) {
       <EmpleadoFormulario
         puestos={puestos || []} 
         jefe={empleados}
-        empresas={empresas}
         isUpdate={true} // Esto es para indicar que estamos creando, no actualizando
         initialData={initialData} // Datos iniciales para crear un nuevo empleado
       />

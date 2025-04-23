@@ -12,11 +12,7 @@ export type Empleado = {
     jefe_id?: string;
     jefe?:       string;
     puesto?:     string;
-    empresas?:   Empresa[];
 }
 
-export type Empresa = {
-    id:     string;
-    nombre: string;
-}
+
   

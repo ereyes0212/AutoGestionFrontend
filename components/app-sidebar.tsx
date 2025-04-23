@@ -3,6 +3,7 @@ import {
   BookTextIcon,
   Car,
   ChartSplineIcon,
+  Files,
   Home,
   House,
   LayersIcon,
@@ -11,6 +12,7 @@ import {
   ListChecks,
   NotebookText,
   Package,
+  Settings,
   StepForward,
   TornadoIcon,
   User,
@@ -53,12 +55,6 @@ const items = [
     permiso: "ver_empleados",
   },
   {
-    title: "Empresas",
-    url: "/empresas",
-    icon: House,
-    permiso: "ver_empresas",
-  },
-  {
     title: "Puestos",
     url: "/puestos",
     icon: UserRoundCheck,
@@ -80,6 +76,18 @@ const items = [
     title: "Usuarios",
     url: "/usuarios",
     icon: UserIcon,
+    permiso: "ver_usuarios",
+  },
+  {
+    title: "Solicitudes",
+    url: "/solicitudes",
+    icon: Files,
+    permiso: "ver_usuarios",
+  },
+  {
+    title: "Configuración",
+    url: "/configuracion-permisos",
+    icon: Settings,
     permiso: "ver_usuarios",
   }
 

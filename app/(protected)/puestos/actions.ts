@@ -47,24 +47,8 @@ export async function getPuestoId(id: string) {
     return null;
   }
 }
-export async function getPuestoByEmpresaId() {
-  try {
-    const response = await apiService.get<Puesto>(`/Puesto/empresaId`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
-}
-export async function getPuestoActivosByEmpresaId() {
-  try {
-    const response = await apiService.get<Puesto[]>(`/Puesto/activos/empresa`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
-}
+
+
 
 export async function postPuesto({ puesto }: { puesto: Puesto }) {
   try {

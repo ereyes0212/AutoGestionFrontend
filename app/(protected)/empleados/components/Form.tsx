@@ -27,10 +27,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { Empresa } from "@/lib/Types";
 import { Puesto } from "../../puestos/types";
 import { Empleado as EmpleadoModel } from "../type";
-import { CheckboxEmpresas } from "./ComboBox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns"
 import { cn } from "@/lib/utils";
@@ -39,17 +37,13 @@ import { es } from "date-fns/locale"
 export function EmpleadoFormulario({
   isUpdate,
   initialData,
-  empresas,
   puestos,
   jefe,
-  empresaSeleccionada,
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof EmpleadoSchema>;
-  empresas: Empresa[];
   puestos: Puesto[];
   jefe: EmpleadoModel[];
-  empresaSeleccionada?: Empresa;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -219,38 +213,6 @@ export function EmpleadoFormulario({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="empresas"
-            render={({ field }) => {
-              const clientesIniciales = empresaSeleccionada
-                ? [{ id: empresaSeleccionada.id, nombre: empresaSeleccionada.nombre }]
-                : empresas;
-
-              return (
-                <FormItem>
-                  <FormLabel>Selecciona Clientes</FormLabel>
-                  <FormControl>
-                    {empresaSeleccionada ? (
-                      <Input value={empresaSeleccionada.nombre} disabled />
-                    ) : (
-                      <CheckboxEmpresas
-                        clientes={clientesIniciales}
-                        selectedClientes={field.value?.map((cliente) => cliente.id) || []}
-                        onChange={(selected) => {
-                          const selectedClientes = empresas.filter((c) => selected.includes(c.id || ""));
-                          field.onChange(selectedClientes);
-                        }}
-                      />
-                    )}
-                  </FormControl>
-                  <FormDescription>Selecciona los clientes que deseas asignar.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
-          />
-
           <FormField
             control={form.control}
             name="puesto_id"
