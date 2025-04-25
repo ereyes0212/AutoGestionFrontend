@@ -1,15 +1,14 @@
-"use client"
+'use client'
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Separator } from "@/components/ui/separator"
 import { CalendarDays, Clock, FileText, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { SolicitudPermiso } from "../type"
-
-
 
 // Componente para mostrar el estado de aprobación
 const EstadoAprobacion = ({ aprobado }: { aprobado: boolean | null }) => {
@@ -31,38 +30,38 @@ const formatearFecha = (fecha: string) => {
   if (!fecha) return "N/A"
   try {
     return format(new Date(fecha), "dd 'de' MMMM 'de' yyyy", { locale: es })
-  } catch (error) {
+  } catch {
     return "Fecha inválida"
   }
 }
 
 export default function SolicitudPermisoCard({ solicitud }: { solicitud: SolicitudPermiso }) {
   // Determinar el estado general de la solicitud basado en las aprobaciones
-  const determinarEstadoGeneral = (solicitud: SolicitudPermiso) => {
-    // Si hay alguna aprobación en false, la solicitud está rechazada
-    if (solicitud.aprobaciones.some((a) => a.aprobado === false)) {
-      return false
-    }
-
-    // Si todas las aprobaciones están en true, la solicitud está aprobada
-    if (solicitud.aprobaciones.every((a) => a.aprobado === true)) {
-      return true
-    }
-
-    // En cualquier otro caso, está pendiente
+  const determinarEstadoGeneral = (sol: SolicitudPermiso) => {
+    if (sol.aprobaciones.some(a => a.aprobado === false)) return false
+    if (sol.aprobaciones.every(a => a.aprobado === true)) return true
     return null
   }
 
   const estadoGeneral = determinarEstadoGeneral(solicitud)
 
+  const handlePrint = () => {
+    window.open(
+      `/solicitudes/${solicitud.id}/imprimir`,
+      "_blank"
+    )
+  }
+
   return (
     <Card className="shadow-md">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl">Solicitud de Permiso</CardTitle>
-            <CardDescription>ID: {solicitud.id.substring(0, 8)}...</CardDescription>
-          </div>
+      <CardHeader className="pb-2 flex justify-between items-start">
+        <div>
+          <CardTitle className="text-xl">Solicitud de Permiso</CardTitle>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrint}>
+            Imprimir
+          </Button>
           <EstadoAprobacion aprobado={estadoGeneral} />
         </div>
       </CardHeader>
@@ -80,8 +79,8 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
               <p>{solicitud.nombreEmpleado || "No especificado"}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">ID Empleado:</p>
-              <p>{solicitud.empleadoId.substring(0, 8)}...</p>
+              <p className="text-sm font-medium text-muted-foreground">Puesto:</p>
+              <p>{solicitud.puestoId}</p>
             </div>
           </div>
         </div>
@@ -124,7 +123,7 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
 
         <Separator />
 
-        {/* Historial de aprobaciones - mostrado directamente */}
+        {/* Historial de aprobaciones */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span>Historial de Aprobaciones</span>
@@ -136,19 +135,19 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
                 <TableHead>Estado</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead>Comentario</TableHead>
+                <TableHead>Aprobador</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {solicitud.aprobaciones.map((aprobacion) => (
-                <TableRow key={aprobacion.id}>
-                  <TableCell className="font-medium">Nivel {aprobacion.nivel}</TableCell>
+              {solicitud.aprobaciones.map(a => (
+                <TableRow key={a.id}>
+                  <TableCell className="font-medium">Nivel {a.nivel}</TableCell>
+                  <TableCell><EstadoAprobacion aprobado={a.aprobado} /></TableCell>
                   <TableCell>
-                    <EstadoAprobacion aprobado={aprobacion.aprobado} />
+                    {a.fechaAprobacion ? formatearFecha(a.fechaAprobacion) : "Pendiente"}
                   </TableCell>
-                  <TableCell>
-                    {aprobacion.fechaAprobacion ? formatearFecha(aprobacion.fechaAprobacion) : "Pendiente"}
-                  </TableCell>
-                  <TableCell>{aprobacion.comentario || "Sin comentarios"}</TableCell>
+                  <TableCell>{a.comentario || "Sin comentarios"}</TableCell>
+                  <TableCell>{a.descripcion || "Sin aprobador asignado"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

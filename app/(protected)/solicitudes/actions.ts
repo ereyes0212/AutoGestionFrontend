@@ -3,12 +3,30 @@
 
 import apiService from "../../../lib/server";
 import { Solicitud } from "./schema";
-import { SolicitudPermiso, Aprobacion } from "./type";
+import { SolicitudPermiso, Aprobacion, SolicitudAprobacion } from "./type";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getSolicitudesByEmpleado() {
   try {
     const response = await apiService.get<SolicitudPermiso[]>("/SolicitudVacaciones/empleado");
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener los empleados:", error);
+    return [];
+  }
+}
+export async function getSolicitudesAprobaciones() {
+  try {
+    const response = await apiService.get<SolicitudAprobacion[]>("/SolicitudVacaciones/aprobaciones/empleado");
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener los empleados:", error);
+    return [];
+  }
+}
+export async function getSolicitudesAprobacionesHistorico() {
+  try {
+    const response = await apiService.get<SolicitudAprobacion[]>("/SolicitudVacaciones/aprobaciones/empleado/historico");
     return response.data;
   } catch (error) {
     console.error("Error al obtener los empleados:", error);
@@ -43,6 +61,35 @@ export async function putSolicitud({ solicitud }: { solicitud: Solicitud }) {
   } catch (error) {
     console.error("Error:", error);
     return [];
+  }
+}
+interface ProcessApprovalParams {
+  id: string
+  nivel: number
+  aprobado: boolean
+  comentarios: string
+}
+export async function processApproval({
+  id,
+  nivel,
+  aprobado,
+  comentarios,
+}: ProcessApprovalParams) {
+  try {
+    const query = new URLSearchParams({
+      nivel: nivel.toString(),
+      aprobado: String(aprobado),
+      comentarios,
+    }).toString()
+
+    const response = await apiService.put(
+      `/solicitudvacaciones/${id}/aprobar?${query}`, {}
+    )
+    console.log("🚀 ~ response:", response.config.baseURL)
+    return response.data
+  } catch (error) {
+    console.error("Error procesando aprobación:", error)
+    throw error
   }
 }
 

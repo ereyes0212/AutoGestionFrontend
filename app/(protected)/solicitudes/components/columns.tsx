@@ -95,14 +95,18 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-left"
       >
-        Dias Solicitidados
+        Dias Solicitados
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
-    ),
-  },
-  {
-    accessorKey: "aprobado",
-    header: ({ column }) => (
+        ),
+        cell: ({ row }) => {
+      const diasSolicitados = row.getValue<number>("diasSolicitados");
+      return <span>{diasSolicitados}</span>;
+        },
+      },
+      {
+        accessorKey: "aprobado",
+        header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -111,21 +115,28 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
         Estado
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
-    ),
-    cell: ({ row }) => {
+        ),
+        cell: ({ row }) => {
       const aprobado = row.getValue<boolean | null>("aprobado");
 
-      return (
-        <Badge>
-          {aprobado === null ? "Pendiente" : aprobado ? "Aprobado" : "Rechazado"}
+      return aprobado === true ? (
+        <Badge className="bg-green-500 hover:bg-green-600">Aprobado</Badge>
+      ) : aprobado === false ? (
+        <Badge variant="destructive">Rechazado</Badge>
+      ) : (
+        <Badge
+          variant="outline"
+          className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300"
+        >
+          Pendiente
         </Badge>
       );
-    },
-  },
-  {
-    id: "actions",
-    header: "Acciones",
-    cell: ({ row }) => {
+        },
+      },
+      {
+        id: "actions",
+        header: "Acciones",
+        cell: ({ row }) => {
       const solicitud = row.original;
       return (
         <DropdownMenu>

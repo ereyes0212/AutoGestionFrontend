@@ -46,27 +46,44 @@ export const decrypt = async (input: string): Promise<UsuarioSesion> => {
 
     return usuarioSesion;
 };
-export const login = async (credentials: TSchemaSignIn) => {
-    const validated = schemaSignIn.safeParse(credentials);
+export interface LoginResult {
+    success?: string
+    error?: string
+    redirect?: string
+  }
+  
+  // Ahora recibimos redirect aparte
+  export const login = async (
+    credentials: TSchemaSignIn,
+    redirect: string
+  ): Promise<LoginResult> => {
+    const validated = schemaSignIn.safeParse(credentials)
     if (!validated.success) {
-        return { error: "Usuario o contraseña invalidos" };
+      return { error: "Usuario o contraseña inválidos" }
     }
+  
     try {
-        const { usuario, contrasena } = validated.data;
-        const tokenAD = await getADAuthentication(usuario, contrasena);
-        if (!tokenAD) {
-            return { error: "Usuario o contraseña invalidos" };
-        }
-        const decryptedToken = await decrypt(tokenAD);
-        const session = tokenAD;
-        const expires = new Date(((await decrypt(session)).exp as number) * 1000);
-        cookies().set("session", session, { expires, httpOnly: true });
-        return { success: "Login OK" };
-    } catch (error) {
-        console.log(error);
-        return { error: "Error al iniciar sesion" };
+      const { usuario, contrasena } = validated.data
+      const tokenAD = await getADAuthentication(usuario, contrasena)
+      if (!tokenAD) {
+        return { error: "Usuario o contraseña inválidos" }
+      }
+  
+      // Guardamos la cookie de sesión
+      const session    = tokenAD
+      const decrypted  = await decrypt(session)
+      const expires    = new Date((decrypted.exp as number) * 1000)
+      cookies().set("session", session, { expires, httpOnly: true })
+  
+      return {
+        success:  "Login OK",
+        redirect  // devolvemos el redirect que nos pasaron
+      }
+    } catch {
+      return { error: "Error al iniciar sesión" }
     }
-};
+  }
+
 export const getSession = async () => {
     const session = cookies().get("session")?.value;
     if (!session) {
@@ -96,21 +113,6 @@ export const getSessionPermisos = async (): Promise<string[] | null> => {
 };
 
 
-type TRolAcceso = {
-    id: string;
-    nivelAcceso: number;
-    descripcion: string;
-    grupos: string;
-    esquema: string;
-    tagServicio: string;
-};
-const chunkCookie = ({ name, value, size }: { name: string; value: string; size: number }) => {
-    const chunks = Math.ceil(value.length / size);
-    for (let i = 0; i < chunks; i++) {
-        const chunkValue = value.slice(i * size, (i + 1) * size);
-        cookies().set(`${name}Chunk${i}`, chunkValue);
-    }
-};
 const getADAuthentication = async (username: string, password: string) => {
 
     const url = `${process.env.URLLOGIN}`;

@@ -19,6 +19,7 @@ export type Aprobacion = {
     empleadoId: string;
     nombreEmpleado: string;
     puestoId: string;
+    puesto: string;
     fechaSolicitud: string;
     fechaInicio: string;
     fechaFin: string;
@@ -27,4 +28,23 @@ export type Aprobacion = {
     descripcion: string;
     aprobaciones: Aprobacion[];
   };
+
+  export type SolicitudAprobacion = {
+    id:              string;
+    idSolicitud:     string;
+    nivel:           number;
+    aprobado:        null;
+    comentario:      null;
+    fechaAprobacion: null;
+    empleadoId:      string;
+    nombreEmpleado:  string;
+    puestoId:        string;
+    puesto:          string;
+    fechaSolicitud:  string;
+    fechaInicio:     string;
+    fechaFin:        string;
+    diasSolicitados: number;
+    descripcion:     string;
+}
+
   
