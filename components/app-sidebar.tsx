@@ -68,6 +68,12 @@ const items = [
     url: "/configuracion-permisos",
     icon: Settings,
     permiso: "ver_usuarios",
+  },
+  {
+    title: "Tipo de Deducciones",
+    url: "/tipo-deducciones",
+    icon: Settings,
+    permiso: "ver_tipodeducciones",
   }
 
 ];

@@ -53,7 +53,6 @@ export function Formulario({
   });
 
   async function onSubmit(data: z.infer<typeof UsuarioSchema>) {
-    console.log("🚀 ~ onSubmit ~ data:", form.getValues())
     const usuarioData = {
       usuario: data.usuario,
       contrasena: data.contrasena || undefined,

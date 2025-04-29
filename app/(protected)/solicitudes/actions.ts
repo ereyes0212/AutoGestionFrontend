@@ -85,7 +85,6 @@ export async function processApproval({
     const response = await apiService.put(
       `/solicitudvacaciones/${id}/aprobar?${query}`, {}
     )
-    console.log("🚀 ~ response:", response.config.baseURL)
     return response.data
   } catch (error) {
     console.error("Error procesando aprobación:", error)

@@ -42,7 +42,6 @@ export async function getPuestoId(id: string) {
 
 
 export async function postConfig({ config }: { config: OutputConfig[] }) {
-  console.log("🚀 ~ postPuesto ~ puesto:", config)
   try {
     const response = await apiService.post("/ConfiguracionAprobacion", config);
 

@@ -25,54 +25,53 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
-import { postPuesto, putPuesto } from "../actions"; // Tu función para enviar datos
-import { PuestoSchema } from "../schema"; // Tu esquema de Zod para puesto
+import { postTipoDeduccion, putTipoDeduccion } from "../actions"; // Tu función para enviar datos
+import { TipoDeduccionSchema } from "../schema"; // Tu esquema de Zod para tipo de deducción
 
-export function PuestoFormulario({
+export function TipoDeduccionFormulario({
   isUpdate,
   initialData,
 }: {
   isUpdate: boolean;
-  initialData: z.infer<typeof PuestoSchema>;
+  initialData: z.infer<typeof TipoDeduccionSchema>;
 }) {
   const { toast } = useToast();
   const router = useRouter();
 
   // Usamos Zod para resolver la validación
-  const form = useForm<z.infer<typeof PuestoSchema>>({
-    resolver: zodResolver(PuestoSchema),
+  const form = useForm<z.infer<typeof TipoDeduccionSchema>>({
+    resolver: zodResolver(TipoDeduccionSchema),
     defaultValues: initialData,
   });
 
   // Verificación de validez antes del submit
-  const { formState } = form;
+  // const { formState } = form;
 
-  //forma de saber si un form esta valido o no
-  const isValid = formState.errors;
-  console.log("isValid");
-  console.log(isValid);
-  async function onSubmit(data: z.infer<typeof PuestoSchema>) {
-    const puestoData = {
-      puesto: data,
+  // //forma de saber si un form esta valido o no
+  // const isValid = formState.errors;
+  // console.log("🚀 ~ isValid:", isValid)
+  async function onSubmit(data: z.infer<typeof TipoDeduccionSchema>) {
+    const tipoDeduccionData = {
+      tipoDeduccion: data,
     };
 
 
     try {
       if (isUpdate) {
-        await putPuesto(puestoData); // Llamada a la API para actualizar
+        await putTipoDeduccion(tipoDeduccionData); // Llamada a la API para actualizar
       } else {
-        await postPuesto(puestoData); // Llamada a la API para crear un nuevo puesto
+        await postTipoDeduccion(tipoDeduccionData); // Llamada a la API para crear un nuevo tipo de deducción
       }
 
       // Notificación de éxito
       toast({
         title: isUpdate ? "Actualización Exitosa" : "Creación Exitosa",
         description: isUpdate
-          ? "El puesto ha sido actualizado."
-          : "El puesto ha sido creado.",
+          ? "El tipo de deduccion ha sido actualizado."
+          : "El tipo de deduccion ha sido creado.",
       });
 
-      router.push("/puestos"); // Redirige después de la acción
+      router.push("/tipo-deducciones"); // Redirige después de la acción
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);
@@ -124,7 +123,7 @@ export function PuestoFormulario({
                   <Input placeholder="Ingresa tu nombre" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Por favor ingresa la descripción de puesto.
+                  Por favor ingresa la descripción de tipo de deducción.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
