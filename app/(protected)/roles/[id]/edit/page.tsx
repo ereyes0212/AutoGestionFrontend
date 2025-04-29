@@ -1,12 +1,12 @@
 
-import HeaderComponent from "@/components/HeaderComponent";
-import { Pencil } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
-import { FormularioRol } from "../../components/Formulario";
-import { getRolsPermisoById } from "../../actions";
-import NoAcceso from "@/components/noAccess";
 import { getPermisosActivos } from "@/app/(protected)/permisos/actions";
+import { getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { Pencil } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getRolsPermisoById } from "../../actions";
+import { FormularioRol } from "../../components/Formulario";
 
 export default async function Edit({ params }: { params: { id: string } }) {
   // Verificar si hay una sesión activa

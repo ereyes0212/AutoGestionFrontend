@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useTransition } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { schemaSignIn, type TSchemaSignIn } from "../../../lib/shemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { login, type LoginResult } from "../../../auth";
+import { Eye, EyeOff } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { login, type LoginResult } from "../../../auth";
+import { schemaSignIn, type TSchemaSignIn } from "../../../lib/shemas";
 
 export default function Login() {
-  const router         = useRouter();
-  const searchParams   = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);

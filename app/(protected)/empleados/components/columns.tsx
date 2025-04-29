@@ -1,8 +1,8 @@
 "use client";
-import { ArrowUpDown, Check, CheckCircleIcon, UserX } from "lucide-react";
+import { ArrowUpDown, CheckCircleIcon, UserX } from "lucide-react";
 // import { FormateadorFecha } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
+import { MoreHorizontal, XCircleIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,12 +10,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { Empleado } from "../type";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { calcularEdad } from "@/lib/utils";
 
 export const columns: ColumnDef<Empleado>[] = [

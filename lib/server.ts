@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getToken } from '@/auth';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { redirect } from 'next/navigation';
@@ -5,7 +7,7 @@ import { redirect } from 'next/navigation';
 class ApiService {
   private static axiosInstance: AxiosInstance;
 
-  private constructor() {}
+  private constructor() { }
 
   // Patrón Singleton para la instancia de Axios
   public static getInstance(): AxiosInstance {
@@ -103,7 +105,7 @@ class ApiService {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
       const data = error.response?.data;
-  
+
       let message = '';
       if (status === 400) {
         // Error de validación (status 400)
@@ -114,19 +116,19 @@ class ApiService {
       } else {
         message = 'Ocurrió un error inesperado.';
       }
-  
+
       // Lanza un error personalizado con el mensaje y el status
       const customError = new Error(message);
       (customError as any).status = status; // Agregamos el status al error
       (customError as any).data = data; // Agregamos los datos del error
-  
+
       throw customError;
     } else {
       // Si no es un error de Axios
       throw new Error('Ocurrió un error inesperado.');
     }
   }
-  
+
 }
 
 export default ApiService;

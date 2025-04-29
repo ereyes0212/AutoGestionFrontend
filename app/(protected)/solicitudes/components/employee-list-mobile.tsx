@@ -1,14 +1,11 @@
-"use client";
-import { formatearFecha } from "@/lib/utils";
-import { useState } from "react";
-import Link from "next/link";
+"use client";;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Mail, User, UserX, Search, Plus, Home, HomeIcon, Calendar1, View } from "lucide-react";
+import { formatearFecha } from "@/lib/utils";
+import { Calendar1, Plus, Search, View } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { SolicitudPermiso } from "../type";
-import { calcularEdad } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
 
 interface EmployeeListProps {
   empleados: SolicitudPermiso[];
@@ -16,19 +13,6 @@ interface EmployeeListProps {
 
 export default function SolicitudesListMobile({ empleados }: EmployeeListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const EstadoAprobacion = ({ aprobado }: { aprobado: boolean | null }) => {
-    if (aprobado === true) {
-      return <Badge className="bg-green-500 hover:bg-green-600">Aprobado</Badge>
-    } else if (aprobado === false) {
-      return <Badge variant="destructive">Rechazado</Badge>
-    } else {
-      return (
-        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
-          Pendiente
-        </Badge>
-      )
-    }
-  }
   const filteredSolicitudes = empleados.filter(
     (empleado) =>
       empleado.nombreEmpleado.toLowerCase().includes(searchTerm.toLowerCase())
@@ -63,7 +47,7 @@ export default function SolicitudesListMobile({ empleados }: EmployeeListProps) 
               <span
                 className={`w-2 h-2 rounded-full mr-2 ${empleado.aprobado ? "bg-green-500" : "bg-red-500"
                   }`}
-                  
+
               ></span>
               <h3 className="text-sm font-medium truncate">
                 {empleado.nombreEmpleado}

@@ -1,22 +1,22 @@
 'use client'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Clock, FileText, User, Briefcase } from 'lucide-react'
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Briefcase, CalendarDays, Clock, FileText, User } from 'lucide-react'
+import { useRouter } from "next/navigation"
+import { processApproval } from "../actions"
 import { SolicitudAprobacion } from "../type"
 import { ApprovalDialog } from "./dialog-aprobacion"
-import { processApproval } from "../actions"
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { Button } from "@/components/ui/button"
 
 const formatearFecha = (fecha: string) => {
     if (!fecha) return "N/A"
     try {
         return format(new Date(fecha), "dd 'de' MMMM 'de' yyyy", { locale: es })
-    } catch (error) {
+    } catch {
         return "Fecha inválida"
     }
 }
@@ -159,7 +159,7 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                                 });
                                                 router.push("/solicitudes");
                                                 router.refresh();
-                                            } catch (err) {
+                                            } catch {
                                                 toast({
                                                     title: "Error en la aprobación",
                                                     description: "Hubo un problema al procesar la aprobación.",
@@ -186,7 +186,7 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                                 });
                                                 router.push("/solicitudes");
                                                 router.refresh();
-                                            } catch (err) {
+                                            } catch {
                                                 toast({
                                                     title: "Error en la aprobación",
                                                     description: "Hubo un problema al procesar la aprobación.",

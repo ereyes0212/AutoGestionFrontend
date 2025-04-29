@@ -1,9 +1,8 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { PlusCircle } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
-import { PuestoFormulario } from "../components/Form";  // Asegúrate de que el formulario sea para Empleados
 import NoAcceso from "@/components/noAccess";
+import { PlusCircle } from "lucide-react";
+import { PuestoFormulario } from "../components/Form"; // Asegúrate de que el formulario sea para Empleados
 
 export default async function Create() {
 

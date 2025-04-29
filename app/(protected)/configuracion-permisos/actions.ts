@@ -8,22 +8,13 @@ import { ConfigItem, OutputConfig } from "./type";
 export async function getConfiguracionAprobacion() {
   try {
     const response = await apiService.get<ConfigItem[]>("/ConfiguracionAprobacion");
-    console.log("🚀 ~ getConfiguracionAprobacion ~ response:", response)
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los puesto:", error);
+    console.error("Error al obtener las configuraciones:", error);
     return [];
   }
 }
-export async function getConfiguracionAprobacionByEmpresaId() {
-  try {
-    const response = await apiService.get<ConfigItem[]>(`/ConfiguracionAprobacion/`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los puestos:", error);
-    return [];
-  }
-}
+
 
 
 // export async function putPuesto({ puesto }: { puesto: OutputConfig }) {
@@ -50,14 +41,15 @@ export async function getPuestoId(id: string) {
 }
 
 
-export async function postPuesto({ puesto }: { puesto: OutputConfig[] }) {
+export async function postConfig({ config }: { config: OutputConfig[] }) {
+  console.log("🚀 ~ postPuesto ~ puesto:", config)
   try {
-    const response = await apiService.post("/ConfiguracionAprobacion", puesto);
+    const response = await apiService.post("/ConfiguracionAprobacion", config);
 
     return response.data;
   } catch (error) {
     console.error("Error al crear el puesto:", error);
-    throw error; 
+    throw error;
   }
 }
 

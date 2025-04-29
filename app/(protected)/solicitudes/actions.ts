@@ -3,7 +3,7 @@
 
 import apiService from "../../../lib/server";
 import { Solicitud } from "./schema";
-import { SolicitudPermiso, Aprobacion, SolicitudAprobacion } from "./type";
+import { SolicitudAprobacion, SolicitudPermiso } from "./type";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getSolicitudesByEmpleado() {

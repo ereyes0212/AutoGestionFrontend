@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"; // Importamos useForm
 import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 
 import { z } from "zod";
-import { Empleado, EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
+import {  EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
 import { postEmpleado, putEmpleado } from "../actions"; // Tu función para enviar datos
 import {
   Form,

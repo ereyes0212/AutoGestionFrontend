@@ -1,31 +1,31 @@
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
-import { PlusCircle } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
-import { FormularioRol } from "../components/Formulario"; // Asegúrate de que el formulario sea para Empleados
 import NoAcceso from "@/components/noAccess";
+import { PlusCircle } from "lucide-react";
 import { getPermisosActivos } from "../../permisos/actions";
+import { FormularioRol } from "../components/Formulario"; // Asegúrate de que el formulario sea para Empleados
 
 export default async function Create() {
 
-  
+
   // Redirige si no hay sesión
-  
+
   // Verifica permisos para crear empleados
   const permisos = await getSessionPermisos();
   if (!permisos?.includes("crear_roles")) {
     return <NoAcceso />;
   }
-  
+
   const permisosData = await getPermisosActivos();
   // Inicializamos con un valor específico para genero
   const initialData = {
     nombre: "",
     descripcion: "",
     activo: true,
-    permisosRol: []  // Cambié "permisoRol" a "permisosRol"
+    permisos: [], // Cambié "permiso" a "permisos"
+
   };
-  
+
 
   return (
     <div>

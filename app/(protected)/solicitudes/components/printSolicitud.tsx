@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from "react"
-import { SolicitudAprobacion, SolicitudPermiso } from "../type"
+import { useEffect } from "react";
+import { SolicitudPermiso } from "../type";
 
 export default function ClientPrintView({ solicitud }: { solicitud: SolicitudPermiso }) {
   useEffect(() => {

@@ -1,13 +1,13 @@
 'use client'
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Separator } from "@/components/ui/separator"
 import { CalendarDays, Clock, FileText, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { SolicitudPermiso } from "../type"
 
 // Componente para mostrar el estado de aprobación

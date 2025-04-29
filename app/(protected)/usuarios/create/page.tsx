@@ -1,12 +1,10 @@
-// /pages/usuarios/create/page.tsx
-import { redirect } from "next/navigation";
-import { Formulario } from "../components/Form";
-import { getSession, getSessionPermisos } from "@/auth";
-import { PlusCircle } from "lucide-react";
-import NoAcceso from "@/components/noAccess";
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { PlusCircle } from "lucide-react";
 import { getEmpleadosSinUsuario } from "../../empleados/actions";
 import { getRolsActivos } from "../../roles/actions";
+import { Formulario } from "../components/Form";
 
 export default async function Create() {
 

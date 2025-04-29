@@ -1,9 +1,8 @@
-// app/(protected)/configuracion-permisos/[empresaId]/config/page.tsx
-import React from "react";
+
 import { getPuestosActivas } from "@/app/(protected)/puestos/actions";
 import { getConfiguracionAprobacion } from "./actions";
-import { ConfigItem } from "./type";
 import DragAndDropConfigurator from "./components/drag-and-drop";
+import { ConfigItem } from "./type";
 
 
 export default async function ConfiacionAprobacionPage() {

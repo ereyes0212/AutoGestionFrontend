@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Building2, Mail } from "lucide-react"
+import { Mail } from "lucide-react"
 import { Employee } from "../type"
 import { calcularEdad } from "@/lib/utils"
 

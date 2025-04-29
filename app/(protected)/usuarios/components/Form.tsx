@@ -1,11 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { UsuarioSchema } from "../schema";
-import { postUsuario, putUsuario } from "../actions";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -23,11 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {  Rol } from "@/lib/Types";
+import { Rol } from "@/lib/Types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Empleado } from "../../empleados/type";
+import { postUsuario, putUsuario } from "../actions";
+import { UsuarioSchema } from "../schema";
 import { UsuarioCreate, UsuarioUpdate } from "../type";
 
 export function Formulario({
@@ -49,7 +49,7 @@ export function Formulario({
   // Usamos Zod para resolver la validación
   const form = useForm<z.infer<typeof UsuarioSchema>>({
     resolver: zodResolver(UsuarioSchema), // Pasamos el esquema Zod al resolver
-    defaultValues: initialData || {}, 
+    defaultValues: initialData || {},
   });
 
   async function onSubmit(data: z.infer<typeof UsuarioSchema>) {
@@ -190,7 +190,7 @@ export function Formulario({
               <FormMessage />
             </FormItem>
           )}
-        /> 
+        />
 
 
 

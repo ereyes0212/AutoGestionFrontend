@@ -1,7 +1,7 @@
 
 import HeaderComponent from "@/components/HeaderComponent";
 import { Pencil } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
+import {  getSessionPermisos } from "@/auth";
 import { redirect } from "next/navigation";
 import { EmpleadoFormulario } from "../../components/Form";
 import { getEmpleadoId, getEmpleados } from "../../actions";
@@ -12,7 +12,6 @@ export default async function Edit({ params }: { params: { id: string } }) {
   // Verificar si hay una sesión activa
 
   const permisos = await getSessionPermisos();
-  const sesion = await getSession();
   if (!permisos?.includes("editar_empleado")) {
     return <NoAcceso />;
   }

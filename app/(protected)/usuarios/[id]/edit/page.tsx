@@ -1,17 +1,13 @@
 // /pages/usuarios/[id]/editar/page.tsx
-import { redirect } from "next/navigation";
-import { Formulario } from "../../components/Form";
-import { getUsuarioById } from "../../actions";
-import { Pencil } from "lucide-react";
-import NoAcceso from "@/components/noAccess";
-import { getSession, getSessionPermisos } from "@/auth";
-import HeaderComponent from "@/components/HeaderComponent";
-import {
-  getEmpleadoId,
-  getEmpleados,
-  getEmpleadosSinUsuario,
-} from "@/app/(protected)/empleados/actions";
+import { getEmpleadoId, getEmpleadosSinUsuario } from "@/app/(protected)/empleados/actions";
 import { getRolsActivos } from "@/app/(protected)/roles/actions";
+import { getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { Pencil } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getUsuarioById } from "../../actions";
+import { Formulario } from "../../components/Form";
 
 export default async function Edit({ params }: { params: { id: string } }) {
 
@@ -33,7 +29,7 @@ export default async function Edit({ params }: { params: { id: string } }) {
     redirect("/usuarios");
   }
   const initialData = {
-    id : usuario.id,
+    id: usuario.id,
     usuario: usuario.usuario ?? "",
     contrasena: "",
     empleado_id: usuario.empleado_id ?? "",

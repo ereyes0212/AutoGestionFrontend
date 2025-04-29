@@ -1,0 +1,17 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "eslint.codeActionsOnSave.mode": "all",
+  "editor.formatOnSave": true,
+  "[typescript]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[javascript]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
+}

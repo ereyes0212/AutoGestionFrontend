@@ -1,10 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
+"use client";;
 import { Button } from "@/components/ui/button"; // Botón de ShadCN
-import { Sun, Moon } from "lucide-react"; // Iconos para los temas
-import { SunMediumIcon } from "./ui/sun-medium";
+import { useEffect, useState } from "react";
 import { MoonIcon } from "./ui/moon"; // Icono de luna
+import { SunMediumIcon } from "./ui/sun-medium";
 
 export default function ToggleThemeButton() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -32,9 +30,9 @@ export default function ToggleThemeButton() {
   return (
     <Button variant="ghost" size="sm" onClick={toggleTheme}>
       {theme === "light" ? (
-        <MoonIcon  size={16}/>
+        <MoonIcon size={16} />
       ) : (
-        <SunMediumIcon  size={16}  />
+        <SunMediumIcon size={16} />
       )}
       <span className="sr-only">Tema</span>
     </Button>

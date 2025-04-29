@@ -1,7 +1,7 @@
 
 import HeaderComponent from "@/components/HeaderComponent";
 import { Pencil } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
+import {  getSessionPermisos } from "@/auth";
 import { redirect } from "next/navigation";
 import { PuestoFormulario } from "../../components/Form";
 import { getPuestoId } from "../../actions";

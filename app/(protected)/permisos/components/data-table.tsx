@@ -22,8 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {  Plus } from "lucide-react";
-import Link from "next/link";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -35,7 +33,7 @@ export function DataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+  const [columnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [globalFilter, setGlobalFilter] = React.useState<string>(""); 

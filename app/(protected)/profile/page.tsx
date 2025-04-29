@@ -1,10 +1,7 @@
-import { ListCheck, User, Users } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
+import {  User } from "lucide-react";
+import {  getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
-// import PermissionListMobile from "./components/permisos-list-mobile";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 import EmployeeProfile from "./components/empleado-perfil";
 import { getProfile } from "./actions";
 

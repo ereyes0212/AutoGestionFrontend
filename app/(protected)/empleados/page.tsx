@@ -1,6 +1,5 @@
 import { Users } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
+import {  getSessionPermisos } from "@/auth";
 import { getEmpleados } from "./actions";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";

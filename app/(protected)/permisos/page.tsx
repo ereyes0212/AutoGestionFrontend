@@ -1,13 +1,11 @@
-import { ListCheck, Users } from "lucide-react";
-import { getSession, getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
+import { ListCheck } from "lucide-react";
+import {  getSessionPermisos } from "@/auth";
 import { getPermisos } from "./actions";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import PermissionListMobile from "./components/permisos-list-mobile";
-import { ScrollArea } from "@radix-ui/react-scroll-area";
 
 export default async function EstadoServicio() {
 

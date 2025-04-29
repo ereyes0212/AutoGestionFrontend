@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Search, Plus } from "lucide-react";
-import type { Puesto } from "@/lib/Types";
+import { Pencil, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { Puesto } from "../types";
 
 interface EmployeeListProps {
   puesto: Puesto[];
@@ -46,18 +46,14 @@ export default function PuestoListMobile({ puesto: puestos }: EmployeeListProps)
           <div className="flex-1 min-w-0">
             <div className="flex items-center">
               <span
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  puestos.activo ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`w-2 h-2 rounded-full mr-2 ${puestos.activo ? "bg-green-500" : "bg-red-500"
+                  }`}
               ></span>
               <h3 className="text-sm font-medium truncate">
                 {puestos.nombre}
               </h3>
               <h3 className="text-sm font-medium truncate">
                 {puestos.descripcion}
-              </h3>
-              <h3 className="text-sm font-medium truncate">
-                {puestos.empresa}
               </h3>
             </div>
           </div>

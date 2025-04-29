@@ -1,27 +1,7 @@
 
-import {
-  BookTextIcon,
-  Car,
-  ChartSplineIcon,
-  Files,
-  Home,
-  House,
-  LayersIcon,
-  List,
-  ListCheck,
-  ListChecks,
-  NotebookText,
-  Package,
-  Settings,
-  StepForward,
-  TornadoIcon,
-  User,
-  UserIcon,
-  UserRoundCheck,
-  Users2,
-  UsersIcon,
-} from "lucide-react";
+import { Files, LayersIcon, Settings, UserIcon, UserRoundCheck, UsersIcon } from "lucide-react";
 // import { getSessionUsuario } from "@/auth"; // Asegúrate de que esta función exista y retorne el nombre del usuario
+import { getSessionUsuario } from "@/auth";
 import {
   Sidebar,
   SidebarContent,
@@ -33,10 +13,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import ToggleThemeButton from "../components/button-theme";
 import Link from "next/link";
+import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
-import { getSessionUsuario } from "@/auth";
 // import { BookTextIcon } from "./ui/book-text";
 // import { UsersIcon } from "./ui/users";
 // import { ChartSplineIcon } from "./ui/chart-spline";
@@ -95,7 +74,7 @@ const items = [
 
 export async function AppSidebar() {
   const usuario = await getSessionUsuario(); // Obtiene el nombre del usuario
-  const permisosUsuario = usuario?.Permiso || []; 
+  const permisosUsuario = usuario?.Permiso || [];
   // Filtrar los ítems basados en los permisos del usuario
   const filteredItems = items.filter(item =>
     permisosUsuario.includes(item.permiso)
@@ -106,7 +85,7 @@ export async function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="flex justify-between items-center">
             <span>Sistema Autogestión MP</span>
-            
+
             <ToggleThemeButton />
           </SidebarGroupLabel>
 
@@ -116,7 +95,7 @@ export async function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
-                      <item.icon size={16} className="p-0"/>
+                      <item.icon size={16} className="p-0" />
                       {item.title}
                     </Link>
                   </SidebarMenuButton>
@@ -127,7 +106,7 @@ export async function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-      {usuario && <NavUser usuario={usuario} />}
+        {usuario && <NavUser usuario={usuario} />}
       </SidebarFooter>
     </Sidebar>
   );

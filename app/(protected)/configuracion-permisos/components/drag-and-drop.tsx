@@ -1,20 +1,20 @@
 "use client"
 
-import type React from "react"
-import { useEffect, useState } from "react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { GripVertical, Save, ArrowDown, ArrowUp, Trash } from "lucide-react"
-import { cn } from "@/lib/utils"
-import type { ConfigItem, OutputConfig } from "../type"
-import { useToast } from "@/hooks/use-toast"
-import { Puesto } from "../../puestos/types"
-import { postPuesto } from "../actions"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
+import { ArrowDown, ArrowUp, GripVertical, Save, Trash } from "lucide-react"
+import type React from "react"
+import { useEffect, useState } from "react"
+import { Puesto } from "../../puestos/types"
+import { postConfig } from "../actions"
+import type { ConfigItem, OutputConfig } from "../type"
 
 interface DragAndDropConfiguratorProps {
   initialItems: ConfigItem[]
@@ -97,12 +97,20 @@ export default function DragAndDropConfigurator({
       return config
     })
 
-    console.log("Configuración a guardar:", outputConfigs)
-    const sendData = await postPuesto({ puesto: outputConfigs })
-    toast({
-      title: "Configuración guardada",
-      description: "La configuración ha sido guardada exitosamente.",
-    })
+    const success = await postConfig({ config: outputConfigs })
+
+    if (success) {
+      toast({
+        title: "Configuración guardada",
+        description: "La configuración ha sido guardada exitosamente.",
+      })
+    } else {
+      toast({
+        title: "Error al guardar",
+        description: "Hubo un problema al guardar la configuración. Inténtalo nuevamente.",
+        variant: "destructive",
+      })
+    }
   }
 
   // Función para agregar el nuevo elemento al array de items
@@ -205,7 +213,7 @@ export default function DragAndDropConfigurator({
                     </SelectTrigger>
                     <SelectContent>
                       {puestos.map((puesto) => (
-                        <SelectItem key={puesto.id} value={puesto.id}>
+                        <SelectItem key={puesto.id} value={puesto.id || ""}>
                           {puesto.nombre}
                         </SelectItem>
                       ))}

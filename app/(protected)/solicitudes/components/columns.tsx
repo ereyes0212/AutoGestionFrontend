@@ -1,23 +1,20 @@
-"use client";
-import { ArrowUpDown, Check, CheckCircleIcon, UserX } from "lucide-react";
+"use client";;
+import { ArrowUpDown } from "lucide-react";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { SolicitudPermiso } from "../type";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { calcularEdad } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 export const columns: ColumnDef<SolicitudPermiso>[] = [
   {
@@ -98,15 +95,15 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
         Dias Solicitados
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
-        ),
-        cell: ({ row }) => {
+    ),
+    cell: ({ row }) => {
       const diasSolicitados = row.getValue<number>("diasSolicitados");
       return <span>{diasSolicitados}</span>;
-        },
-      },
-      {
-        accessorKey: "aprobado",
-        header: ({ column }) => (
+    },
+  },
+  {
+    accessorKey: "aprobado",
+    header: ({ column }) => (
       <Button
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -115,8 +112,8 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
         Estado
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
-        ),
-        cell: ({ row }) => {
+    ),
+    cell: ({ row }) => {
       const aprobado = row.getValue<boolean | null>("aprobado");
 
       return aprobado === true ? (
@@ -131,12 +128,12 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
           Pendiente
         </Badge>
       );
-        },
-      },
-      {
-        id: "actions",
-        header: "Acciones",
-        cell: ({ row }) => {
+    },
+  },
+  {
+    id: "actions",
+    header: "Acciones",
+    cell: ({ row }) => {
       const solicitud = row.original;
       return (
         <DropdownMenu>

@@ -1,6 +1,5 @@
 "use server";
 
-
 import apiService from "../../../lib/server";
 import { Puesto } from "./types";
 // import { ClienteElementSchema } from "./schema";
@@ -19,7 +18,7 @@ export async function getPuestosActivas() {
     const response = await apiService.get<Puesto[]>("/Puesto/activos");
     return response.data;
   } catch (error) {
-    console.error("Error al obtener los puestos:", error);
+    console.error("Error al obtener los puestos activos:", error);
     return [];
   }
 }
@@ -57,7 +56,7 @@ export async function postPuesto({ puesto }: { puesto: Puesto }) {
     return response.data;
   } catch (error) {
     console.error("Error al crear el puesto:", error);
-    throw error; 
+    throw error;
   }
 }
 

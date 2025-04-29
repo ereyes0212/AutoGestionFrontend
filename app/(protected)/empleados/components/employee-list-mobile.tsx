@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Mail, User, UserX, Search, Plus, Home, HomeIcon } from "lucide-react";
+import { Pencil, Mail, User, UserX, Search, Plus } from "lucide-react";
 import { Empleado } from "../type";
 import { calcularEdad } from "@/lib/utils";
 

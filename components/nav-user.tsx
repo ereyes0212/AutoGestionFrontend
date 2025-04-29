@@ -1,56 +1,42 @@
 "use client"
 
 import {
-    BadgeCheck,
-    Bell,
     ChevronsUpDown,
-    CreditCard,
-    LogOut,
-    Sparkles,
     User,
-} from "lucide-react"
+} from "lucide-react";
 
 import {
     Avatar,
     AvatarFallback,
     AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    useSidebar,
-} from "@/components/ui/sidebar"
-import LogoutButton from "./signOut"
-import Link from "next/link"
+} from "@/components/ui/dropdown-menu";
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import Link from "next/link";
+import LogoutButton from "./signOut";
 
 export function NavUser({
     usuario,
 }: {
     usuario: {
 
-        IdUser:     string;
-        User:       string;
-        Rol:        string;
-        IdRol:      string;
+        IdUser: string;
+        User: string;
+        Rol: string;
+        IdRol: string;
         IdEmpleado: string;
-        Permiso:    string[];
-        exp:        number;
-        iss:        string;
-        aud:        string;
+        Permiso: string[];
+        exp: number;
+        iss: string;
+        aud: string;
 
     }
 }) {
-    const { isMobile } = useSidebar()
 
     return (<SidebarMenu>
         <SidebarMenuItem>
@@ -76,7 +62,7 @@ export function NavUser({
                     align="end"
                     sideOffset={4}
                 >
-                <DropdownMenuItem asChild></DropdownMenuItem>
+                    <DropdownMenuItem asChild></DropdownMenuItem>
                     <DropdownMenuItem asChild>
                         <Link href="/profile" className="flex justify-between">
                             <span>Perfil</span>

@@ -3,18 +3,10 @@ import { ArrowUpDown, CheckCircleIcon } from "lucide-react";
 import { Permiso } from "@/lib/Types";
 // import { FormateadorFecha } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, CheckCircle, XCircleIcon } from "lucide-react";
+import {  XCircleIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+
 
 export const columns: ColumnDef<Permiso>[] = [
 

@@ -1,9 +1,9 @@
-import HeaderComponent from "@/components/HeaderComponent";
-import { PlusCircle } from "lucide-react";
 import { getSession, getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { PlusCircle } from "lucide-react";
 import { redirect } from "next/navigation";
 import { EmpleadoFormulario } from "../components/Form"; // Asegúrate de que el formulario sea para Empleados
-import NoAcceso from "@/components/noAccess";
 
 export default async function Create() {
   const permisos = await getSessionPermisos();
@@ -23,9 +23,9 @@ export default async function Create() {
 
   const initialData = {
     id: "",
-    fechaInicio : new Date(),
-    fechaFin : new Date(),
-    descripcion : "",
+    fechaInicio: new Date(),
+    fechaFin: new Date(),
+    descripcion: "",
   };
 
   return (
