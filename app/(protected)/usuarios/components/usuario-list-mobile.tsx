@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Pencil, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Pencil, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { Usuario } from "../type";
 
 interface UserListProps {
@@ -52,6 +52,7 @@ export default function UserListMobile({ usuarios }: UserListProps) {
               <h3 className="text-sm font-medium truncate">{user.usuario}</h3>
             </div>
             <p className="text-xs mt-1 truncate">Empleado: {user.empleado}</p>
+            <p className="text-xs mt-1 truncate">Rol: {user.rol}</p>
           </div>
           <div className="flex items-center ml-4">
             <Link href={`/usuarios/${user.id}/edit`}>
