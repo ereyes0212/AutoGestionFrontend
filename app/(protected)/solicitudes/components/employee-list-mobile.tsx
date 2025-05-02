@@ -11,9 +11,9 @@ interface EmployeeListProps {
   empleados: SolicitudPermiso[];
 }
 
-export default function SolicitudesListMobile({ empleados }: EmployeeListProps) {
+export default function SolicitudesListMobile({ empleados: solicitudes }: EmployeeListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const filteredSolicitudes = empleados.filter(
+  const filteredSolicitudes = solicitudes.filter(
     (empleado) =>
       empleado.nombreEmpleado.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -80,6 +80,11 @@ export default function SolicitudesListMobile({ empleados }: EmployeeListProps) 
       {filteredSolicitudes.length === 0 && (
         <p className="text-center text-gray-500">
           No se encontraron solicitudes.
+        </p>
+      )}
+      {filteredSolicitudes.length > 0 && (
+        <p className="text-sm text-muted-foreground text-center">
+          Mostrando {filteredSolicitudes.length} de {solicitudes.length} solicitudes
         </p>
       )}
     </div>

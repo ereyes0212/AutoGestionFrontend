@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Pencil, Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { Rol } from "@/lib/Types"; // Asegúrate de tener la interfaz Rol definida
+import { Pencil, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 
 interface RoleListProps {
   roles: Rol[];
@@ -65,6 +65,11 @@ export default function RoleListMobile({ roles }: RoleListProps) {
       ))}
       {filteredRoles.length === 0 && (
         <p className="text-center text-gray-500">No se encontraron roles.</p>
+      )}
+      {filteredRoles.length > 0 && (
+        <p className="text-sm text-muted-foreground text-center">
+          Mostrando {filteredRoles.length} de {roles.length} roles
+        </p>
       )}
     </div>
   );

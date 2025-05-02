@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Mail, User, UserX, Search, Plus } from "lucide-react";
-import { Empleado } from "../type";
 import { calcularEdad } from "@/lib/utils";
+import { Mail, Pencil, Plus, Search, User, UserX } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { Empleado } from "../type";
 
 interface EmployeeListProps {
   empleados: Empleado[];
@@ -91,6 +91,11 @@ export default function EmployeeListMobile({ empleados }: EmployeeListProps) {
       {filteredEmpleados.length === 0 && (
         <p className="text-center text-gray-500">
           No se encontraron empleados.
+        </p>
+      )}
+      {filteredEmpleados.length > 0 && (
+        <p className="text-sm text-muted-foreground text-center">
+          Mostrando {filteredEmpleados.length} de {empleados.length} empleados
         </p>
       )}
     </div>

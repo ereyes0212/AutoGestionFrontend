@@ -16,7 +16,7 @@ interface PayrollListMobileProps {
 export default function PayrollListMobile({ registros }: PayrollListMobileProps) {
     const [searchTerm, setSearchTerm] = useState("");
 
-    const filtered = registros.filter(r =>
+    const filteredVouchers = registros.filter(r =>
         r.empleadoNombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -38,7 +38,7 @@ export default function PayrollListMobile({ registros }: PayrollListMobileProps)
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
 
-            {filtered.map(reg => {
+            {filteredVouchers.map(reg => {
                 const quincenal = reg.salarioMensual / 2;
                 return (
                     <Link
@@ -76,8 +76,13 @@ export default function PayrollListMobile({ registros }: PayrollListMobileProps)
                 );
             })}
 
-            {filtered.length === 0 && (
+            {filteredVouchers.length === 0 && (
                 <p className="text-center text-gray-500">No se encontraron registros.</p>
+            )}
+            {filteredVouchers.length > 0 && (
+                <p className="text-sm text-muted-foreground text-center">
+                    Mostrando {filteredVouchers.length} de {registros.length} vouchers
+                </p>
             )}
         </div>
     );

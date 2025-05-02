@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import type { Permiso } from "@/lib/Types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Permiso } from "@/lib/Types";
+import { Search } from "lucide-react";
+import { useState } from "react";
 
 interface PermissionListProps {
   permisos: Permiso[];
@@ -50,6 +50,11 @@ export default function PermissionListMobile({ permisos }: PermissionListProps) 
         {filteredPermisos.length === 0 && (
           <p className="text-center text-gray-500">
             No se encontraron permisos.
+          </p>
+        )}
+        {filteredPermisos.length > 0 && (
+          <p className="text-sm text-muted-foreground text-center">
+            Mostrando {filteredPermisos.length} de {permisos.length} permisos
           </p>
         )}
       </ScrollArea>

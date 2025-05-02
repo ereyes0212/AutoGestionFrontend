@@ -67,6 +67,11 @@ export default function UserListMobile({ usuarios }: UserListProps) {
       {filteredUsuarios.length === 0 && (
         <p className="text-center text-gray-500">No se encontraron usuarios.</p>
       )}
+      {filteredUsuarios.length > 0 && (
+        <p className="text-sm text-muted-foreground text-center">
+          Mostrando {filteredUsuarios.length} de {usuarios.length} usuarios
+        </p>
+      )}
     </div>
   );
 }
