@@ -1,10 +1,11 @@
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
-import { Users } from "lucide-react";
+import { FileSpreadsheetIcon } from "lucide-react";
 import { getVoucherPagos } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
+import PayrollListMobile from "./components/vouchers-list-mobile";
 
 export default async function Empleados() {
 
@@ -22,17 +23,17 @@ export default async function Empleados() {
   return (
     <div className="container mx-auto py-2">
       <HeaderComponent
-        Icon={Users}
-        description="En este apartado podrá ver todos los empleados"
-        screenName="Empleados"
+        Icon={FileSpreadsheetIcon}
+        description="En este apartado podrá ver todos sus voucher de pago."
+        screenName="Vouchers de pago"
       />
 
       <div className="hidden md:block">
         <DataTable columns={columns} data={data} />
       </div>
-      {/* <div className="block md:hidden">
-        <EmployeeListMobile empleados={data} />
-      </div> */}
+      <div className="block md:hidden">
+        <PayrollListMobile registros={data} />
+      </div>
     </div>
   );
 }

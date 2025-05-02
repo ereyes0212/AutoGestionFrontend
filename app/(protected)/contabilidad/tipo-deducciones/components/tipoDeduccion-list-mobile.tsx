@@ -22,7 +22,7 @@ export default function TipoDeduccionesListMobile({ tipoDeduccion: tipoDeduccion
 
   return (
     <div className="space-y-4">
-      <Link href={`/tipo-deducciones/create`} className="w-full md:w-auto">
+      <Link href={`/contabilidad/tipo-deducciones/create`} className="w-full md:w-auto">
         <Button className="w-full md:w-auto flex items-center gap-2">
           Nueva tipo de deducción
           <Plus />
@@ -56,7 +56,7 @@ export default function TipoDeduccionesListMobile({ tipoDeduccion: tipoDeduccion
             </Badge>
           </div>
           <div className="flex items-center ml-4">
-            <Link href={`/tipo-deducciones/${tipoDeduccion.id}/edit`}>
+            <Link href={`/contabilidad/tipo-deducciones/${tipoDeduccion.id}/edit`}>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Pencil className="h-4 w-4" />
               </Button>
