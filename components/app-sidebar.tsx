@@ -1,6 +1,4 @@
 
-import { Files, LayersIcon, Settings, UserIcon, UserRoundCheck, UsersIcon } from "lucide-react";
-// import { getSessionUsuario } from "@/auth"; // Asegúrate de que esta función exista y retorne el nombre del usuario
 import { getSessionUsuario } from "@/auth";
 import {
   Sidebar,
@@ -13,17 +11,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Calculator, File, Files, LayersIcon, Settings, UserIcon, UserRoundCheck, UsersIcon } from "lucide-react";
 import Link from "next/link";
 import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
-// import { BookTextIcon } from "./ui/book-text";
-// import { UsersIcon } from "./ui/users";
-// import { ChartSplineIcon } from "./ui/chart-spline";
-// import { BoxesIcon } from "./ui/boxes";
-// import { UserIcon } from "./ui/user";
-// import { LayersIcon } from "./ui/layers";
-// import { PlayIcon } from "./ui/play";
-// import { TornadoIcon } from "./ui/tornado";
+
 
 // Menu items con permisos necesarios
 const items = [
@@ -70,10 +62,16 @@ const items = [
     permiso: "ver_usuarios",
   },
   {
-    title: "Tipo de Deducciones",
-    url: "/tipo-deducciones",
-    icon: Settings,
-    permiso: "ver_tipodeducciones",
+    title: "Contabilidad",
+    url: "/contabilidad",
+    icon: Calculator,
+    permiso: "ver_contabilidad",
+  },
+  {
+    title: "Voucher de Pago",
+    url: "/voucher-pago",
+    icon: File,
+    permiso: "ver_voucher_pago",
   }
 
 ];

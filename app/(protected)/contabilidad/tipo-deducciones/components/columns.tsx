@@ -89,7 +89,7 @@ export const columns: ColumnDef<TipoDeduccion>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/tipo-deducciones/${puesto.id}/edit`}>
+            <Link href={`/contabilidad/tipo-deducciones/${puesto.id}/edit`}>
               <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

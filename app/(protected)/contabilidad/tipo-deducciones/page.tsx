@@ -13,7 +13,6 @@ export default async function TipoDeduccion() {
 
 
   const data = await getTipoDeduccion();
-  console.log(data)
   if (!permisos?.includes("ver_tipodeducciones")) {
     return <NoAcceso />;
   }

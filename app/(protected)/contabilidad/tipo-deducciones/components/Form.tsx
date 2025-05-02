@@ -71,7 +71,7 @@ export function TipoDeduccionFormulario({
           : "El tipo de deduccion ha sido creado.",
       });
 
-      router.push("/tipo-deducciones"); // Redirige después de la acción
+      router.push("/contabilidad/tipo-deducciones"); // Redirige después de la acción
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);

@@ -1,22 +1,21 @@
 "use server";
 
-import { type TSchemaSignIn, schemaSignIn } from "./lib/shemas";
 import { type JWTPayload, SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { RedirectType, redirect } from "next/navigation";
+import { type TSchemaSignIn, schemaSignIn } from "./lib/shemas";
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
-interface UsuarioSesion  {
-    IdUser:     string;
-    User:       string;
-    Rol:        string;
-    IdRol:      string;
+interface UsuarioSesion {
+    IdUser: string;
+    User: string;
+    Rol: string;
+    IdRol: string;
     IdEmpleado: string;
-    Permiso:    string[];
-    Puesto:     string;
-    PuestoId:  string;
-    exp:        number;
-    iss:        string;
-    aud:        string;
+    Permiso: string[];
+    Puesto: string;
+    PuestoId: string;
+    exp: number;
+    iss: string;
+    aud: string;
 }
 
 
@@ -50,39 +49,39 @@ export interface LoginResult {
     success?: string
     error?: string
     redirect?: string
-  }
-  
-  // Ahora recibimos redirect aparte
-  export const login = async (
+}
+
+// Ahora recibimos redirect aparte
+export const login = async (
     credentials: TSchemaSignIn,
     redirect: string
-  ): Promise<LoginResult> => {
+): Promise<LoginResult> => {
     const validated = schemaSignIn.safeParse(credentials)
     if (!validated.success) {
-      return { error: "Usuario o contraseña inválidos" }
-    }
-  
-    try {
-      const { usuario, contrasena } = validated.data
-      const tokenAD = await getADAuthentication(usuario, contrasena)
-      if (!tokenAD) {
         return { error: "Usuario o contraseña inválidos" }
-      }
-  
-      // Guardamos la cookie de sesión
-      const session    = tokenAD
-      const decrypted  = await decrypt(session)
-      const expires    = new Date((decrypted.exp as number) * 1000)
-      cookies().set("session", session, { expires, httpOnly: true })
-  
-      return {
-        success:  "Login OK",
-        redirect  // devolvemos el redirect que nos pasaron
-      }
-    } catch {
-      return { error: "Error al iniciar sesión" }
     }
-  }
+
+    try {
+        const { usuario, contrasena } = validated.data
+        const tokenAD = await getADAuthentication(usuario, contrasena)
+        if (!tokenAD) {
+            return { error: "Usuario o contraseña inválidos" }
+        }
+
+        // Guardamos la cookie de sesión
+        const session = tokenAD
+        const decrypted = await decrypt(session)
+        const expires = new Date((decrypted.exp as number) * 1000)
+        cookies().set("session", session, { expires, httpOnly: true })
+
+        return {
+            success: "Login OK",
+            redirect  // devolvemos el redirect que nos pasaron
+        }
+    } catch {
+        return { error: "Error al iniciar sesión" }
+    }
+}
 
 export const getSession = async () => {
     const session = cookies().get("session")?.value;
@@ -98,7 +97,7 @@ export const getSessionUsuario = async (): Promise<UsuarioSesion | null> => {
         return null;
     }
     const usuario = await decrypt(session);
-    return usuario; 
+    return usuario;
 };
 
 
@@ -108,7 +107,7 @@ export const getSessionPermisos = async (): Promise<string[] | null> => {
         return null;
     }
     const usuario = await decrypt(session);
-    
+
     return usuario.Permiso; // Esto ahora debería ser correcto
 };
 
@@ -130,7 +129,7 @@ const getADAuthentication = async (username: string, password: string) => {
 };
 export const getToken = async () => {
     const token = cookies().get("session")?.value;
-    if(!token){
+    if (!token) {
         return ''
     }
     return token as string;

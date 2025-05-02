@@ -22,8 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus } from "lucide-react";
-import Link from "next/link";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -37,11 +35,8 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters] = React.useState<ColumnFiltersState>(
     []
-
-
   );
   const [globalFilter, setGlobalFilter] = React.useState<string>("");
-
 
   const table = useReactTable({
     data,
@@ -74,12 +69,7 @@ export function DataTable<TData, TValue>({
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="w-full md:max-w-sm"
         />
-        <Link href={`/tipo-deducciones/create`} className="w-full md:w-auto">
-          <Button className="w-full md:w-auto flex items-center gap-2">
-            Nueva tipo de deducción
-            <Plus />
-          </Button>
-        </Link>
+
       </div>
 
       <div className="rounded-md border">

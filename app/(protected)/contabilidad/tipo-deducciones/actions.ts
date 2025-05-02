@@ -1,12 +1,13 @@
 "use server";
 
-import apiService from "../../../lib/server";
+
+import ApiService from "@/lib/server";
 import { TipoDeduccion } from "./types";
 // import { ClienteElementSchema } from "./schema";
 
 export async function getTipoDeduccion() {
   try {
-    const response = await apiService.get<TipoDeduccion[]>("/TipoDeduccion");
+    const response = await ApiService.get<TipoDeduccion[]>("/TipoDeduccion");
     return response.data;
   } catch (error) {
     console.error("Error al obtener los Tipo de deducción:", error);
@@ -15,7 +16,7 @@ export async function getTipoDeduccion() {
 }
 export async function getTipoDeduccionActivas() {
   try {
-    const response = await apiService.get<TipoDeduccion[]>("/TipoDeduccion/activos");
+    const response = await ApiService.get<TipoDeduccion[]>("/TipoDeduccion/activos");
     return response.data;
   } catch (error) {
     console.error("Error al obtener los Tipo de Deduccion activos:", error);
@@ -28,7 +29,7 @@ export async function putTipoDeduccion({ tipoDeduccion }: { tipoDeduccion: TipoD
 
   try {
 
-    const response = await apiService.put(`/TipoDeduccion/${tipoDeduccion.id}`, tipoDeduccion);
+    const response = await ApiService.put(`/TipoDeduccion/${tipoDeduccion.id}`, tipoDeduccion);
 
     return response.data;
   } catch (error) {
@@ -39,7 +40,7 @@ export async function putTipoDeduccion({ tipoDeduccion }: { tipoDeduccion: TipoD
 
 export async function getTipoDeduccionId(id: string) {
   try {
-    const response = await apiService.get<TipoDeduccion>(`/TipoDeduccion/${id}`);
+    const response = await ApiService.get<TipoDeduccion>(`/TipoDeduccion/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error al obtener el tipo de deduccion:", error);
@@ -51,7 +52,7 @@ export async function getTipoDeduccionId(id: string) {
 
 export async function postTipoDeduccion({ tipoDeduccion }: { tipoDeduccion: TipoDeduccion }) {
   try {
-    const response = await apiService.post("/TipoDeduccion", tipoDeduccion);
+    const response = await ApiService.post("/TipoDeduccion", tipoDeduccion);
 
     return response.data;
   } catch (error) {
