@@ -9,13 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Puesto } from "../types"
 
-interface Puesto {
-  id: string
-  nombre: string
-  descripcion: string
-  activo: boolean
-}
+
 
 interface PuestoListProps {
   puesto: Puesto[]

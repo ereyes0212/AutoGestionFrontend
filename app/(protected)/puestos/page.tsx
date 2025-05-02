@@ -1,10 +1,10 @@
-import { Users } from "lucide-react";
 import { getSessionPermisos } from "@/auth";
-import { getPuestos } from "./actions";
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
+import { Users } from "lucide-react";
+import { getPuestos } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
 import PuestoListMobile from "./components/puesto-list-mobile";
 
 export default async function Puestos() {
