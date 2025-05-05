@@ -1,21 +1,26 @@
-// /middleware.ts
+// middleware.ts
 import { getSession } from "@/auth";
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function middleware(req: NextRequest) {
-    // 1) Intenta recuperar la sesión (pasále la request si tu getSession lo admite)
+    const { pathname, search } = req.nextUrl;
+
+    // Recupera la sesión
     const session = await getSession();
 
-    // 2) Si NO hay sesión, redirigí a "/" (login) y agregá ?redirect=<ruta>
+    // Si no hay sesión, manda al login
     if (!session) {
         const loginUrl = new URL("/", req.url);
-        // guardamos la ruta a la que intentaba entrar
-        loginUrl.searchParams.set("redirect", req.nextUrl.pathname + req.nextUrl.search);
+        loginUrl.searchParams.set("redirect", pathname + search);
         return NextResponse.redirect(loginUrl);
     }
 
-    // 3) Si hay sesión, continuá
+    if (session.DebeCambiar && pathname !== "/reset-password") {
+        return NextResponse.redirect(new URL("/reset-password", req.url));
+    }
+
+    // En cualquier otro caso, deja pasar
     return NextResponse.next();
 }
 
@@ -29,5 +34,8 @@ export const config = {
         "/puestos/:path*",
         "/usuarios/:path*",
         "/solicitudes/:path*",
+        "/voucher-pago/:path*",
+        // incluye reset-password para que no lo intercepte el middleware
+        "/reset-password",
     ],
 };

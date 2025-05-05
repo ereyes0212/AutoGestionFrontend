@@ -1,14 +1,22 @@
-'use client';
+// components/Login.tsx
+"use client";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { login, type LoginResult } from "../../../auth";
+import { getSession, login } from "../../../auth";
 import { schemaSignIn, type TSchemaSignIn } from "../../../lib/shemas";
 
 export default function Login() {
@@ -18,42 +26,47 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // 1) Leemos de la URL: ?redirect=/ruta-que-queria-el-usuario
+  // Ruta a redirigir tras login exitoso
   const redirectTo = searchParams.get("redirect") ?? "/profile";
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const formSignIn = useForm<TSchemaSignIn>({
+  const form = useForm<TSchemaSignIn>({
     resolver: zodResolver(schemaSignIn),
     defaultValues: { usuario: "", contrasena: "" },
   });
 
-  const onSubmit = (data: TSchemaSignIn) => {
+  const onSubmit = (values: TSchemaSignIn) => {
     startTransition(async () => {
-      const response: LoginResult = await login(data, redirectTo);
-
+      // 1) Hacemos login
+      const response = await login(values, redirectTo);
       if (response.error) {
-        formSignIn.setError("contrasena", { message: response.error });
+        form.setError("contrasena", { message: response.error });
         return;
       }
 
-      // 3) Reemplazamos la ruta actual por la de redirectTo
-      router.replace(response.redirect!);
+      // 2) Obtenemos la sesión para leer DebeCambiarPassword
+      const session = await getSession();
+      if (session?.DebeCambiar) {
+        router.replace("/reset-password");
+      } else {
+        router.replace(response.redirect!);
+      }
     });
   };
 
-  if (!mounted) return null; // evitar hydration mismatch
+  if (!mounted) return null; // evitar errores de hidratación
 
   return (
-    <Form {...formSignIn}>
+    <Form {...form}>
       <form
-        onSubmit={formSignIn.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 bg-gray-900 text-white p-6 rounded-lg"
       >
         <FormField
-          control={formSignIn.control}
+          control={form.control}
           name="usuario"
           render={({ field }) => (
             <FormItem>
@@ -72,7 +85,7 @@ export default function Login() {
         />
 
         <FormField
-          control={formSignIn.control}
+          control={form.control}
           name="contrasena"
           render={({ field }) => (
             <FormItem>
@@ -82,7 +95,7 @@ export default function Login() {
                   <Input
                     {...field}
                     type={showPassword ? "text" : "password"}
-                    placeholder="......."
+                    placeholder="*******"
                     disabled={isPending}
                     className="bg-gray-800 border-gray-700 text-white pr-10"
                   />

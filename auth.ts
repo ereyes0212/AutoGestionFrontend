@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { type JWTPayload, SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { TSchemaResetPassword, schemaResetPassword } from "./app/(public)/reset-password/schema";
 import { type TSchemaSignIn, schemaSignIn } from "./lib/shemas";
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
 interface UsuarioSesion {
@@ -11,6 +13,7 @@ interface UsuarioSesion {
     IdRol: string;
     IdEmpleado: string;
     Permiso: string[];
+    DebeCambiar: boolean;
     Puesto: string;
     PuestoId: string;
     exp: number;
@@ -32,6 +35,7 @@ export const decrypt = async (input: string): Promise<UsuarioSesion> => {
     const usuarioSesion: UsuarioSesion = {
         IdUser: payload.IdUser as string,
         User: payload.User as string,
+        DebeCambiar: payload.DebeCambiar === "True",
         IdEmpleado: payload.empleadoId as string,
         IdRol: payload.IdRol as string,
         Permiso: payload.Permiso as string[] || [],
@@ -50,6 +54,13 @@ export interface LoginResult {
     error?: string
     redirect?: string
 }
+export interface UserChangePassword {
+    username: string;
+    newPassword: string;
+}
+
+
+
 
 // Ahora recibimos redirect aparte
 export const login = async (
@@ -77,6 +88,37 @@ export const login = async (
         return {
             success: "Login OK",
             redirect  // devolvemos el redirect que nos pasaron
+        }
+    } catch {
+        return { error: "Error al iniciar sesión" }
+    }
+}
+
+// Ahora recibimos redirect aparte
+export const resetPassword = async (
+    credentials: TSchemaResetPassword,
+    username: string,
+): Promise<LoginResult> => {
+    const validated = schemaResetPassword.safeParse(credentials)
+    if (!validated.success) {
+        return { error: "Errir al cambiar la contraseña" }
+    }
+
+    try {
+        const { confirmar } = validated.data
+        const tokenAD = await changePassword(username, confirmar)
+        if (!tokenAD) {
+            return { error: "Error al cambiar la contraseña" }
+        }
+
+        // Guardamos la cookie de sesión
+        const session = tokenAD
+        const decrypted = await decrypt(session)
+        const expires = new Date((decrypted.exp as number) * 1000)
+        cookies().set("session", session, { expires, httpOnly: true })
+
+        return {
+            success: "Login OK",
         }
     } catch {
         return { error: "Error al iniciar sesión" }
@@ -119,6 +161,22 @@ const getADAuthentication = async (username: string, password: string) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
+    });
+    if (!response.ok) {
+        return null;
+    }
+    const { token } = await response.json();
+
+    return token;
+};
+
+const changePassword = async (username: string, newPassword: string) => {
+
+    const url = `${process.env.URLLOGIN}/reset-password`;
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, newPassword }),
     });
     if (!response.ok) {
         return null;

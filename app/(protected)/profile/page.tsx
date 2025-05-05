@@ -1,9 +1,9 @@
-import {  User } from "lucide-react";
-import {  getSessionPermisos } from "@/auth";
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
-import EmployeeProfile from "./components/empleado-perfil";
+import { User } from "lucide-react";
 import { getProfile } from "./actions";
+import EmployeeProfile from "./components/empleado-perfil";
 
 export default async function EstadoServicio() {
 
@@ -11,7 +11,7 @@ export default async function EstadoServicio() {
 
 
 
-    if (!permisos?.includes("ver_permisos")) {
+    if (!permisos?.includes("ver_profile")) {
         return <NoAcceso />;
     }
 

@@ -95,6 +95,7 @@ export default function DragAndDropConfigurator({ initialItems, puestos }: DragA
 
       return config
     })
+    console.log("🚀 ~ constoutputConfigs:OutputConfig[]=items.map ~ outputConfigs:", outputConfigs)
 
     const success = await postConfig({ config: outputConfigs })
 
