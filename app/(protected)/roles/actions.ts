@@ -1,6 +1,6 @@
 "use server";
 
-import {  PermisosRol, Rol } from "@/lib/Types";
+import { PermisosRol, Rol } from "@/lib/Types";
 import apiService from "../../../lib/server";
 // import { ClienteElementSchema } from "./schema";
 
@@ -28,7 +28,7 @@ export async function putRol({ rol }: { rol: Rol }) {
 
   const rolData = {
     ...rol,
-    permisosRol: permisosIds, 
+    permisosRol: permisosIds,
   };
   try {
     const response = await apiService.put(`/Rol/${rol.id}`, rolData);

@@ -55,7 +55,6 @@ export function Formulario({
   async function onSubmit(data: z.infer<typeof UsuarioSchema>) {
     const usuarioData = {
       usuario: data.usuario,
-      contrasena: data.contrasena || undefined,
       empleado_id: data.empleado_id,
       rol_id: data.rol_id,
       activo: isUpdate ? data.activo : undefined,
@@ -114,27 +113,7 @@ export function Formulario({
           )}
         />
 
-        {/* Contraseña */}
-        <FormField
-          control={form.control}
-          name="contrasena"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Contraseña</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  placeholder="Ingresa la contraseña"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Ingresa una contraseña segura.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
 
         {/* Empleado */}
         <FormField
