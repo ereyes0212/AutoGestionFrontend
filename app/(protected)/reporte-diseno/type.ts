@@ -2,6 +2,7 @@ export type ReporteDiseño = {
     id: string
     empleado: string
     tipoSeccion: string
+    tipoSeccionId: string
     fechaRegistro: string // o Date, si lo parseas
     paginaInicio: string
     paginaFin: string
