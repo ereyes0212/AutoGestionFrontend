@@ -1,12 +1,11 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form"; // Importamos useForm
-import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 
-import { z } from "zod";
-import {  EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
-import { postEmpleado, putEmpleado } from "../actions"; // Tu función para enviar datos
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -17,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -24,16 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { Puesto } from "../../puestos/types";
-import { Empleado as EmpleadoModel } from "../type";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns"
 import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { es } from "date-fns/locale"
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CalendarIcon, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { Puesto } from "../../puestos/types";
+import { postEmpleado, putEmpleado } from "../actions"; // Tu función para enviar datos
+import { EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
+import { Empleado as EmpleadoModel } from "../type";
 export function EmpleadoFormulario({
   isUpdate,
   initialData,
@@ -159,7 +159,7 @@ export function EmpleadoFormulario({
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "PPP",  { locale: es })
+                          format(field.value, "PPP", { locale: es })
                         ) : (
                           <span>Selecciona una fecha</span>
                         )}

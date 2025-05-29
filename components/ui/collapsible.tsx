@@ -1,9 +1,9 @@
 "use client"
 
 import { cn } from "@/lib/utils"; // si usas una función cn para combinar clases
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
-import { forwardRef } from "react"
+import { forwardRef } from "react";
 
 const Collapsible = CollapsiblePrimitive.Root
 
@@ -25,5 +25,5 @@ const CollapsibleContent = forwardRef<
 
 CollapsibleContent.displayName = CollapsiblePrimitive.CollapsibleContent.displayName
 
-export { Collapsible, CollapsibleContent, CollapsibleTrigger }
+export { Collapsible, CollapsibleContent, CollapsibleTrigger };
 
