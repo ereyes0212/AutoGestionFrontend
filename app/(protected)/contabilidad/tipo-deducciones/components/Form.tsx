@@ -58,9 +58,9 @@ export function TipoDeduccionFormulario({
 
     try {
       if (isUpdate) {
-        await putTipoDeduccion(tipoDeduccionData); // Llamada a la API para actualizar
+        await putTipoDeduccion(tipoDeduccionData.tipoDeduccion); // Llamada a la API para actualizar
       } else {
-        await postTipoDeduccion(tipoDeduccionData); // Llamada a la API para crear un nuevo tipo de deducción
+        await postTipoDeduccion(tipoDeduccionData.tipoDeduccion); // Llamada a la API para crear un nuevo tipo de deducción
       }
 
       // Notificación de éxito

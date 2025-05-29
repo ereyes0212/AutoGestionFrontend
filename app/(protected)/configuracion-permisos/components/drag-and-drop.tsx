@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import type { Puesto } from "../../puestos/types"
-import { postConfig } from "../actions"
+import { postConfiguracion } from "../actions"
 import type { ConfigItem, OutputConfig } from "../type"
 
 interface DragAndDropConfiguratorProps {
@@ -95,9 +95,8 @@ export default function DragAndDropConfigurator({ initialItems, puestos }: DragA
 
       return config
     })
-    console.log("🚀 ~ constoutputConfigs:OutputConfig[]=items.map ~ outputConfigs:", outputConfigs)
 
-    const success = await postConfig({ config: outputConfigs })
+    const success = await postConfiguracion(outputConfigs)
 
     if (success) {
       toast({

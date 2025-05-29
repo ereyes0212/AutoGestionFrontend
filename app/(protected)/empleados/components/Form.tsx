@@ -31,7 +31,7 @@ import { es } from "date-fns/locale";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { Puesto } from "../../puestos/types";
-import { postEmpleado, putEmpleado } from "../actions"; // Tu función para enviar datos
+import { createEmpleado, updateEmpleado } from "../actions"; // Tu función para enviar datos
 import { EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
 import { Empleado as EmpleadoModel } from "../type";
 export function EmpleadoFormulario({
@@ -70,9 +70,9 @@ export function EmpleadoFormulario({
 
     try {
       if (isUpdate) {
-        await putEmpleado(empleadoData); // Llamada a la API para actualizar
+        await updateEmpleado(empleadoData.id!, empleadoData.empleado); // Llamada a la API para actualizar
       } else {
-        await postEmpleado(empleadoData); // Llamada a la API para crear un nuevo empleado
+        await createEmpleado(empleadoData.empleado); // Llamada a la API para crear un nuevo empleado
       }
 
       // Notificación de éxito

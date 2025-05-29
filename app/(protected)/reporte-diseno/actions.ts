@@ -1,98 +1,138 @@
-"use server";
+'use server';
 
-import apiService from "../../../lib/server";
-import { ReporteDisenoDTOSchema } from "./schema";
-import { ReporteDiseño } from "./type";
+import { getSession } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { parseTimeToTodayDate } from '@/lib/utils';
+import { randomUUID } from 'crypto';
+import { ReporteDiseño } from './type';
 
 /**
  * Obtiene todos los reportes de diseño.
  */
 export async function getReportesDiseño(): Promise<ReporteDiseño[]> {
-  try {
-    const response = await apiService.get<ReporteDiseño[]>('/ReporteDiseño');
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener los reportes de diseño:', error);
-    return [];
-  }
+  const records = await prisma.reporteDise_o.findMany({
+    include: { TipoSeccion: true, Empleados: true },
+    orderBy: { FechaRegistro: 'desc' },
+  });
+
+  return records.map(r => ({
+    id: r.Id,
+    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    tipoSeccion: r.TipoSeccion.Nombre,
+    tipoSeccionId: r.SeccionId,
+    fechaRegistro: r.FechaRegistro.toISOString(),
+    paginaInicio: r.PaginaInicio.toString(),
+    paginaFin: r.PaginaFin.toString(),
+    horaInicio: r.HoraInicio.toISOString(),
+    horaFin: r.HoraFin.toISOString(),
+    observacion: r.Observacion ?? '',
+  }));
 }
+
+
 
 /**
  * Obtiene un reporte de diseño por ID.
  */
-export async function getReporteDiseñoById(
-  id: string
-): Promise<ReporteDiseño | null> {
-  try {
-    const response = await apiService.get<ReporteDiseño>(`/ReporteDiseño/${id}`);
-    return response.data || null;
-  } catch (error) {
-    console.error(`Error al obtener el reporte de diseño ${id}:`, error);
-    return null;
-  }
+export async function getReporteDiseñoById(id: string): Promise<ReporteDiseño | null> {
+  const r = await prisma.reporteDise_o.findUnique({
+    where: { Id: id },
+    include: { TipoSeccion: true, Empleados: true },
+  });
+
+  if (!r) return null;
+
+  return {
+    id: r.Id,
+    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    tipoSeccion: r.TipoSeccion.Nombre,
+    tipoSeccionId: r.SeccionId,
+    fechaRegistro: r.FechaRegistro.toISOString(),
+    paginaInicio: r.PaginaInicio.toString(),
+    paginaFin: r.PaginaFin.toString(),
+    horaInicio: r.HoraInicio.toISOString(),
+    horaFin: r.HoraFin.toISOString(),
+    observacion: r.Observacion ?? '',
+  };
 }
 
 /**
  * Crea un nuevo reporte de diseño.
  */
-export async function postReporteDiseño(
-  { reporte }: { reporte: unknown }
-): Promise<ReporteDiseño> {
-  try {
-    // Valida y transforma el DTO
-    const parsed = ReporteDisenoDTOSchema.parse(reporte);
-    // Petición POST
-    const response = await apiService.post<ReporteDiseño>(
-      '/ReporteDiseño',
-      parsed
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Error al crear el reporte de diseño:', error);
-    throw error;
+export async function createReporteDiseño(data: ReporteDiseño): Promise<ReporteDiseño> {
+  const session = await getSession();
+  if (!session || !session.IdEmpleado) {
+    throw new Error('Empleado no autenticado');
   }
+
+  const now = new Date();
+
+  const r = await prisma.reporteDise_o.create({
+    data: {
+      Id: randomUUID(),
+      EmpleadoId: session.IdEmpleado,
+      SeccionId: data.tipoSeccionId,
+      FechaRegistro: now,
+      PaginaInicio: Number(data.paginaInicio),
+      PaginaFin: Number(data.paginaFin),
+      HoraInicio: parseTimeToTodayDate(data.horaInicio),
+      HoraFin: parseTimeToTodayDate(data.horaFin),
+      Observacion: data.observacion,
+      created_at: now,
+      adicionado_por: 'Sistema',
+      modificado_por: 'Sistema',
+    },
+    include: { TipoSeccion: true, Empleados: true },
+  });
+
+  return {
+    id: r.Id,
+    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    tipoSeccion: r.TipoSeccion.Nombre,
+    tipoSeccionId: r.SeccionId,
+    fechaRegistro: r.FechaRegistro.toISOString(),
+    paginaInicio: r.PaginaInicio.toString(),
+    paginaFin: r.PaginaFin.toString(),
+    horaInicio: r.HoraInicio.toISOString(),
+    horaFin: r.HoraFin.toISOString(),
+    observacion: r.Observacion ?? '',
+  };
 }
 
 /**
  * Actualiza un reporte de diseño existente.
  */
-export async function putReporteDiseño(
-  {
-    reporte,
-  }: {
-    reporte: {
-      id: string;
-      SeccionId: string;
-      PaginaInicio: string;
-      PaginaFin: string;
-      HoraInicio: string;
-      HoraFin: string;
-      Observacion?: string;
-    };
-  }
-): Promise<ReporteDiseño | null> {
-  const { id, SeccionId, PaginaInicio, PaginaFin, HoraInicio, HoraFin, Observacion } = reporte;
+// export async function updateReporteDiseño(input: unknown): Promise<ReporteDiseño | null> {
+//   const dto = ReporteDisenoDTOSchema.parse(input);
+//   if (!dto.id) return null;
 
-  const dto = {
-    SeccionId,
-    PaginaInicio,
-    PaginaFin,
-    HoraInicio,
-    HoraFin,
-    Observacion,
-  };
+//   const now = new Date();
 
-  try {
-    // Valida el DTO
-    const parsed = ReporteDisenoDTOSchema.parse(dto);
-    // Petición PUT
-    const response = await apiService.put<ReporteDiseño>(
-      `/ReporteDiseño/${id}`,
-      parsed
-    );
-    return response.data;
-  } catch (error) {
-    console.error(`Error al actualizar el reporte de diseño ${id}:`, error);
-    return null;
-  }
-}
+//   const r = await prisma.reporteDise_o.update({
+//     where: { Id: dto.id },
+//     data: {
+//       SeccionId: dto.SeccionId,
+//       PaginaInicio: dto.PaginaInicio,
+//       PaginaFin: dto.PaginaFin,
+//       HoraInicio: dto.HoraInicio,
+//       HoraFin: dto.HoraFin,
+//       Observacion: dto.Observacion,
+//       Updated_at: now,
+//       modificado_por: 'Sistema',
+//     },
+//     include: { TipoSeccion: true, Empleados: true },
+//   });
+
+//   return {
+//     id: r.Id,
+//     empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+//     tipoSeccion: r.TipoSeccion.Nombre,
+//     tipoSeccionId: r.SeccionId,
+//     fechaRegistro: r.FechaRegistro.toISOString(),
+//     paginaInicio: r.PaginaInicio.toString(),
+//     paginaFin: r.PaginaFin.toString(),
+//     horaInicio: r.HoraInicio.toISOString(),
+//     horaFin: r.HoraFin.toISOString(),
+//     observacion: r.Observacion ?? '',
+//   };
+// }

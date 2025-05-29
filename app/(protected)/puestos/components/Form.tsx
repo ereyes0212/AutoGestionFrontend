@@ -25,7 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
-import { postPuesto, putPuesto } from "../actions"; // Tu función para enviar datos
+import { createPuesto, updatePuesto } from "../actions"; // Tu función para enviar datos
 import { PuestoSchema } from "../schema"; // Tu esquema de Zod para puesto
 
 export function PuestoFormulario({
@@ -59,9 +59,9 @@ export function PuestoFormulario({
 
     try {
       if (isUpdate) {
-        await putPuesto(puestoData); // Llamada a la API para actualizar
+        await updatePuesto(puestoData.puesto.id!, puestoData.puesto); // Llamada a la API para actualizar
       } else {
-        await postPuesto(puestoData); // Llamada a la API para crear un nuevo puesto
+        await createPuesto(puestoData.puesto); // Llamada a la API para crear un nuevo puesto
       }
 
       // Notificación de éxito

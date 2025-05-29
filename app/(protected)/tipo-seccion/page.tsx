@@ -1,7 +1,7 @@
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
-import { CircleDollarSignIcon } from "lucide-react";
+import { Check } from "lucide-react";
 import { getTipoSeccion } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
@@ -20,7 +20,7 @@ export default async function TipoSeccion() {
   return (
     <div className="container mx-auto py-2">
       <HeaderComponent
-        Icon={CircleDollarSignIcon}
+        Icon={Check}
         description="En este apartado podrá ver todas las diferentes secciónes de reporte."
         screenName="Tipo de Secciones de reporte"
       />

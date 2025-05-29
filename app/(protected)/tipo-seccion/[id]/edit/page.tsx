@@ -4,7 +4,7 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getTipoSeccionId } from "../../actions";
+import { getTipoSeccionById } from "../../actions";
 import { TipoSeccionFormulario } from "../../components/Form";
 
 export default async function Edit({ params }: { params: { id: string } }) {
@@ -17,7 +17,7 @@ export default async function Edit({ params }: { params: { id: string } }) {
   }
 
   // Obtener el cliente por su ID
-  const tipoSeccion = await getTipoSeccionId(params.id);
+  const tipoSeccion = await getTipoSeccionById(params.id);
   if (!tipoSeccion) {
     redirect("/tipo-seccion"); // Redirige si no se encuentra el cliente
   }

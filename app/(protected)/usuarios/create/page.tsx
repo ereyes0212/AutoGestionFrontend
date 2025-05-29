@@ -3,7 +3,7 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { PlusCircle } from "lucide-react";
 import { getEmpleadosSinUsuario } from "../../empleados/actions";
-import { getRolsActivos } from "../../roles/actions";
+import { getRolesPermisosActivos } from "../../roles/actions";
 import { Formulario } from "../components/Form";
 
 export default async function Create() {
@@ -23,7 +23,7 @@ export default async function Create() {
     activo: true,
   };
   const empleados = await getEmpleadosSinUsuario();
-  const roles = await getRolsActivos();
+  const roles = await getRolesPermisosActivos();
 
   return (
     <div>

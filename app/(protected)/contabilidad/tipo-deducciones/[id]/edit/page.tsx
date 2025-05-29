@@ -4,7 +4,7 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getTipoDeduccionId } from "../../actions";
+import { getTipoDeduccionById } from "../../actions";
 import { TipoDeduccionFormulario } from "../../components/Form";
 
 export default async function Edit({ params }: { params: { id: string } }) {
@@ -17,7 +17,7 @@ export default async function Edit({ params }: { params: { id: string } }) {
   }
 
   // Obtener el cliente por su ID
-  const tipoDeduccion = await getTipoDeduccionId(params.id);
+  const tipoDeduccion = await getTipoDeduccionById(params.id);
   if (!tipoDeduccion) {
     redirect("/tipo-deducciones"); // Redirige si no se encuentra el cliente
   }

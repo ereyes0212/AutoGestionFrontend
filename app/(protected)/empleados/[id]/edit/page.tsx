@@ -1,12 +1,12 @@
 
-import HeaderComponent from "@/components/HeaderComponent";
-import { Pencil } from "lucide-react";
-import {  getSessionPermisos } from "@/auth";
-import { redirect } from "next/navigation";
-import { EmpleadoFormulario } from "../../components/Form";
-import { getEmpleadoId, getEmpleados } from "../../actions";
-import NoAcceso from "@/components/noAccess";
 import { getPuestosActivas } from "@/app/(protected)/puestos/actions";
+import { getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { Pencil } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getEmpleadoById, getEmpleados } from "../../actions";
+import { EmpleadoFormulario } from "../../components/Form";
 
 export default async function Edit({ params }: { params: { id: string } }) {
   // Verificar si hay una sesión activa
@@ -19,8 +19,8 @@ export default async function Edit({ params }: { params: { id: string } }) {
   const empleados = await getEmpleados()
 
 
-  // Obtener el cliente por su ID
-  const empleado = await getEmpleadoId(params.id);
+  // Obtener el cliente por getEmpleadoById ID
+  const empleado = await getEmpleadoById(params.id);
   if (!empleado) {
     redirect("/empleados"); // Redirige si no se encuentra el cliente
   }
@@ -31,9 +31,9 @@ export default async function Edit({ params }: { params: { id: string } }) {
     correo: empleado.correo,
     genero: empleado.genero, // Valor por defecto
     activo: empleado.activo,
-    fechaNacimiento: new Date(empleado.fechaNacimiento), 
+    fechaNacimiento: new Date(empleado.fechaNacimiento),
     nombreUsuario: empleado.usuario,
-    jefe_id: empleado.jefe_id || "", 
+    jefe_id: empleado.jefe_id || "",
     puesto_id: empleado.puesto_id || ""
   };
 
@@ -45,12 +45,12 @@ export default async function Edit({ params }: { params: { id: string } }) {
         screenName="Editar Empleado"
       />
       <EmpleadoFormulario
-        puestos={puestos || []} 
+        puestos={puestos || []}
         jefe={empleados}
         isUpdate={true} // Esto es para indicar que estamos creando, no actualizando
         initialData={initialData} // Datos iniciales para crear un nuevo empleado
       />
-      
+
     </div>
   );
 }

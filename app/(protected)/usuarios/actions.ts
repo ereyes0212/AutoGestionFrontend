@@ -1,55 +1,107 @@
 "use server";
 
+import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { Usuario, UsuarioCreate, UsuarioUpdate } from './type';
 
-import apiService from "../../../lib/server";
-import { Usuario, UsuarioCreate, UsuarioUpdate } from "./type";
-// import { ClienteElementSchema } from "./schema";
-
-export async function getUsuarios() {
-  try {
-    const response = await apiService.get<Usuario[]>("/Usuario");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los usuarios:", error);
-    return [];
-  }
+/**
+ * Obtener todos los usuarios con rol y empleado
+ */
+export async function getUsuarios(): Promise<Usuario[]> {
+  const records = await prisma.usuarios.findMany({
+    include: {
+      rol: { select: { id: true, nombre: true } },
+      Empleados: { select: { id: true, nombre: true, apellido: true } },
+    },
+  });
+  return records.map(r => ({
+    id: r.id,
+    usuario: r.usuario,
+    rol: r.rol?.nombre ?? '',
+    rol_id: r.rol_id,
+    empleado: r.Empleados ? `${r.Empleados.nombre} ${r.Empleados.apellido}` : '',
+    empleado_id: r.empleado_id,
+    activo: r.activo,
+  }));
 }
 
-
-// Función para crear usuario
-// Función para crear usuario
-export async function postUsuario({ usuario }: { usuario: UsuarioCreate }): Promise<UsuarioCreate> {
-  try {
-    const response = await apiService.post<UsuarioCreate>("/Usuario", usuario);
-    return response.data; // Retorna la data del usuario creado
-  } catch (error) {
-    console.error("Error en postUsuario:", error);
-    throw new Error("Error al crear el usuario");
-  }
+/**
+ * Crear un nuevo usuario
+ */
+export async function createUsuario(data: UsuarioCreate): Promise<Usuario> {
+  const id = randomUUID();
+  const newUser = await prisma.usuarios.create({
+    data: {
+      id,
+      usuario: data.usuario,
+      rol_id: data.rol_id,
+      empleado_id: data.empleado_id,
+      contrasena: await bcrypt.hash('pass.1234', 10),
+      activo: true,
+      DebeCambiarPassword: true,
+      adicionado_por: 'Sistema',
+      created_at: new Date(),
+      modificado_por: 'Sistema',
+      updated_at: new Date(),
+    },
+  });
+  return {
+    id: newUser.id,
+    usuario: newUser.usuario,
+    rol: '',
+    rol_id: newUser.rol_id,
+    empleado: '',
+    empleado_id: newUser.empleado_id,
+    activo: newUser.activo,
+  };
 }
 
-// Función para actualizar usuario
-export async function putUsuario({ usuario }: { usuario: UsuarioUpdate }): Promise<UsuarioUpdate> {
-  try {
-    const response = await apiService.put<UsuarioUpdate>(`/Usuario/${usuario.id}`, usuario);
-    return response.data; // Retorna la data del usuario actualizado
-  } catch (error) {
-    console.error("Error en putUsuario:", error);
-    throw new Error("Error al actualizar el usuario");
-  }
+/**
+ * Actualizar un usuario existente
+ */
+export async function updateUsuario(data: UsuarioUpdate): Promise<Usuario> {
+  const updated = await prisma.usuarios.update({
+    where: { id: data.id },
+    data: {
+      usuario: data.usuario,
+      rol_id: data.rol_id,
+      empleado_id: data.empleado_id,
+      activo: data.activo,
+      modificado_por: 'Sistema',
+      updated_at: new Date(),
+    },
+  });
+  return {
+    id: updated.id,
+    usuario: updated.usuario,
+    rol: '',
+    rol_id: updated.rol_id,
+    empleado: '',
+    empleado_id: updated.empleado_id,
+    activo: updated.activo,
+  };
 }
 
-
+/**
+ * Obtener usuario por ID
+ */
 export async function getUsuarioById(id: string): Promise<Usuario | null> {
-  try {
-    const response = await apiService.get<Usuario>(`/Usuario/${id}`);
-    // Aseguramos que si alguno de los campos opcionales está ausente, se maneje correctamente
-    const usuarioData = response.data;
-
-    return usuarioData || null;
-  } catch (error) {
-    console.error("Error al obtener el usuario:", error);
-    return null;
-  }
+  const r = await prisma.usuarios.findUnique({
+    where: { id },
+    include: {
+      rol: { select: { nombre: true } },
+      Empleados: { select: { nombre: true, apellido: true } },
+    },
+  });
+  if (!r) return null;
+  return {
+    id: r.id,
+    usuario: r.usuario,
+    rol: r.rol?.nombre ?? '',
+    rol_id: r.rol_id,
+    empleado: r.Empleados ? `${r.Empleados.nombre} ${r.Empleados.apellido}` : '',
+    empleado_id: r.empleado_id,
+    activo: r.activo,
+  };
 }
-

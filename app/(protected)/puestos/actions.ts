@@ -1,62 +1,94 @@
 "use server";
 
-import apiService from "../../../lib/server";
-import { Puesto } from "./types";
-// import { ClienteElementSchema } from "./schema";
+import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
+import { Puesto } from './types';
 
-export async function getPuestos() {
-  try {
-    const response = await apiService.get<Puesto[]>("/Puesto");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los puesto:", error);
-    return [];
-  }
-}
-export async function getPuestosActivas() {
-  try {
-    const response = await apiService.get<Puesto[]>("/Puesto/activos");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los puestos activos:", error);
-    return [];
-  }
+/**
+ * Obtiene todos los puestos
+ */
+export async function getPuestos(): Promise<Puesto[]> {
+  const records = await prisma.puesto.findMany();
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  }));
 }
 
-
-export async function putPuesto({ puesto }: { puesto: Puesto }) {
-
-  try {
-
-    const response = await apiService.put(`/Puesto/${puesto.id}`, puesto);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al actualizar el puesto:", error);
-    return [];
-  }
+/**
+ * Obtiene solo los puestos activos
+ */
+export async function getPuestosActivas(): Promise<Puesto[]> {
+  const records = await prisma.puesto.findMany({
+    where: { Activo: true },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  }));
 }
 
-export async function getPuestoId(id: string) {
-  try {
-    const response = await apiService.get<Puesto>(`/Puesto/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
+/**
+ * Obtiene un puesto por ID
+ */
+export async function getPuestoById(id: string): Promise<Puesto | null> {
+  const r = await prisma.puesto.findUnique({
+    where: { Id: id },
+  });
+  if (!r) return null;
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
-
-
-export async function postPuesto({ puesto }: { puesto: Puesto }) {
-  try {
-    const response = await apiService.post("/Puesto", puesto);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al crear el puesto:", error);
-    throw error;
-  }
+/**
+ * Crea un nuevo puesto
+ */
+export async function createPuesto(data: Puesto): Promise<Puesto> {
+  const id = randomUUID();
+  const r = await prisma.puesto.create({
+    data: {
+      Id: id,
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo ?? true,
+      Adicionado_por: 'Sistema',
+      Created_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
+/**
+ * Actualiza un puesto existente
+ */
+export async function updatePuesto(id: string, data: Partial<Puesto>): Promise<Puesto | null> {
+  const r = await prisma.puesto.update({
+    where: { Id: id },
+    data: {
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo,
+      Modificado_por: 'Sistema',
+      Updated_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
+}

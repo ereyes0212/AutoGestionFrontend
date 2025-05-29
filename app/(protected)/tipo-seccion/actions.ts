@@ -1,63 +1,99 @@
 "use server";
 
+import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
+import { TipoSeccion } from './types';
 
-import ApiService from "@/lib/server";
-import { TipoSeccion } from "./types";
-// import { ClienteElementSchema } from "./schema";
-
-export async function getTipoSeccion() {
-  try {
-    const response = await ApiService.get<TipoSeccion[]>("/TipoSeccion");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Tipo de sección:", error);
-    return [];
-  }
-}
-export async function getTipoSeccionActivas() {
-  try {
-    const response = await ApiService.get<TipoSeccion[]>("/TipoSeccion/activos");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Tipo de sección activos:", error);
-    return [];
-  }
+/**
+ * Obtener todos los tipos de sección
+ */
+export async function getTipoSeccion(): Promise<TipoSeccion[]> {
+  const records = await prisma.tipoSeccion.findMany({
+    orderBy: { Nombre: 'asc' },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+    createdAt: r.Created_at ?? new Date(),
+    updatedAt: r.Updated_at ?? new Date(),
+  }));
 }
 
-
-export async function putTipoSeccion({ tipoSeccion }: { tipoSeccion: TipoSeccion }) {
-
-  try {
-
-    const response = await ApiService.put(`/TipoSeccion/${tipoSeccion.id}`, tipoSeccion);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al actualizar el tipo de sección:", error);
-    return [];
-  }
+/**
+ * Obtener tipos de sección activos
+ */
+export async function getTipoSeccionActivas(): Promise<TipoSeccion[]> {
+  const records = await prisma.tipoSeccion.findMany({
+    where: { Activo: true },
+    orderBy: { Nombre: 'asc' },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+    createdAt: r.Created_at ?? new Date(),
+    updatedAt: r.Updated_at ?? new Date(),
+  }));
 }
 
-export async function getTipoSeccionId(id: string) {
-  try {
-    const response = await ApiService.get<TipoSeccion>(`/TipoSeccion/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el tipo de sección:", error);
-    return null;
-  }
+/**
+ * Obtener un tipo de sección por ID
+ */
+export async function getTipoSeccionById(id: string): Promise<TipoSeccion | null> {
+  const r = await prisma.tipoSeccion.findUnique({ where: { Id: id } });
+  if (!r) return null;
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
-
-
-export async function postTipoSeccion({ tipoSeccion }: { tipoSeccion: TipoSeccion }) {
-  try {
-    const response = await ApiService.post("/TipoSeccion", tipoSeccion);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al crear el tipo de sección:", error);
-    throw error;
-  }
+/**
+ * Crear un nuevo tipo de sección
+ */
+export async function postTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
+  const id = randomUUID();
+  const r = await prisma.tipoSeccion.create({
+    data: {
+      Id: id,
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo ?? true,
+      Adicionado_por: 'Sistema',
+      Created_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
+/**
+ * Actualizar un tipo de sección existente
+ */
+export async function putTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
+  const r = await prisma.tipoSeccion.update({
+    where: { Id: data.id! },
+    data: {
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo,
+      Modificado_por: 'Sistema',
+      Updated_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
+}

@@ -2,7 +2,7 @@ import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { PlusCircle } from "lucide-react";
-import { getPermisosActivos } from "../../permisos/actions";
+import { getPermisos } from "../../permisos/actions";
 import { FormularioRol } from "../components/Formulario"; // Asegúrate de que el formulario sea para Empleados
 
 export default async function Create() {
@@ -16,7 +16,7 @@ export default async function Create() {
     return <NoAcceso />;
   }
 
-  const permisosData = await getPermisosActivos();
+  const permisosData = await getPermisos();
   // Inicializamos con un valor específico para genero
   const initialData = {
     nombre: "",

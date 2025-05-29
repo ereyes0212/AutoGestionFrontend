@@ -2,7 +2,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input"; // Componente Input de ShadCN
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PermisosRol } from "@/lib/Types";
+import { Permiso } from "@/lib/Types";
 import { useState } from "react";
 
 export const CheckboxPermisos = ({
@@ -10,7 +10,7 @@ export const CheckboxPermisos = ({
   selectedPermisos,
   onChange,
 }: {
-  permisos: PermisosRol[]; // Array de permisos con id y nombre
+  permisos: Permiso[]; // Array de permisos con id y nombre
   selectedPermisos: string[]; // Solo IDs
   onChange: (selected: string[]) => void; // Solo pasamos los IDs
 }) => {
@@ -51,8 +51,8 @@ export const CheckboxPermisos = ({
             >
               <Checkbox
                 id={permiso.id} // Agregamos el id al checkbox
-                checked={selectedPermisos.includes(permiso.id)} // Verificamos si el ID está seleccionado
-                onCheckedChange={() => handleCheckboxChange(permiso.id)} // Solo pasamos el ID
+                checked={selectedPermisos.includes(permiso.id || "")} // Verificamos si el ID está seleccionado
+                onCheckedChange={() => handleCheckboxChange(permiso.id || "")} // Solo pasamos el ID
                 className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-muted-800 font-medium">{permiso.nombre}</span>

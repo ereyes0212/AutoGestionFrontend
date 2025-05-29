@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Empleado } from "../../empleados/type";
-import { postUsuario, putUsuario } from "../actions";
+import { createUsuario, updateUsuario } from "../actions";
 import { UsuarioSchema } from "../schema";
 import { UsuarioCreate, UsuarioUpdate } from "../type";
 
@@ -63,9 +63,9 @@ export function Formulario({
 
     try {
       if (isUpdate) {
-        await putUsuario({ usuario: usuarioData as UsuarioUpdate });
+        await updateUsuario(usuarioData as UsuarioUpdate);
       } else {
-        await postUsuario({ usuario: usuarioData as UsuarioCreate });
+        await createUsuario(usuarioData as UsuarioCreate);
       }
 
       toast({

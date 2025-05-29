@@ -1,11 +1,11 @@
 
-import { getPermisosActivos } from "@/app/(protected)/permisos/actions";
+import { getPermisos } from "@/app/(protected)/permisos/actions";
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { redirect } from "next/navigation";
-import { getRolsPermisoById } from "../../actions";
+import { getRolPermisoById } from "../../actions";
 import { FormularioRol } from "../../components/Formulario";
 
 export default async function Edit({ params }: { params: { id: string } }) {
@@ -18,13 +18,13 @@ export default async function Edit({ params }: { params: { id: string } }) {
   }
 
   // Obtener el cliente por su ID
-  const roles = await getRolsPermisoById(params.id);
+  const roles = await getRolPermisoById(params.id);
   if (!roles) {
     redirect("/roles"); // Redirige si no se encuentra el cliente
   }
 
 
-  const permisosData = await getPermisosActivos();
+  const permisosData = await getPermisos();
 
   return (
     <div>

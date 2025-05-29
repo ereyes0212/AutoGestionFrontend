@@ -1,63 +1,99 @@
-"use server";
+'use server';
 
+import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
+import { TipoDeduccion } from './types';
 
-import ApiService from "@/lib/server";
-import { TipoDeduccion } from "./types";
-// import { ClienteElementSchema } from "./schema";
-
-export async function getTipoDeduccion() {
-  try {
-    const response = await ApiService.get<TipoDeduccion[]>("/TipoDeduccion");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Tipo de deducción:", error);
-    return [];
-  }
-}
-export async function getTipoDeduccionActivas() {
-  try {
-    const response = await ApiService.get<TipoDeduccion[]>("/TipoDeduccion/activos");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Tipo de Deduccion activos:", error);
-    return [];
-  }
+/**
+ * Obtener todos los tipos de deducción
+ */
+export async function getTipoDeduccion(): Promise<TipoDeduccion[]> {
+  const records = await prisma.tipoDeducciones.findMany({
+    orderBy: { Nombre: 'asc' },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+    createdAt: r.Created_at ?? new Date(),
+    updatedAt: r.Updated_at ?? new Date(),
+  }));
 }
 
-
-export async function putTipoDeduccion({ tipoDeduccion }: { tipoDeduccion: TipoDeduccion }) {
-
-  try {
-
-    const response = await ApiService.put(`/TipoDeduccion/${tipoDeduccion.id}`, tipoDeduccion);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al actualizar el tipo de Deduccion:", error);
-    return [];
-  }
+/**
+ * Obtener tipos de deducción activos
+ */
+export async function getTipoDeduccionActivas(): Promise<TipoDeduccion[]> {
+  const records = await prisma.tipoDeducciones.findMany({
+    where: { Activo: true },
+    orderBy: { Nombre: 'asc' },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+    createdAt: r.Created_at ?? new Date(),
+    updatedAt: r.Updated_at ?? new Date(),
+  }));
 }
 
-export async function getTipoDeduccionId(id: string) {
-  try {
-    const response = await ApiService.get<TipoDeduccion>(`/TipoDeduccion/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el tipo de deduccion:", error);
-    return null;
-  }
+/**
+ * Obtener un tipo de deducción por ID
+ */
+export async function getTipoDeduccionById(id: string): Promise<TipoDeduccion | null> {
+  const r = await prisma.tipoDeducciones.findUnique({ where: { Id: id } });
+  if (!r) return null;
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
-
-
-export async function postTipoDeduccion({ tipoDeduccion }: { tipoDeduccion: TipoDeduccion }) {
-  try {
-    const response = await ApiService.post("/TipoDeduccion", tipoDeduccion);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al crear el tipo de deducción:", error);
-    throw error;
-  }
+/**
+ * Crear un nuevo tipo de deducción
+ */
+export async function postTipoDeduccion(data: TipoDeduccion): Promise<TipoDeduccion> {
+  const id = randomUUID();
+  const r = await prisma.tipoDeducciones.create({
+    data: {
+      Id: id,
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo ?? true,
+      Adicionado_por: 'Sistema',
+      Created_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
 }
 
+/**
+ * Actualizar un tipo de deducción existente
+ */
+export async function putTipoDeduccion(data: TipoDeduccion): Promise<TipoDeduccion> {
+  const r = await prisma.tipoDeducciones.update({
+    where: { Id: data.id! },
+    data: {
+      Nombre: data.nombre,
+      Descripcion: data.descripcion,
+      Activo: data.activo,
+      Modificado_por: 'Sistema',
+      Updated_at: new Date(),
+    },
+  });
+  return {
+    id: r.Id,
+    nombre: r.Nombre,
+    descripcion: r.Descripcion,
+    activo: r.Activo,
+  };
+}

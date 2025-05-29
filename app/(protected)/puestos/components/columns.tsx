@@ -78,6 +78,7 @@ export const columns: ColumnDef<Puesto>[] = [
     header: "Acciones",
     cell: ({ row }) => {
       const puesto = row.original;
+      console.log("🚀 ~ puesto:", puesto)
 
       return (
         <DropdownMenu>

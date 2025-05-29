@@ -58,9 +58,9 @@ export function TipoSeccionFormulario({
 
     try {
       if (isUpdate) {
-        await putTipoSeccion(tipoSeccionData); // Llamada a la API para actualizar
+        await putTipoSeccion(tipoSeccionData.tipoSeccion); // Llamada a la API para actualizar
       } else {
-        await postTipoSeccion(tipoSeccionData); // Llamada a la API para crear un nuevo tipo de sección
+        await postTipoSeccion(tipoSeccionData.tipoSeccion); // Llamada a la API para crear un nuevo tipo de sección
       }
 
       // Notificación de éxito

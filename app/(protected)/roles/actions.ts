@@ -1,61 +1,191 @@
+
 "use server";
+import { prisma } from "@/lib/prisma"; // Asegúrate de importar correctamente tu cliente de Prisma
+import { randomUUID } from "crypto";
+import { PermisosRol, Rol as RolDTO } from "./type";
 
-import { PermisosRol, Rol } from "@/lib/Types";
-import apiService from "../../../lib/server";
-// import { ClienteElementSchema } from "./schema";
-
-export async function getRolesPermisos() {
+export async function getRolesPermisos(): Promise<RolDTO[]> {
   try {
-    const response = await apiService.get<Rol[]>("/Rol");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Rols y permisos:", error);
-    return [];
-  }
-}
-export async function getRolsActivos() {
-  try {
-    const response = await apiService.get<Rol[]>("/Rol/activos");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener los Rols y permisos:", error);
-    return [];
-  }
-}
+    const roles = await prisma.rol.findMany({
+      include: {
+        permisos: {
+          include: {
+            permiso: true,
+          },
+        },
+      },
+    });
 
-export async function putRol({ rol }: { rol: Rol }) {
-  const permisosIds = rol.permisos.map((permiso: PermisosRol) => permiso.id);
-
-  const rolData = {
-    ...rol,
-    permisosRol: permisosIds,
-  };
-  try {
-    const response = await apiService.put(`/Rol/${rol.id}`, rolData);
-
-    return response.data;
+    // Mapear al DTO
+    return roles.map((r) => ({
+      id: r.id,
+      nombre: r.nombre,
+      descripcion: r.descripcion,
+      activo: r.activo,
+      permisos: r.permisos.map((rp): PermisosRol => ({
+        id: rp.permiso.id,
+        nombre: rp.permiso.nombre,
+      })),
+    }));
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error al obtener los roles y permisos:", error);
     return [];
   }
 }
 
-export async function getRolsPermisoById(id: string) {
+export async function getRolesPermisosActivos(): Promise<RolDTO[]> {
   try {
-    const response = await apiService.get<Rol>(`/Rol/${id}`);
-    return response.data;
+    const roles = await prisma.rol.findMany({
+      include: {
+        permisos: {
+          include: {
+            permiso: true,
+          },
+        },
+      },
+    });
+
+    // Mapear al DTO
+    return roles.map((r) => ({
+      id: r.id,
+      nombre: r.nombre,
+      descripcion: r.descripcion,
+      activo: r.activo,
+      permisos: r.permisos.map((rp): PermisosRol => ({
+        id: rp.permiso.id,
+        nombre: rp.permiso.nombre,
+      })),
+    }));
   } catch (error) {
-    console.error("Error al obtener el estado servicio:", error);
+    console.error("Error al obtener los roles y permisos:", error);
+    return [];
+  }
+}
+
+export async function putRol({ rol }: { rol: RolDTO }): Promise<RolDTO | null> {
+  // Preparamos los nuevos permisos para crear las filas intermedias
+  const permisosCreate = rol.permisos.map((p: PermisosRol) => ({
+    permiso: { connect: { id: p.id } },
+  }));
+
+  try {
+    const updated = await prisma.rol.update({
+      where: { id: rol.id! },
+      data: {
+        nombre: rol.nombre,
+        descripcion: rol.descripcion,
+        activo: rol.activo ?? true,
+        permisos: {
+          // 1) Eliminamos todas las filas RolPermiso existentes
+          deleteMany: {},
+          // 2) Creamos las nuevas relaciones
+          create: permisosCreate,
+        },
+      },
+      include: {
+        permisos: {
+          include: {
+            permiso: true,
+          },
+        },
+      },
+    });
+
+    // Mapear la respuesta de Prisma a tu DTO
+    return {
+      id: updated.id,
+      nombre: updated.nombre,
+      descripcion: updated.descripcion,
+      activo: updated.activo,
+      permisos: updated.permisos.map((rp) => ({
+        id: rp.permiso.id,
+        nombre: rp.permiso.nombre,
+      })),
+    };
+  } catch (error) {
+    console.error("Error al actualizar el rol:", error);
     return null;
   }
 }
-export async function postRol({ rol }: { rol: Rol }) {
+
+
+
+export async function getRolPermisoById(id: string): Promise<RolDTO | null> {
   try {
-    const response = await apiService.post("/Rol", rol); // Envía el rol con los IDs
-    return response.data;
+    const rol = await prisma.rol.findUnique({
+      where: { id },
+      include: {
+        permisos: {
+          include: {
+            permiso: true,
+          },
+        },
+      },
+    });
+
+    if (!rol) {
+      return null;
+    }
+
+    return {
+      id: rol.id,
+      nombre: rol.nombre,
+      descripcion: rol.descripcion,
+      activo: rol.activo,
+      permisos: rol.permisos.map((rp): PermisosRol => ({
+        id: rp.permiso.id,
+        nombre: rp.permiso.nombre,
+      })),
+    };
   } catch (error) {
-    console.error("Error al crear el rol en el servicio:", error);
-    throw error;
+    console.error("Error al obtener el rol por ID:", error);
+    return null;
   }
 }
 
+
+export async function postRol({
+  rol,
+}: {
+  rol: RolDTO;
+}): Promise<RolDTO | null> {
+  try {
+    const created = await prisma.rol.create({
+      data: {
+        // Generamos un UUID para el rol
+        id: randomUUID(),
+        nombre: rol.nombre,
+        descripcion: rol.descripcion,
+        activo: rol.activo ?? true,
+        permisos: {
+          create: rol.permisos.map((p: PermisosRol) => ({
+            id: p.id,
+            permiso: { connect: { id: p.id } },
+          })),
+        },
+      },
+      include: {
+        permisos: {
+          include: {
+            permiso: true,
+          },
+        },
+      },
+    });
+
+    // Mapeamos a tu DTO RolDTO
+    return {
+      id: created.id,
+      nombre: created.nombre,
+      descripcion: created.descripcion,
+      activo: created.activo,
+      permisos: created.permisos.map((rp) => ({
+        id: rp.permiso.id,
+        nombre: rp.permiso.nombre,
+      })),
+    };
+  } catch (error) {
+    console.error("Error al crear el rol:", error);
+    return null;
+  }
+}

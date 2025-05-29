@@ -1,11 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form"; // Importamos useForm
-import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
-import { z } from "zod";
-import { RolSchema } from "../schema"; // Tu esquema de Zod
-import { postRol, putRol } from "../actions"; // Funciones para enviar datos
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -16,8 +11,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
@@ -25,9 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PermisosRol } from "@/lib/Types";
-import { CheckboxPermisos } from "./checkboxForm";
+import { useToast } from "@/hooks/use-toast";
+import { Permiso, PermisosRol } from "@/lib/Types";
+import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form"; // Importamos useForm
+import { z } from "zod";
+import { postRol, putRol } from "../actions"; // Funciones para enviar datos
+import { RolSchema } from "../schema"; // Tu esquema de Zod
+import { CheckboxPermisos } from "./checkboxForm";
 
 export function FormularioRol({
   isUpdate,
@@ -36,14 +36,14 @@ export function FormularioRol({
 }: {
   isUpdate: boolean;
   initialData?: z.infer<typeof RolSchema>;
-  permisos: PermisosRol[]; // Lista de permisos
+  permisos: Permiso[]; // Lista de permisos
 }) {
   const { toast } = useToast();
   const router = useRouter();
 
- 
+
   const form = useForm<z.infer<typeof RolSchema>>({
-    resolver: zodResolver(RolSchema), 
+    resolver: zodResolver(RolSchema),
     defaultValues: initialData || { permisos: [] },
   });
 
@@ -139,7 +139,7 @@ export function FormularioRol({
                   onChange={(selected) => {
                     // Convertimos los IDs seleccionados a un array de objetos PermisosRol
                     const selectedPermisosRol = permisos.filter((permiso) =>
-                      selected.includes(permiso.id)
+                      selected.includes(permiso.id || "")
                     );
                     field.onChange(selectedPermisosRol); // Pasamos los permisos completos al formulario
                   }}
@@ -186,7 +186,7 @@ export function FormularioRol({
 
         {/* Enviar */}
         <div className="flex justify-end">
-        <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -25,7 +25,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { TipoSeccion } from "../../tipo-seccion/types";
-import { postReporteDiseño, putReporteDiseño } from "../actions";
+import { createReporteDiseño } from "../actions";
 import { ReporteDisenoDTOSchema } from "../schema";
 
 type ReporteFormValues = z.infer<typeof ReporteDisenoDTOSchema>;
@@ -59,13 +59,24 @@ export function FormularioReporte({
   const onSubmit = async (data: ReporteFormValues) => {
     try {
       if (isUpdate && initialData?.id) {
-        await putReporteDiseño({ reporte: { id: initialData.id, ...data } });
+        // await putReporteDiseño({ reporte: { id: initialData.id, ...data } });
         toast({
           title: "Reporte actualizado",
           description: "El reporte de diseño se actualizó correctamente",
         });
       } else {
-        await postReporteDiseño({ reporte: data });
+        await createReporteDiseño({
+          id: "",
+          empleado: "",
+          tipoSeccion: "",
+          tipoSeccionId: data.SeccionId,
+          fechaRegistro: "",
+          paginaInicio: data.PaginaInicio,
+          paginaFin: data.PaginaFin,
+          horaInicio: data.HoraInicio,
+          horaFin: data.HoraFin,
+          observacion: data.Observacion ?? "",
+        });
         toast({
           title: "Reporte creado",
           description: "El reporte de diseño se creó correctamente",

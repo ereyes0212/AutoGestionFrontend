@@ -34,3 +34,10 @@ export const formatearFecha = (fecha: string) => {
   }
 }
 
+export function parseTimeToTodayDate(time: string): Date {
+  const [hours, minutes, seconds = '0'] = time.split(':');
+  const now = new Date();
+  now.setHours(Number(hours), Number(minutes), Number(seconds), 0);
+  return now;
+}
+

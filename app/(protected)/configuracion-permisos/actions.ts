@@ -1,54 +1,52 @@
 "use server";
 
+import { prisma } from '@/lib/prisma';
+import { randomUUID } from 'crypto';
+import { ConfigItem, OutputConfig } from './type';
 
-import apiService from "../../../lib/server";
-import { ConfigItem, OutputConfig } from "./type";
-// import { ClienteElementSchema } from "./schema";
-
-export async function getConfiguracionAprobacion() {
-  try {
-    const response = await apiService.get<ConfigItem[]>("/ConfiguracionAprobacion");
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener las configuraciones:", error);
-    return [];
-  }
+/**
+ * Obtener todas las configuraciones de aprobación
+ */
+export async function getConfiguracionAprobacion(): Promise<ConfigItem[]> {
+  const records = await prisma.configuracionAprobacion.findMany({
+    include: { Puesto: true },
+    orderBy: { nivel: 'asc' },
+  });
+  return records.map(r => ({
+    id: r.Id,
+    puesto_id: r.puesto_id ?? "",
+    descripcion: r.Descripcion,
+    tipo: r.Tipo as "Fijo" | "Dinamico",
+    nivel: r.nivel,
+    activo: r.Activo,
+  }));
 }
 
+/**
+ * Reemplaza todas las configuraciones de aprobación: elimina existentes y crea nuevas.
+ */
+export async function postConfiguracion(configs: OutputConfig[]): Promise<ConfigItem[]> {
+  // 1️⃣ Eliminar todas las configuraciones existentes
+  await prisma.configuracionAprobacion.deleteMany();
 
+  // 2️⃣ Preparar datos con IDs y metadata
+  const now = new Date();
+  const data = configs.map(c => ({
+    Id: randomUUID(),
+    puesto_id: c.tipo === 'Fijo' && c.puesto_id ? c.puesto_id : null,
+    Descripcion: c.descripcion,
+    Tipo: c.tipo,
+    nivel: c.nivel,
+    Activo: true,
+    Created_at: now,
+    Updated_at: now,
+    Adicionado_por: 'Sistema',
+    Modificado_por: 'Sistema',
+  }));
 
-// export async function putPuesto({ puesto }: { puesto: OutputConfig }) {
+  // 3️⃣ Crear nuevas configuraciones en bloque
+  await prisma.configuracionAprobacion.createMany({ data });
 
-//   try {
-
-//     const response = await apiService.put(`/Puesto/${puesto.}`, puesto);
-
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error al actualizar el puesto:", error);
-//     return [];
-//   }
-// }
-
-export async function getPuestoId(id: string) {
-  try {
-    const response = await apiService.get<OutputConfig>(`/Puesto/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error al obtener el puesto:", error);
-    return null;
-  }
+  // 4️⃣ Retornar la lista completa actualizada
+  return getConfiguracionAprobacion();
 }
-
-
-export async function postConfig({ config }: { config: OutputConfig[] }) {
-  try {
-    const response = await apiService.post("/ConfiguracionAprobacion", config);
-
-    return response.data;
-  } catch (error) {
-    console.error("Error al crear el puesto:", error);
-    throw error;
-  }
-}
-
