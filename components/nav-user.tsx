@@ -30,10 +30,8 @@ export function NavUser({
         Rol: string;
         IdRol: string;
         IdEmpleado: string;
+
         Permiso: string[];
-        exp: number;
-        iss: string;
-        aud: string;
 
     }
 }) {

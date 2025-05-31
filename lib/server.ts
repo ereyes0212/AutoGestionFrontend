@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getToken } from '@/auth';
+
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { redirect } from 'next/navigation';
 
@@ -23,14 +23,7 @@ class ApiService {
       this.axiosInstance.interceptors.request.use(
         async (config) => {
           try {
-            const token = await getToken();
-            if (token) {
-              config.headers.Authorization = `Bearer ${token}`;
-            } else {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/';
-              }
-            }
+
           } catch (error) {
             if (typeof window !== 'undefined') {
               window.location.href = '/';
