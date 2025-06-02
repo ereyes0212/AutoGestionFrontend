@@ -83,7 +83,7 @@ const items = [
     title: "Solicitudes",
     url: "/solicitudes",
     icon: Files,
-    permiso: "ver_usuarios",
+    permiso: "ver_solicitudes",
   },
 
   {
