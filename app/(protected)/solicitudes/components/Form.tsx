@@ -82,7 +82,7 @@ export function EmpleadoFormulario({
           : "El empleado ha sido creado.",
       });
 
-      router.push("/empleados"); // Redirige después de la acción
+      router.push("/solicitudes"); // Redirige después de la acción
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);

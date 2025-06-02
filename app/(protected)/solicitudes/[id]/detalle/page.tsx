@@ -10,11 +10,10 @@ export default async function Detalle({ params }: { params: { id: string } }) {
   // Verificar si hay una sesión activa
 
   const permisos = await getSessionPermisos();
-  if (!permisos?.includes("editar_empleado")) {
+  if (!permisos?.includes("ver_detalles_solicitudes")) {
     return <NoAcceso />;
   }
   const solicitud = await getSolicitudesById(params.id);
-  console.log("🚀 ~ Detalle ~ solicitud:", solicitud)
 
   return (
     <div>

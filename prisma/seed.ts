@@ -25,6 +25,7 @@ async function main() {
     { nombre: "editar_empleado", descripcion: "Permiso para editar los empleados" },
     // Solicitudes
     { nombre: "ver_solicitudes", descripcion: "Permiso para ver las solicitudes" },
+    { nombre: "ver_detalles_solicitudes", descripcion: "Permiso para ver las detalles de solicitudes" },
     { nombre: "crear_solicitudes", descripcion: "Permiso para crear las solicitudes" },
     // { nombre: "editar_empleado", descripcion: "Permiso para editar los empleados" },
     // Permisos
