@@ -13,7 +13,6 @@ export default async function Puestos() {
 
 
   const data = await getPuestos();
-  console.log(data)
   if (!permisos?.includes("ver_puestos")) {
     return <NoAcceso />;
   }

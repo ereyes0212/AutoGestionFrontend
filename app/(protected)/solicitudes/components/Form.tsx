@@ -49,9 +49,29 @@ export function EmpleadoFormulario({
 
     try {
       if (isUpdate) {
-        await putSolicitud(solicitudData); // Llamada a la API para actualizar
+        await putSolicitud({
+          solicitud: {
+            ...solicitudData.solicitud,
+            fechaInicio: solicitudData.solicitud.fechaInicio.toISOString(),
+            fechaFin: solicitudData.solicitud.fechaFin.toISOString(),
+          },
+        }); // Llamada a la API para actualizar
       } else {
-        await postSolicitud({ Solicitud: solicitudData.solicitud }); // Llamada a la API para crear un nuevo empleado
+        // Validar que fechaInicio y fechaFin existen antes de enviar
+        if (!solicitudData.solicitud.fechaInicio || !solicitudData.solicitud.fechaFin) {
+          toast({
+            title: "Error",
+            description: "Debes seleccionar ambas fechas: inicio y fin.",
+          });
+          return;
+        }
+        await postSolicitud({
+          Solicitud: {
+            ...solicitudData.solicitud,
+            fechaInicio: solicitudData.solicitud.fechaInicio.toISOString(),
+            fechaFin: solicitudData.solicitud.fechaFin.toISOString(),
+          },
+        }); // Llamada a la API para crear un nuevo empleado
       }
 
       // Notificación de éxito

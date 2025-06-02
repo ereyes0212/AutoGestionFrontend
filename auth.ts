@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
@@ -154,6 +155,12 @@ const usuarioWithRolArgs = Prisma.validator<Prisma.UsuariosDefaultArgs>()({
                 },
             },
         },
+        Empleados: {
+            include: {
+                Puesto: true, // Incluimos el puesto del empleado
+            },
+        },
+
     },
 });
 
@@ -169,7 +176,20 @@ export async function getADAuthentication(
 ): Promise<string | null> {
     const user: UsuarioConRol | null = await prisma.usuarios.findFirst({
         where: { usuario: username },
-        include: usuarioWithRolArgs.include,
+        include: {
+            rol: {
+                include: {
+                    permisos: {
+                        include: { permiso: true },
+                    },
+                },
+            },
+            Empleados: {
+                include: {
+                    Puesto: true,
+                },
+            },
+        },
     });
 
     if (
@@ -181,6 +201,7 @@ export async function getADAuthentication(
 
     const permisos = user.rol.permisos.map(rp => rp.permiso.nombre);
 
+
     const payload: UsuarioSesion = {
         IdUser: user.id,
         User: user.usuario,
@@ -189,8 +210,8 @@ export async function getADAuthentication(
         IdEmpleado: user.empleado_id,
         Permiso: permisos,
         DebeCambiar: user.DebeCambiarPassword!,
-        Puesto: "",
-        PuestoId: "",
+        Puesto: user?.Empleados.Puesto.Nombre ?? "",
+        PuestoId: user.Empleados.puesto_id ?? "",
         exp: Math.floor(Date.now() / 1000) + 3600,
         iss: "your-issuer",
         aud: "your-audience",
@@ -198,6 +219,7 @@ export async function getADAuthentication(
 
     return encrypt(payload);
 }
+
 
 // ------------------------------------------------------------------
 // Cambio de contraseña con Prisma

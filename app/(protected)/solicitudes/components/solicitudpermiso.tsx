@@ -80,7 +80,7 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Puesto:</p>
-              <p>{solicitud.puestoId}</p>
+              <p>{solicitud.puesto}</p>
             </div>
           </div>
         </div>

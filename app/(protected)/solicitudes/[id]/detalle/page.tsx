@@ -14,6 +14,7 @@ export default async function Detalle({ params }: { params: { id: string } }) {
     return <NoAcceso />;
   }
   const solicitud = await getSolicitudesById(params.id);
+  console.log("🚀 ~ Detalle ~ solicitud:", solicitud)
 
   return (
     <div>

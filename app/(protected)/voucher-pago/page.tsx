@@ -2,7 +2,7 @@ import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { FileSpreadsheetIcon } from "lucide-react";
-import { getVoucherPagos } from "./actions";
+import { getVoucherPagosByEmpleado } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
 import PayrollListMobile from "./components/vouchers-list-mobile";
@@ -16,7 +16,7 @@ export default async function Empleados() {
     return <NoAcceso />;
   }
 
-  const data = await getVoucherPagos();
+  const data = await getVoucherPagosByEmpleado();
 
 
 
