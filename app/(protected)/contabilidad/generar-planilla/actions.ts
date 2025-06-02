@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { EmailService } from "@/lib/sendEmail";
+import { generateVoucherEmailHtml } from "@/lib/templates/voucherEmail";
 import { randomUUID } from "crypto";
 import { VoucherDto, VoucherTemplateResponse } from "./types";
 
@@ -52,7 +54,6 @@ export async function saveVouchers(vouchers: VoucherDto[]) {
         for (const v of vouchers) {
             const voucherId = randomUUID();
 
-            // 1. Crear el voucher principal
             await prisma.voucherPagos.create({
                 data: {
                     Id: voucherId,
@@ -66,16 +67,32 @@ export async function saveVouchers(vouchers: VoucherDto[]) {
                     created_at: new Date(),
                     DetalleVoucherPagos: {
                         createMany: {
-                            data: v.detalles.map(d => ({
+                            data: v.detalles.map((d) => ({
                                 Id: randomUUID(),
                                 TipoDeduccionId: d.tipoDeduccionId,
-                                Monto: d.monto,
+                                Monto: Number(d.monto),
                                 created_at: new Date(),
                             })),
                         },
                     },
                 },
             });
+
+            // Obtener correo del empleado (esto depende de tu modelo, aquí un ejemplo)
+            const empleado = await prisma.empleados.findUnique({
+                where: { id: v.empleadoId },
+                select: { correo: true },
+            });
+
+            if (empleado?.correo) {
+                const emailService = new EmailService();
+                await emailService.sendMail({
+                    to: empleado.correo,
+                    subject: "Tu recibo de pago",
+                    html: generateVoucherEmailHtml(v),
+                });
+            }
+
         }
     } catch (error) {
         console.error("Error al guardar los vouchers:", error);

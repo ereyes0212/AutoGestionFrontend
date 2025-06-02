@@ -11,7 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { getTemplate, saveVouchers } from "../actions";
@@ -25,6 +25,8 @@ import {
 type RowData = Record<string, string | number | null>;
 
 export function VoucherImporter() {
+
+    const router = useRouter();
     const { toast } = useToast();
     const [data, setData] = useState<RowData[]>([]);
     const [tipos, setTipos] = useState<TipoDeduccionTemplate[]>([]);
@@ -57,7 +59,8 @@ export function VoucherImporter() {
                 description: "Por favor, seleccione una fecha de pago.",
                 variant: "destructive",
             });
-            return;
+            router.push("/contabilidad"); // Redirige después de la acción
+            router.refresh();
         }
 
         try {
@@ -93,7 +96,8 @@ export function VoucherImporter() {
                 title: "Exito",
                 description: "Los vouchers se han guardado correctamente."
             });
-            redirect("/contabilidad/generar-planilla"); // Redirige a la página de generación de planilla
+            router.push("/contabilidad"); // Redirige después de la acción
+            router.refresh();  // Redirige a la página de generación de planilla
         } catch (error) {
             toast({
                 title: "Error",

@@ -110,8 +110,9 @@ export async function createEmpleado(data: Empleado): Promise<Empleado> {
  * Actualiza un empleado existente
  */
 export async function updateEmpleado(id: string, data: Partial<Empleado>): Promise<Empleado | null> {
+  console.log("🚀 ~ data:", data)
   const r = await prisma.empleados.update({
-    where: { id },
+    where: { id: id },
     data: {
       nombre: data.nombre,
       apellido: data.apellido,
@@ -121,7 +122,7 @@ export async function updateEmpleado(id: string, data: Partial<Empleado>): Promi
       genero: data.genero,
       activo: data.activo,
       puesto_id: data.puesto_id,
-      jefe_id: data.jefe_id,
+      jefe_id: data.jefe_id === '' ? null : data.jefe_id,
       updated_at: new Date(),
     },
   });

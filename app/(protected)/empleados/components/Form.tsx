@@ -67,6 +67,7 @@ export function EmpleadoFormulario({
       empleado: data,
     };
 
+    console.log("🚀 ~ onSubmit ~ empleadoData:", empleadoData)
 
     try {
       if (isUpdate) {
