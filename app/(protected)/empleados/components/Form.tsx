@@ -67,8 +67,6 @@ export function EmpleadoFormulario({
       empleado: data,
     };
 
-    console.log("🚀 ~ onSubmit ~ empleadoData:", empleadoData)
-
     try {
       if (isUpdate) {
         await updateEmpleado(empleadoData.id!, empleadoData.empleado); // Llamada a la API para actualizar
