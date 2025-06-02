@@ -8,8 +8,6 @@ CREATE TABLE `ConfiguracionAprobacion` (
     `Activo` BIT(1) NOT NULL,
     `Created_at` DATETIME(6) NULL,
     `Updated_at` DATETIME(6) NULL,
-    `Adicionado_por` VARCHAR(100) NULL,
-    `Modificado_por` VARCHAR(100) NULL,
 
     INDEX `IX_ConfiguracionAprobacion_puesto_id`(`puesto_id`),
     PRIMARY KEY (`Id`)
@@ -23,8 +21,6 @@ CREATE TABLE `DetalleVoucherPagos` (
     `Monto` DECIMAL(65, 30) NOT NULL,
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     INDEX `IX_DetalleVoucherPagos_TipoDeduccionId`(`TipoDeduccionId`),
     INDEX `IX_DetalleVoucherPagos_VoucherPagoId`(`VoucherPagoId`),
@@ -45,8 +41,6 @@ CREATE TABLE `Empleados` (
     `activo` BIT(1) NOT NULL,
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     INDEX `IX_Empleados_jefe_id`(`jefe_id`),
     INDEX `IX_Empleados_puesto_id`(`puesto_id`),
@@ -74,8 +68,6 @@ CREATE TABLE `Puesto` (
     `Activo` BIT(1) NOT NULL,
     `Created_at` DATETIME(6) NULL,
     `Updated_at` DATETIME(6) NULL,
-    `Adicionado_por` LONGTEXT NULL,
-    `Modificado_por` LONGTEXT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -93,8 +85,6 @@ CREATE TABLE `ReporteDiseño` (
     `Observacion` LONGTEXT NULL,
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     INDEX `IX_ReporteDiseño_EmpleadoId`(`EmpleadoId`),
     INDEX `IX_ReporteDiseño_SeccionId`(`SeccionId`),
@@ -172,8 +162,6 @@ CREATE TABLE `TipoDeducciones` (
     `Activo` BIT(1) NOT NULL,
     `Created_at` DATETIME(6) NULL,
     `Updated_at` DATETIME(6) NULL,
-    `Adicionado_por` LONGTEXT NULL,
-    `Modificado_por` LONGTEXT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -186,8 +174,6 @@ CREATE TABLE `TipoSeccion` (
     `Activo` BIT(1) NOT NULL,
     `Created_at` DATETIME(6) NULL,
     `Updated_at` DATETIME(6) NULL,
-    `Adicionado_por` LONGTEXT NULL,
-    `Modificado_por` LONGTEXT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -200,8 +186,6 @@ CREATE TABLE `TipoSolicitud` (
     `activo` BIT(1) NOT NULL,
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -217,8 +201,6 @@ CREATE TABLE `Usuarios` (
     `updated_at` DATETIME(6) NULL,
     `rol_id` VARCHAR(36) NOT NULL,
     `activo` BIT(1) NOT NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     UNIQUE INDEX `IX_Usuarios_empleado_id`(`empleado_id`),
     INDEX `IX_Usuarios_rol_id`(`rol_id`),
@@ -237,8 +219,6 @@ CREATE TABLE `VoucherPagos` (
     `Observaciones` LONGTEXT NOT NULL,
     `created_at` DATETIME(6) NULL,
     `updated_at` DATETIME(6) NULL,
-    `adicionado_por` LONGTEXT NULL,
-    `modificado_por` LONGTEXT NULL,
 
     INDEX `IX_VoucherPagos_EmpleadoId`(`EmpleadoId`),
     PRIMARY KEY (`Id`)

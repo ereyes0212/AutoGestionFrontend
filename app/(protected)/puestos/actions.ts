@@ -59,7 +59,6 @@ export async function createPuesto(data: Puesto): Promise<Puesto> {
       Nombre: data.nombre,
       Descripcion: data.descripcion,
       Activo: data.activo ?? true,
-      Adicionado_por: 'Sistema',
       Created_at: new Date(),
     },
   });
@@ -81,7 +80,6 @@ export async function updatePuesto(id: string, data: Partial<Puesto>): Promise<P
       Nombre: data.nombre,
       Descripcion: data.descripcion,
       Activo: data.activo,
-      Modificado_por: 'Sistema',
       Updated_at: new Date(),
     },
   });

@@ -63,7 +63,6 @@ export async function saveVouchers(vouchers: VoucherDto[]) {
                     NetoPagar: v.netoPagar,
                     FechaPago: new Date(v.fechaPago),
                     Observaciones: v.observaciones,
-                    adicionado_por: "Sistema",
                     created_at: new Date(),
                     DetalleVoucherPagos: {
                         createMany: {
@@ -71,7 +70,6 @@ export async function saveVouchers(vouchers: VoucherDto[]) {
                                 Id: randomUUID(),
                                 TipoDeduccionId: d.tipoDeduccionId,
                                 Monto: d.monto,
-                                Adicionado_por: "Sistema",
                                 Created_at: new Date(),
                             })),
                         },

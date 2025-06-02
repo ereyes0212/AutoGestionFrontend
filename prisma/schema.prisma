@@ -17,8 +17,6 @@ model ConfiguracionAprobacion {
   Activo                      Boolean                       @db.Bit(1)
   Created_at                  DateTime?                     @db.DateTime(6)
   Updated_at                  DateTime?                     @db.DateTime(6)
-  Adicionado_por              String?                       @db.VarChar(100)
-  Modificado_por              String?                       @db.VarChar(100)
   Puesto                      Puesto?                       @relation(fields: [puesto_id], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ConfiguracionAprobacion_Puesto_puesto_id")
   SolicitudVacacionAprobacion SolicitudVacacionAprobacion[]
 
@@ -32,8 +30,6 @@ model DetalleVoucherPagos {
   Monto           Decimal
   created_at      DateTime?       @db.DateTime(6)
   updated_at      DateTime?       @db.DateTime(6)
-  adicionado_por  String?         @db.LongText
-  modificado_por  String?         @db.LongText
   TipoDeducciones TipoDeducciones @relation(fields: [TipoDeduccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucherPagos_TipoDeducciones_TipoDeduccionId")
   VoucherPagos    VoucherPagos    @relation(fields: [VoucherPagoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucherPagos_VoucherPagos_VoucherPagoId")
 
@@ -54,8 +50,6 @@ model Empleados {
   activo                      Boolean                       @db.Bit(1)
   created_at                  DateTime?                     @db.DateTime(6)
   updated_at                  DateTime?                     @db.DateTime(6)
-  adicionado_por              String?                       @db.LongText
-  modificado_por              String?                       @db.LongText
   Empleados                   Empleados?                    @relation("EmpleadosToEmpleados", fields: [jefe_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Empleados_Empleados_jefe_id")
   other_Empleados             Empleados[]                   @relation("EmpleadosToEmpleados")
   Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Empleados_Puesto_puesto_id")
@@ -86,29 +80,25 @@ model Puesto {
   Activo                  Boolean                   @db.Bit(1)
   Created_at              DateTime?                 @db.DateTime(6)
   Updated_at              DateTime?                 @db.DateTime(6)
-  Adicionado_por          String?                   @db.LongText
-  Modificado_por          String?                   @db.LongText
   ConfiguracionAprobacion ConfiguracionAprobacion[]
   Empleados               Empleados[]
   SolicitudVacacion       SolicitudVacacion[]
 }
 
 model ReporteDise_o {
-  Id             String      @id @db.VarChar(36)
-  EmpleadoId     String      @db.VarChar(36)
-  SeccionId      String      @db.VarChar(36)
-  FechaRegistro  DateTime    @db.DateTime(6)
-  PaginaInicio   Int
-  PaginaFin      Int
-  HoraInicio     DateTime    @db.Time(6)
-  HoraFin        DateTime    @db.Time(6)
-  Observacion    String?     @db.LongText
-  created_at     DateTime?   @db.DateTime(6)
-  updated_at     DateTime?   @db.DateTime(6)
-  adicionado_por String?     @db.LongText
-  modificado_por String?     @db.LongText
-  Empleados      Empleados   @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_Empleados_EmpleadoId")
-  TipoSeccion    TipoSeccion @relation(fields: [SeccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_TipoSeccion_SeccionId")
+  Id            String      @id @db.VarChar(36)
+  EmpleadoId    String      @db.VarChar(36)
+  SeccionId     String      @db.VarChar(36)
+  FechaRegistro DateTime    @db.DateTime(6)
+  PaginaInicio  Int
+  PaginaFin     Int
+  HoraInicio    DateTime    @db.Time(6)
+  HoraFin       DateTime    @db.Time(6)
+  Observacion   String?     @db.LongText
+  created_at    DateTime?   @db.DateTime(6)
+  updated_at    DateTime?   @db.DateTime(6)
+  Empleados     Empleados   @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_Empleados_EmpleadoId")
+  TipoSeccion   TipoSeccion @relation(fields: [SeccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_TipoSeccion_SeccionId")
 
   @@index([EmpleadoId], map: "IX_ReporteDiseño_EmpleadoId")
   @@index([SeccionId], map: "IX_ReporteDiseño_SeccionId")
@@ -186,32 +176,26 @@ model TipoDeducciones {
   Activo              Boolean               @db.Bit(1)
   Created_at          DateTime?             @db.DateTime(6)
   Updated_at          DateTime?             @db.DateTime(6)
-  Adicionado_por      String?               @db.LongText
-  Modificado_por      String?               @db.LongText
   DetalleVoucherPagos DetalleVoucherPagos[]
 }
 
 model TipoSeccion {
-  Id             String          @id @db.VarChar(36)
-  Nombre         String          @db.VarChar(100)
-  Descripcion    String          @db.VarChar(100)
-  Activo         Boolean         @db.Bit(1)
-  Created_at     DateTime?       @db.DateTime(6)
-  Updated_at     DateTime?       @db.DateTime(6)
-  Adicionado_por String?         @db.LongText
-  Modificado_por String?         @db.LongText
-  ReporteDise_o  ReporteDise_o[]
+  Id            String          @id @db.VarChar(36)
+  Nombre        String          @db.VarChar(100)
+  Descripcion   String          @db.VarChar(100)
+  Activo        Boolean         @db.Bit(1)
+  Created_at    DateTime?       @db.DateTime(6)
+  Updated_at    DateTime?       @db.DateTime(6)
+  ReporteDise_o ReporteDise_o[]
 }
 
 model TipoSolicitud {
-  Id             String    @id @db.VarChar(36)
-  Nombre         String    @db.VarChar(100)
-  Descripcion    String    @db.VarChar(100)
-  activo         Boolean   @db.Bit(1)
-  created_at     DateTime? @db.DateTime(6)
-  updated_at     DateTime? @db.DateTime(6)
-  adicionado_por String?   @db.LongText
-  modificado_por String?   @db.LongText
+  Id          String    @id @db.VarChar(36)
+  Nombre      String    @db.VarChar(100)
+  Descripcion String    @db.VarChar(100)
+  activo      Boolean   @db.Bit(1)
+  created_at  DateTime? @db.DateTime(6)
+  updated_at  DateTime? @db.DateTime(6)
 }
 
 model Usuarios {
@@ -224,8 +208,6 @@ model Usuarios {
   updated_at          DateTime? @db.DateTime(6)
   rol_id              String    @db.VarChar(36)
   activo              Boolean   @db.Bit(1)
-  adicionado_por      String?   @db.LongText
-  modificado_por      String?   @db.LongText
   Empleados           Empleados @relation(fields: [empleado_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Usuarios_Empleados_empleado_id")
   rol                 Rol       @relation(fields: [rol_id], references: [id])
 
@@ -243,8 +225,6 @@ model VoucherPagos {
   Observaciones       String                @db.LongText
   created_at          DateTime?             @db.DateTime(6)
   updated_at          DateTime?             @db.DateTime(6)
-  adicionado_por      String?               @db.LongText
-  modificado_por      String?               @db.LongText
   DetalleVoucherPagos DetalleVoucherPagos[]
   Empleados           Empleados             @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_VoucherPagos_Empleados_EmpleadoId")
 

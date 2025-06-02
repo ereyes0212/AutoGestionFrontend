@@ -40,8 +40,6 @@ export async function postConfiguracion(configs: OutputConfig[]): Promise<Config
     Activo: true,
     Created_at: now,
     Updated_at: now,
-    Adicionado_por: 'Sistema',
-    Modificado_por: 'Sistema',
   }));
 
   // 3️⃣ Crear nuevas configuraciones en bloque

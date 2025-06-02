@@ -40,9 +40,7 @@ export async function createUsuario(data: UsuarioCreate): Promise<Usuario> {
       contrasena: await bcrypt.hash('pass.1234', 10),
       activo: true,
       DebeCambiarPassword: true,
-      adicionado_por: 'Sistema',
       created_at: new Date(),
-      modificado_por: 'Sistema',
       updated_at: new Date(),
     },
   });
@@ -68,7 +66,6 @@ export async function updateUsuario(data: UsuarioUpdate): Promise<Usuario> {
       rol_id: data.rol_id,
       empleado_id: data.empleado_id,
       activo: data.activo,
-      modificado_por: 'Sistema',
       updated_at: new Date(),
     },
   });

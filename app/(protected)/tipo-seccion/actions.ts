@@ -64,7 +64,6 @@ export async function postTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
       Nombre: data.nombre,
       Descripcion: data.descripcion,
       Activo: data.activo ?? true,
-      Adicionado_por: 'Sistema',
       Created_at: new Date(),
     },
   });
@@ -86,7 +85,6 @@ export async function putTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
       Nombre: data.nombre,
       Descripcion: data.descripcion,
       Activo: data.activo,
-      Modificado_por: 'Sistema',
       Updated_at: new Date(),
     },
   });
