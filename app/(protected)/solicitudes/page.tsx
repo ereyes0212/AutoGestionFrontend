@@ -13,7 +13,7 @@ export default async function Empleados() {
   const permisos = await getSessionPermisos();
   const data = await getSolicitudesByEmpleado();
 
-  if (!permisos?.includes("ver_empleados")) {
+  if (!permisos?.includes("ver_solicitudes")) {
     return <NoAcceso />;
   }
 

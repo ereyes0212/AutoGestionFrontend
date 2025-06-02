@@ -15,7 +15,7 @@ export default async function Create() {
   }
 
   // Verifica permisos para crear empleados
-  if (!permisos?.includes("crear_empleados")) {
+  if (!permisos?.includes("crear_solicitudes")) {
     return <NoAcceso />;
   }
 
