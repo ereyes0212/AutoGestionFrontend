@@ -70,7 +70,7 @@ export async function saveVouchers(vouchers: VoucherDto[]) {
                                 Id: randomUUID(),
                                 TipoDeduccionId: d.tipoDeduccionId,
                                 Monto: d.monto,
-                                Created_at: new Date(),
+                                created_at: new Date(),
                             })),
                         },
                     },
