@@ -11,6 +11,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { getTemplate, saveVouchers } from "../actions";
@@ -92,6 +93,7 @@ export function VoucherImporter() {
                 title: "Exito",
                 description: "Los vouchers se han guardado correctamente."
             });
+            redirect("/contabilidad/generar-planilla"); // Redirige a la página de generación de planilla
         } catch (error) {
             toast({
                 title: "Error",

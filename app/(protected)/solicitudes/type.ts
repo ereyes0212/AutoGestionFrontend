@@ -33,12 +33,12 @@ export type SolicitudAprobacion = {
   id: string;
   idSolicitud: string;
   nivel: number;
-  aprobado: null;
-  comentario: null;
-  fechaAprobacion: null;
-  empleadoId: string | null;
+  aprobado: string;
+  comentario: null | string;
+  fechaAprobacion: string;
+  empleadoId: string;
   nombreEmpleado: string;
-  puestoId: string | null;
+  puestoId: string;
   puesto: string;
   fechaSolicitud: string;
   fechaInicio: string;

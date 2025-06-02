@@ -22,6 +22,7 @@ const formatearFecha = (fecha: string) => {
 }
 
 export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: SolicitudAprobacion[] }) {
+    console.log("🚀 ~ SolicitudAprobaciones ~ solicitudes:", solicitudes)
 
     const { toast } = useToast();
     const router = useRouter();
@@ -33,9 +34,9 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                         <div className="flex justify-between items-center w-full">
                             <span>Solicitud de Permiso - {solicitud.nombreEmpleado || "No especificado"}</span>
                             <div>
-                                {solicitud.aprobado === true ? (
+                                {solicitud.aprobado === "Aprobado" ? (
                                     <Badge className="bg-green-500 hover:bg-green-600">Aprobado</Badge>
-                                ) : solicitud.aprobado === false ? (
+                                ) : solicitud.aprobado === "Rechazado" ? (
                                     <Badge variant="destructive">Rechazado</Badge>
                                 ) : (
                                     <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
@@ -113,9 +114,9 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                         <div>
                                             <p className="text-xs font-medium text-gray-500">Estado de Aprobación:</p>
                                             <div className="mt-1">
-                                                {solicitud.aprobado === true ? (
+                                                {solicitud.aprobado === "Aprobado" ? (
                                                     <Badge className="bg-green-500 hover:bg-green-600">Aprobado el {formatearFecha(solicitud.fechaAprobacion || "")}</Badge>
-                                                ) : solicitud.aprobado === false ? (
+                                                ) : solicitud.aprobado === "Rechazado" ? (
                                                     <Badge variant="destructive">Rechazado</Badge>
                                                 ) : (
                                                     <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">

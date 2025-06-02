@@ -128,9 +128,9 @@ export async function getSolicitudesAprobaciones(): Promise<SolicitudAprobacion[
       id: r.Id,
       idSolicitud: r.SolicitudVacacionId,
       nivel: r.Nivel,
-      aprobado: null,
+      aprobado: r.Estado,
       comentario: null,
-      fechaAprobacion: null,
+      fechaAprobacion: "",
       empleadoId: r.EmpleadoAprobadorId ?? "",
       nombreEmpleado: r.Empleados
         ? `${r.Empleados.nombre} ${r.Empleados.apellido}`
@@ -189,15 +189,15 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
       id: r.Id,
       idSolicitud: r.SolicitudVacacionId,
       nivel: r.Nivel,
-      aprobado: null,
-      comentario: null,
-      fechaAprobacion: null,
-      empleadoId: r.EmpleadoAprobadorId,
+      aprobado: r.Estado,
+      comentario: r.Comentarios,
+      fechaAprobacion: r.FechaDecision ? r.FechaDecision.toISOString() : "",
+      empleadoId: r.EmpleadoAprobadorId ?? "",
       nombreEmpleado: r.Empleados
         ? `${r.Empleados.nombre} ${r.Empleados.apellido}`
         : "",
-      puestoId: r.ConfiguracionAprobacion.puesto_id,
-      puesto: r.ConfiguracionAprobacion.Puesto?.Nombre ?? "",
+      puestoId: r.ConfiguracionAprobacion.puesto_id ?? "",
+      puesto: r.ConfiguracionAprobacion.Puesto?.Nombre ?? r.ConfiguracionAprobacion.Descripcion,
       fechaSolicitud: fechaSolicitudStr,
       fechaInicio: fechaInicioStr,
       fechaFin: fechaFinStr,
