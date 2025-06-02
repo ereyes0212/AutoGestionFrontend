@@ -10,6 +10,6 @@
     "@typescript-eslint/no-empty-object-type": "off"
   },
   "ignorePatterns": [
-    "app/generated/prisma/*" // Ignora los archivos generados por Prisma
+    "lib/generated/prisma/*" // Ignora los archivos generados por Prisma
   ]
 }
