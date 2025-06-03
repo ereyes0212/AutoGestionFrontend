@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Pencil, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { TipoDeduccion } from "../types";
+import { AjusteTipo } from "../types";
 
 interface TipoDeduccionListProps {
-  tipoDeduccion: TipoDeduccion[];
+  tipoDeduccion: AjusteTipo[];
 }
 
 export default function TipoDeduccionesListMobile({ tipoDeduccion: tipoDeduccion }: TipoDeduccionListProps) {
@@ -47,6 +47,9 @@ export default function TipoDeduccionesListMobile({ tipoDeduccion: tipoDeduccion
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold truncate">
               {tipoDeduccion.nombre}
+            </h3>
+            <h3 className="text-base font-semibold truncate">
+              {tipoDeduccion.categoria}
             </h3>
             <p className="text-sm text-gray-500 truncate">
               {tipoDeduccion.descripcion}
