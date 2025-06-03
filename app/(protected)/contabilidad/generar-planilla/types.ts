@@ -36,5 +36,6 @@ export interface VoucherDto {
     salarioMensual: number
     netoPagar: number
     observaciones: string
+    empleadoNombre: string
     detalles: DetalleVoucherDto[]
 }

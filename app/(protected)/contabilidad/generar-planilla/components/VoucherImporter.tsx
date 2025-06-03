@@ -6,7 +6,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -14,7 +19,6 @@ import { CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
-import { getTemplate, saveVouchers } from "../actions";
 import {
     DetalleVoucherDto,
     TipoDeduccionTemplate,
@@ -22,22 +26,35 @@ import {
     VoucherTemplateResponse,
 } from "../types";
 
+// Importamos las acciones del servidor
+import { getTemplate, saveVouchers, sendVoucherEmails } from "../actions";
+
 type RowData = Record<string, string | number | null>;
 
 export function VoucherImporter() {
-
     const router = useRouter();
     const { toast } = useToast();
+
+    // Estados para archivos + template
     const [data, setData] = useState<RowData[]>([]);
     const [tipos, setTipos] = useState<TipoDeduccionTemplate[]>([]);
     const [fechaPago, setFechaPago] = useState<string>("");
 
+    // IDs de vouchers recién guardados
+    const [voucherIds, setVoucherIds] = useState<string[]>([]);
+
+    // Estados de carga para botones
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [isSending, setIsSending] = useState<boolean>(false);
+
+    // Cargar el template (tipos de deducción) al iniciar
     useEffect(() => {
         getTemplate().then((json: VoucherTemplateResponse) => {
             setTipos(json.tiposDeducciones);
         });
     }, []);
 
+    // Manejar selección de archivo Excel
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -52,6 +69,7 @@ export function VoucherImporter() {
         reader.readAsBinaryString(file);
     };
 
+    // Acción: Guardar vouchers (solo guarda, no envía emails)
     const handleSave = async () => {
         if (!fechaPago) {
             toast({
@@ -59,13 +77,15 @@ export function VoucherImporter() {
                 description: "Por favor, seleccione una fecha de pago.",
                 variant: "destructive",
             });
-            router.push("/contabilidad"); // Redirige después de la acción
-            router.refresh();
+            return;
         }
 
+        setIsSaving(true);
         try {
+            // Mapear filas a VoucherDto
             const vouchers: VoucherDto[] = data.map((row) => {
                 const v: VoucherDto = {
+                    empleadoNombre: (row["NombreCompleto"] as string) || "",
                     empleadoId: row["EmpleadoId"] as string,
                     fechaPago,
                     diasTrabajados: Number(row["DiasTrabajados"] || 0),
@@ -76,6 +96,7 @@ export function VoucherImporter() {
                     detalles: [],
                 };
 
+                // Agregar cada deducción
                 tipos.forEach((t) => {
                     const monto = Number(row[t.nombre] || 0);
                     if (monto > 0) {
@@ -91,23 +112,72 @@ export function VoucherImporter() {
                 return v;
             });
 
-            await saveVouchers(vouchers);
+            // Llamamos a la acción saveVouchers, que retorna los IDs
+            const createdIds = await saveVouchers(vouchers);
+            setVoucherIds(createdIds);
+
             toast({
-                title: "Exito",
-                description: "Los vouchers se han guardado correctamente."
+                title: "Éxito",
+                description: "Los vouchers se han guardado correctamente.",
             });
-            router.push("/contabilidad"); // Redirige después de la acción
-            router.refresh();  // Redirige a la página de generación de planilla
+
+            // NO redirigimos automáticamente: permitimos al usuario hacer clic en "Enviar Emails"
+            // router.push("/contabilidad");
+            // router.refresh();
         } catch (error) {
+            console.error(error);
             toast({
                 title: "Error",
                 variant: "destructive",
                 description: "No se pudieron guardar los vouchers.",
             });
-            console.error(error);
+        } finally {
+            setIsSaving(false);
         }
     };
 
+    // Acción: Enviar correos para los IDs que se guardaron
+    const handleSendEmails = async () => {
+        if (voucherIds.length === 0) {
+            toast({
+                title: "Nada para enviar",
+                description: "No hay vouchers guardados para enviar correo.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsSending(true);
+        try {
+            const { sent, failed } = await sendVoucherEmails(voucherIds);
+
+            if (sent.length > 0) {
+                toast({
+                    title: "Emails enviados",
+                    description: `Se enviaron los correos de los vouchers: ${sent.join(", ")}`,
+                });
+            }
+
+            if (failed.length > 0) {
+                toast({
+                    title: "Algunos fallaron",
+                    variant: "destructive",
+                    description: `No se enviaron los correos de: ${failed.join(", ")}`,
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error general",
+                variant: "destructive",
+                description: "Ocurrió un error al intentar enviar los correos.",
+            });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    // Columnas de la tabla (nombres de propiedades del XLSX)
     const columns = data[0] ? Object.keys(data[0]) : [];
 
     return (
@@ -130,14 +200,38 @@ export function VoucherImporter() {
                         <Calendar
                             mode="single"
                             selected={fechaPago ? new Date(fechaPago) : undefined}
-                            onSelect={(date) => setFechaPago(date ? date.toISOString().split("T")[0] : "")}
+                            onSelect={(date) =>
+                                setFechaPago(date ? date.toISOString().split("T")[0] : "")
+                            }
                             initialFocus
                         />
                     </PopoverContent>
                 </Popover>
-                <Input type="file" accept=".xlsx, .xls" onChange={handleFile} className="w-full sm:w-auto" />
-                <Button onClick={handleSave} className="w-full sm:w-auto">
-                    Guardar Vouchers
+
+                <Input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFile}
+                    className="w-full sm:w-auto"
+                />
+
+                {/* Botón Guardar Vouchers */}
+                <Button
+                    onClick={handleSave}
+                    className="w-full sm:w-auto"
+                    disabled={isSaving || data.length === 0}
+                >
+                    {isSaving ? "Guardando..." : "Guardar Vouchers"}
+                </Button>
+
+                {/* Botón Enviar Emails */}
+                <Button
+                    onClick={handleSendEmails}
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                    disabled={isSending || voucherIds.length === 0}
+                >
+                    {isSending ? "Enviando correos..." : "Enviar Emails"}
                 </Button>
             </div>
 
