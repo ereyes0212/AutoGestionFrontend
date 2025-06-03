@@ -15,8 +15,8 @@ model ConfiguracionAprobacion {
   Tipo                        String                        @db.VarChar(50)
   nivel                       Int
   Activo                      Boolean                       @db.Bit(1)
-  Created_at                  DateTime?                     @db.DateTime(6)
-  Updated_at                  DateTime?                     @db.DateTime(6)
+  createAt                    DateTime                      @default(now())
+  updateAt                    DateTime                      @updatedAt
   Puesto                      Puesto?                       @relation(fields: [puesto_id], references: [Id], onDelete: NoAction, onUpdate: NoAction, map: "FK_ConfiguracionAprobacion_Puesto_puesto_id")
   SolicitudVacacionAprobacion SolicitudVacacionAprobacion[]
 
@@ -24,17 +24,19 @@ model ConfiguracionAprobacion {
 }
 
 model DetalleVoucherPagos {
-  Id              String          @id @db.VarChar(36)
-  VoucherPagoId   String          @db.VarChar(36)
-  TipoDeduccionId String          @db.VarChar(36)
-  Monto           Decimal
-  created_at      DateTime?       @db.DateTime(6)
-  updated_at      DateTime?       @db.DateTime(6)
-  TipoDeducciones TipoDeducciones @relation(fields: [TipoDeduccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucherPagos_TipoDeducciones_TipoDeduccionId")
-  VoucherPagos    VoucherPagos    @relation(fields: [VoucherPagoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucherPagos_VoucherPagos_VoucherPagoId")
+  id            String   @id @db.VarChar(36)
+  voucherPagoId String   @db.VarChar(36)
+  ajusteTipoId  String   @db.VarChar(36) // Antes era TipoDeduccionId
+  monto         Decimal  @db.Decimal(10, 2) // Monto efectivo para este voucher (puede venir de montoPorDefecto o override)
+  createAt      DateTime @default(now())
+  updateAt      DateTime @updatedAt
 
-  @@index([TipoDeduccionId], map: "IX_DetalleVoucherPagos_TipoDeduccionId")
-  @@index([VoucherPagoId], map: "IX_DetalleVoucherPagos_VoucherPagoId")
+  // Relaciones
+  AjusteTipo   AjusteTipo   @relation(fields: [ajusteTipoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucher_AjusteTipo")
+  VoucherPagos VoucherPagos @relation(fields: [voucherPagoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_DetalleVoucher_VoucherPagos")
+
+  @@index([ajusteTipoId], map: "IX_DetalleVoucher_AjusteTipoId")
+  @@index([voucherPagoId], map: "IX_DetalleVoucher_VoucherPagoId")
 }
 
 model Empleados {
@@ -48,8 +50,8 @@ model Empleados {
   Vacaciones                  Int
   genero                      String                        @db.LongText
   activo                      Boolean                       @db.Bit(1)
-  created_at                  DateTime?                     @db.DateTime(6)
-  updated_at                  DateTime?                     @db.DateTime(6)
+  createAt                    DateTime                      @default(now())
+  updateAt                    DateTime                      @updatedAt
   Empleados                   Empleados?                    @relation("EmpleadosToEmpleados", fields: [jefe_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Empleados_Empleados_jefe_id")
   other_Empleados             Empleados[]                   @relation("EmpleadosToEmpleados")
   Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Empleados_Puesto_puesto_id")
@@ -78,8 +80,8 @@ model Puesto {
   Nombre                  String                    @db.VarChar(100)
   Descripcion             String                    @db.VarChar(100)
   Activo                  Boolean                   @db.Bit(1)
-  Created_at              DateTime?                 @db.DateTime(6)
-  Updated_at              DateTime?                 @db.DateTime(6)
+  createAt                DateTime                  @default(now())
+  updateAt                DateTime                  @updatedAt
   ConfiguracionAprobacion ConfiguracionAprobacion[]
   Empleados               Empleados[]
   SolicitudVacacion       SolicitudVacacion[]
@@ -95,8 +97,8 @@ model ReporteDise_o {
   HoraInicio    DateTime    @db.Time(6)
   HoraFin       DateTime    @db.Time(6)
   Observacion   String?     @db.LongText
-  created_at    DateTime?   @db.DateTime(6)
-  updated_at    DateTime?   @db.DateTime(6)
+  createAt      DateTime    @default(now())
+  updateAt      DateTime    @updatedAt
   Empleados     Empleados   @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_Empleados_EmpleadoId")
   TipoSeccion   TipoSeccion @relation(fields: [SeccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_TipoSeccion_SeccionId")
 
@@ -138,8 +140,8 @@ model SolicitudVacacion {
   FechaFin                    DateTime                      @db.DateTime(6)
   Aprobado                    Boolean?
   Descripcion                 String                        @db.VarChar(250)
-  CreatedAt                   DateTime                      @db.DateTime(6)
-  UpdatedAt                   DateTime?                     @db.DateTime(6)
+  createAt                    DateTime                      @default(now())
+  updateAt                    DateTime                      @updatedAt
   Empleados                   Empleados                     @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SolicitudVacacion_Empleados_EmpleadoId")
   Puesto                      Puesto                        @relation(fields: [PuestoId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SolicitudVacacion_Puesto_PuestoId")
   SolicitudVacacionAprobacion SolicitudVacacionAprobacion[]
@@ -156,10 +158,10 @@ model SolicitudVacacionAprobacion {
   Nivel                     Int
   Descripcion               String                  @db.LongText
   Estado                    String                  @db.VarChar(50)
-  CreatedAt                 DateTime                @db.DateTime(6)
+  createAt                  DateTime                @default(now())
+  updateAt                  DateTime                @updatedAt
   FechaDecision             DateTime?               @db.DateTime(6)
   Comentarios               String?                 @db.LongText
-  UpdatedAt                 DateTime?               @db.DateTime(6)
   ConfiguracionAprobacion   ConfiguracionAprobacion @relation(fields: [ConfiguracionAprobacionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SolicitudVacacionAprobacion_ConfiguracionAprobacion_Configur~")
   Empleados                 Empleados?              @relation(fields: [EmpleadoAprobadorId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_SolicitudVacacionAprobacion_Empleados_EmpleadoAprobadorId")
   SolicitudVacacion         SolicitudVacacion       @relation(fields: [SolicitudVacacionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SolicitudVacacionAprobacion_SolicitudVacacion_SolicitudVacac~")
@@ -169,14 +171,20 @@ model SolicitudVacacionAprobacion {
   @@index([SolicitudVacacionId], map: "IX_SolicitudVacacionAprobacion_SolicitudVacacionId")
 }
 
-model TipoDeducciones {
-  Id                  String                @id @db.VarChar(36)
-  Nombre              String                @db.VarChar(100)
-  Descripcion         String                @db.VarChar(100)
-  Activo              Boolean               @db.Bit(1)
-  Created_at          DateTime?             @db.DateTime(6)
-  Updated_at          DateTime?             @db.DateTime(6)
+model AjusteTipo {
+  id              String          @id @db.VarChar(36)
+  nombre          String          @db.VarChar(100)
+  descripcion     String?         @db.VarChar(100)
+  categoria       AjusteCategoria
+  montoPorDefecto Decimal         @db.Decimal(10, 2)
+  activo          Boolean         @db.Bit(1) // Si está disponible o no
+  createAt        DateTime        @default(now())
+  updateAt        DateTime        @updatedAt
+
+  // Relación con detalles de voucher
   DetalleVoucherPagos DetalleVoucherPagos[]
+
+  @@map("TipoDeducciones") // Para conservar el nombre de tabla en la BD si lo deseas
 }
 
 model TipoSeccion {
@@ -184,18 +192,18 @@ model TipoSeccion {
   Nombre        String          @db.VarChar(100)
   Descripcion   String          @db.VarChar(100)
   Activo        Boolean         @db.Bit(1)
-  Created_at    DateTime?       @db.DateTime(6)
-  Updated_at    DateTime?       @db.DateTime(6)
+  CreateAt      DateTime        @default(now())
+  UpdateAt      DateTime        @updatedAt
   ReporteDise_o ReporteDise_o[]
 }
 
 model TipoSolicitud {
-  Id          String    @id @db.VarChar(36)
-  Nombre      String    @db.VarChar(100)
-  Descripcion String    @db.VarChar(100)
-  activo      Boolean   @db.Bit(1)
-  created_at  DateTime? @db.DateTime(6)
-  updated_at  DateTime? @db.DateTime(6)
+  Id          String   @id @db.VarChar(36)
+  Nombre      String   @db.VarChar(100)
+  Descripcion String   @db.VarChar(100)
+  activo      Boolean  @db.Bit(1)
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
 }
 
 model Usuarios {
@@ -204,8 +212,8 @@ model Usuarios {
   usuario             String    @db.VarChar(50)
   contrasena          String    @db.LongText
   DebeCambiarPassword Boolean?
-  created_at          DateTime? @db.DateTime(6)
-  updated_at          DateTime? @db.DateTime(6)
+  createAt            DateTime  @default(now())
+  updateAt            DateTime  @updatedAt
   rol_id              String    @db.VarChar(36)
   activo              Boolean   @db.Bit(1)
   Empleados           Empleados @relation(fields: [empleado_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Usuarios_Empleados_empleado_id")
@@ -214,19 +222,26 @@ model Usuarios {
   @@index([rol_id], map: "IX_Usuarios_rol_id")
 }
 
-model VoucherPagos {
-  Id                  String                @id @db.VarChar(36)
-  EmpleadoId          String                @db.VarChar(36)
-  FechaPago           DateTime              @db.DateTime(6)
-  DiasTrabajados      Int
-  SalarioDiario       Decimal
-  SalarioMensual      Decimal
-  NetoPagar           Decimal
-  Observaciones       String                @db.LongText
-  created_at          DateTime?             @db.DateTime(6)
-  updated_at          DateTime?             @db.DateTime(6)
-  DetalleVoucherPagos DetalleVoucherPagos[]
-  Empleados           Empleados             @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_VoucherPagos_Empleados_EmpleadoId")
+enum AjusteCategoria {
+  DEDUCCION
+  BONO
+}
 
-  @@index([EmpleadoId], map: "IX_VoucherPagos_EmpleadoId")
+model VoucherPagos {
+  id             String   @id @db.VarChar(36)
+  empleadoId     String   @db.VarChar(36)
+  fechaPago      DateTime @db.DateTime(6)
+  diasTrabajados Int
+  salarioDiario  Decimal  @db.Decimal(10, 2)
+  salarioMensual Decimal  @db.Decimal(10, 2)
+  netoPagar      Decimal  @db.Decimal(10, 2)
+  observaciones  String   @db.LongText
+  createAt       DateTime @default(now())
+  updateAt       DateTime @updatedAt
+
+  // Relaciones
+  DetalleVoucherPagos DetalleVoucherPagos[]
+  Empleados           Empleados             @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_VoucherPagos_Empleados")
+
+  @@index([empleadoId], map: "IX_VoucherPagos_EmpleadoId")
 }

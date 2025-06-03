@@ -13,7 +13,11 @@ import {
     Clock,
     CreditCard,
     DollarSign,
+    Minus,
     PieChart,
+    Plus,
+    TrendingDown,
+    TrendingUp,
     User,
     XCircle,
 } from "lucide-react"
@@ -26,7 +30,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { RegistroPago } from "../type"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RegistroPago } from "../type"
+
 
 interface PayrollCardProps {
     registro: RegistroPago
@@ -43,10 +49,17 @@ export function PayrollCard({ registro }: PayrollCardProps) {
 
     const formatDate = (dateString: string) => format(new Date(dateString), "dd 'de' MMMM, yyyy", { locale: es })
 
+    // Separar deducciones y bonos
+    const deducciones = registro.detalles.filter((d) => d.categoria === "DEDUCCION")
+    const bonos = registro.detalles.filter((d) => d.categoria === "BONO")
+
+    // Calcular totales
+    const totalDeducciones = deducciones.reduce((sum, d) => sum + d.monto, 0)
+    const totalBonos = bonos.reduce((sum, b) => sum + b.monto, 0)
+
     // Calcular salario quincenal y porcentaje sobre quincena
     const salarioQuincenal = registro.salarioMensual / 2
     const porcentajeNeto = (registro.netoPagar / salarioQuincenal) * 100
-    const totalDeducciones = registro.detalles.reduce((sum, d) => sum + d.monto, 0)
 
     const getInitials = (name: string) =>
         name
@@ -143,20 +156,69 @@ export function PayrollCard({ registro }: PayrollCardProps) {
                     </div>
                 </div>
 
-                <div className="space-y-3 bg-muted/10 p-3 sm:p-4 rounded-lg">
+                {/* Resumen mejorado con bonos y deducciones */}
+                <div className="space-y-4 bg-muted/10 p-3 sm:p-4 rounded-lg">
                     <h3 className="text-xs sm:text-sm font-medium mb-2">Resumen de Pago</h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="bg-primary/10 p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Plus className="h-3.5 w-3.5 text-green-600" />
+                                <span className="text-xs font-medium text-muted-foreground">Bonos</span>
+                            </div>
+                            <span className="text-sm font-semibold ">
+                                {totalBonos > 0 ? formatCurrency(totalBonos) : "Sin bonos"}
+                            </span>
+                        </div>
+
+                        <div className="bg-primary/10 p-3 rounded-lg border border-red-200">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Minus className="h-3.5 w-3.5 text-red-600" />
+                                <span className="text-xs font-medium text-muted-foreground">Deducciones</span>
+                            </div>
+                            <span className="text-sm font-semibold ">
+                                {totalDeducciones > 0 ? formatCurrency(totalDeducciones) : "Sin deducciones"}
+                            </span>
+                        </div>
+
+                        <div className="bg-primary/10 p-3 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 mb-1">
+                                <CreditCard className="h-3.5 w-3.5 text-blue-600" />
+                                <span className="text-xs font-medium text-muted-foreground">Neto Final</span>
+                            </div>
+                            <span className="text-sm font-semibold ">{formatCurrency(registro.netoPagar)}</span>
+                        </div>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row sm:justify-between text-xs sm:text-sm gap-2 sm:gap-0">
                         <span>Salario Quincenal</span>
                         <div className="flex items-center gap-2 sm:gap-6">
                             <span>{formatCurrency(salarioQuincenal)}</span>
+                            {totalBonos > 0 && (
+                                <>
+                                    <Plus className="h-3 w-3 text-green-600" />
+                                    <span className="text-green-600">{formatCurrency(totalBonos)}</span>
+                                </>
+                            )}
+                            {totalDeducciones > 0 && (
+                                <>
+                                    <Minus className="h-3 w-3 text-red-600" />
+                                    <span className="text-red-600">{formatCurrency(totalDeducciones)}</span>
+                                </>
+                            )}
                             <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground hidden sm:inline" />
-                            <span>{formatCurrency(registro.netoPagar)}</span>
+                            <span className="font-semibold">{formatCurrency(registro.netoPagar)}</span>
                         </div>
-                        <span>Neto a Pagar</span>
                     </div>
                     <Progress value={porcentajeNeto} className="h-2 sm:h-2.5" />
                     <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-muted-foreground gap-1 sm:gap-0">
-                        <span>Deducciones: {formatCurrency(totalDeducciones)}</span>
+                        <span>
+                            {totalBonos > 0 && totalDeducciones > 0
+                                ? `Bonos: ${formatCurrency(totalBonos)} | Deducciones: ${formatCurrency(totalDeducciones)}`
+                                : totalBonos > 0
+                                    ? `Bonos: ${formatCurrency(totalBonos)}`
+                                    : `Deducciones: ${formatCurrency(totalDeducciones)}`}
+                        </span>
                         <span>{porcentajeNeto.toFixed(1)}% de la quincena</span>
                     </div>
                 </div>
@@ -170,12 +232,12 @@ export function PayrollCard({ registro }: PayrollCardProps) {
                     {detallesExpanded ? (
                         <>
                             <ChevronUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Ocultar detalles de deducciones
+                            Ocultar detalles
                         </>
                     ) : (
                         <>
                             <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Ver detalles de deducciones
+                            Ver detalles de bonos y deducciones
                         </>
                     )}
                 </Button>
@@ -186,58 +248,139 @@ export function PayrollCard({ registro }: PayrollCardProps) {
                         <div>
                             <h3 className="text-xs sm:text-sm font-medium flex items-center gap-2 mb-3">
                                 <PieChart className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-                                Desglose de Deducciones
+                                Desglose Detallado
                             </h3>
 
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="overflow-x-auto -mx-4 sm:mx-0">
-                                    <div className="inline-block min-w-full align-middle px-4 sm:px-0">
-                                        <Table className="min-w-full">
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="text-xs sm:text-sm">Tipo</TableHead>
-                                                    <TableHead className="text-right text-xs sm:text-sm">Monto</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {registro.detalles.map((detalle) => (
-                                                    <TableRow key={detalle.id}>
-                                                        <TableCell className="text-xs sm:text-sm">{detalle.tipoDeduccionNombre}</TableCell>
-                                                        <TableCell className="text-right font-medium text-xs sm:text-sm">
-                                                            {formatCurrency(detalle.monto)}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                <TableRow>
-                                                    <TableCell className="font-bold text-xs sm:text-sm">Total</TableCell>
-                                                    <TableCell className="text-right font-bold text-xs sm:text-sm">
-                                                        {formatCurrency(totalDeducciones)}
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </div>
+                            <Tabs defaultValue={bonos.length > 0 ? "bonos" : "deducciones"} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="bonos" className="flex items-center gap-2">
+                                        <TrendingUp className="h-3.5 w-3.5" />
+                                        Bonos ({bonos.length})
+                                    </TabsTrigger>
+                                    <TabsTrigger value="deducciones" className="flex items-center gap-2">
+                                        <TrendingDown className="h-3.5 w-3.5" />
+                                        Deducciones ({deducciones.length})
+                                    </TabsTrigger>
+                                </TabsList>
 
-                                <div className="space-y-4 mt-4">
-                                    <h4 className="text-xs sm:text-sm font-medium">Distribución de Deducciones</h4>
-                                    {registro.detalles.map((detalle) => {
-                                        const porcentajeDet = (detalle.monto / totalDeducciones) * 100
-                                        return (
-                                            <div key={detalle.id} className="space-y-1">
-                                                <div className="flex justify-between text-xs sm:text-sm">
-                                                    <span className="truncate mr-2">{detalle.tipoDeduccionNombre}</span>
-                                                    <span className="flex-shrink-0">{formatCurrency(detalle.monto)}</span>
-                                                </div>
-                                                <Progress value={porcentajeDet} className="h-1.5 sm:h-2" />
-                                                <div className="text-xs text-muted-foreground text-right">
-                                                    {porcentajeDet.toFixed(1)}% de deducciones
+                                <TabsContent value="bonos" className="space-y-4">
+                                    {bonos.length > 0 ? (
+                                        <>
+                                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                                <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                                                    <Table className="min-w-full">
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="text-xs sm:text-sm">Concepto</TableHead>
+                                                                <TableHead className="text-right text-xs sm:text-sm">Monto</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {bonos.map((bono) => (
+                                                                <TableRow key={bono.id}>
+                                                                    <TableCell className="text-xs sm:text-sm">{bono.tipoDeduccionNombre}</TableCell>
+                                                                    <TableCell className="text-right font-medium text-xs sm:text-sm text-green-600">
+                                                                        +{formatCurrency(bono.monto)}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                            <TableRow>
+                                                                <TableCell className="font-bold text-xs sm:text-sm">Total Bonos</TableCell>
+                                                                <TableCell className="text-right font-bold text-xs sm:text-sm text-green-600">
+                                                                    +{formatCurrency(totalBonos)}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        </TableBody>
+                                                    </Table>
                                                 </div>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
+
+                                            <div className="space-y-4 mt-4">
+                                                <h4 className="text-xs sm:text-sm font-medium">Distribución de Bonos</h4>
+                                                {bonos.map((bono) => {
+                                                    const porcentajeBono = totalBonos > 0 ? (bono.monto / totalBonos) * 100 : 0
+                                                    return (
+                                                        <div key={bono.id} className="space-y-1">
+                                                            <div className="flex justify-between text-xs sm:text-sm">
+                                                                <span className="truncate mr-2">{bono.tipoDeduccionNombre}</span>
+                                                                <span className="flex-shrink-0 text-green-600">+{formatCurrency(bono.monto)}</span>
+                                                            </div>
+                                                            <Progress value={porcentajeBono} className="h-1.5 sm:h-2" />
+                                                            <div className="text-xs text-muted-foreground text-right">
+                                                                {porcentajeBono.toFixed(1)}% de bonos
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No hay bonos registrados para este período</p>
+                                        </div>
+                                    )}
+                                </TabsContent>
+
+                                <TabsContent value="deducciones" className="space-y-4">
+                                    {deducciones.length > 0 ? (
+                                        <>
+                                            <div className="overflow-x-auto -mx-4 sm:mx-0">
+                                                <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                                                    <Table className="min-w-full">
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="text-xs sm:text-sm">Concepto</TableHead>
+                                                                <TableHead className="text-right text-xs sm:text-sm">Monto</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {deducciones.map((deduccion) => (
+                                                                <TableRow key={deduccion.id}>
+                                                                    <TableCell className="text-xs sm:text-sm">{deduccion.tipoDeduccionNombre}</TableCell>
+                                                                    <TableCell className="text-right font-medium text-xs sm:text-sm text-red-600">
+                                                                        -{formatCurrency(deduccion.monto)}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                            <TableRow>
+                                                                <TableCell className="font-bold text-xs sm:text-sm">Total Deducciones</TableCell>
+                                                                <TableCell className="text-right font-bold text-xs sm:text-sm text-red-600">
+                                                                    -{formatCurrency(totalDeducciones)}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        </TableBody>
+                                                    </Table>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4 mt-4">
+                                                <h4 className="text-xs sm:text-sm font-medium">Distribución de Deducciones</h4>
+                                                {deducciones.map((deduccion) => {
+                                                    const porcentajeDed = totalDeducciones > 0 ? (deduccion.monto / totalDeducciones) * 100 : 0
+                                                    return (
+                                                        <div key={deduccion.id} className="space-y-1">
+                                                            <div className="flex justify-between text-xs sm:text-sm">
+                                                                <span className="truncate mr-2">{deduccion.tipoDeduccionNombre}</span>
+                                                                <span className="flex-shrink-0 text-red-600">-{formatCurrency(deduccion.monto)}</span>
+                                                            </div>
+                                                            <Progress value={porcentajeDed} className="h-1.5 sm:h-2" />
+                                                            <div className="text-xs text-muted-foreground text-right">
+                                                                {porcentajeDed.toFixed(1)}% de deducciones
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <TrendingDown className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No hay deducciones registradas para este período</p>
+                                        </div>
+                                    )}
+                                </TabsContent>
+                            </Tabs>
                         </div>
                     </div>
                 )}

@@ -279,7 +279,6 @@ export async function putSolicitud({ solicitud }: { solicitud: SolicitudCreateIn
       FechaInicio: new Date(solicitud.fechaInicio),
       FechaFin: new Date(solicitud.fechaFin),
       Descripcion: solicitud.descripcion,
-      UpdatedAt: now,
     },
   });
 
@@ -432,8 +431,6 @@ export async function postSolicitud({
       FechaFin: fechaFin,
       Descripcion: data.descripcion,
       Aprobado: null,
-      CreatedAt: now,
-      UpdatedAt: now,
       SolicitudVacacionAprobacion: {
         create: aprobacionesData,
       },

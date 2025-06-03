@@ -117,8 +117,6 @@ async function main() {
         Nombre: "Gerente Recursos Humanos",
         Descripcion: "Gerente de recursos humanos de diario tiempo",
         Activo: true,
-        Created_at: new Date(),
-        Updated_at: new Date(),
       },
     });
     console.log("Puesto creado");
@@ -138,8 +136,6 @@ async function main() {
         Vacaciones: 10,
         genero: "Femenino",
         activo: true,
-        created_at: new Date(),
-        updated_at: new Date(),
       },
     });
     console.log("Empleado Marta Rapalo creado");
@@ -158,8 +154,6 @@ async function main() {
         rol_id: adminRole.id,
         activo: true,
         DebeCambiarPassword: false,
-        created_at: new Date(),
-        updated_at: new Date(),
       },
     });
     console.log("Usuario Marta Rapalo creado");

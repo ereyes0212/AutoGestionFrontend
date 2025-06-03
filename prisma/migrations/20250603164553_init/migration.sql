@@ -6,8 +6,8 @@ CREATE TABLE `ConfiguracionAprobacion` (
     `Tipo` VARCHAR(50) NOT NULL,
     `nivel` INTEGER NOT NULL,
     `Activo` BIT(1) NOT NULL,
-    `Created_at` DATETIME(6) NULL,
-    `Updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     INDEX `IX_ConfiguracionAprobacion_puesto_id`(`puesto_id`),
     PRIMARY KEY (`Id`)
@@ -15,16 +15,16 @@ CREATE TABLE `ConfiguracionAprobacion` (
 
 -- CreateTable
 CREATE TABLE `DetalleVoucherPagos` (
-    `Id` VARCHAR(36) NOT NULL,
-    `VoucherPagoId` VARCHAR(36) NOT NULL,
-    `TipoDeduccionId` VARCHAR(36) NOT NULL,
-    `Monto` DECIMAL(65, 30) NOT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `id` VARCHAR(36) NOT NULL,
+    `voucherPagoId` VARCHAR(36) NOT NULL,
+    `ajusteTipoId` VARCHAR(36) NOT NULL,
+    `monto` DECIMAL(10, 2) NOT NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
-    INDEX `IX_DetalleVoucherPagos_TipoDeduccionId`(`TipoDeduccionId`),
-    INDEX `IX_DetalleVoucherPagos_VoucherPagoId`(`VoucherPagoId`),
-    PRIMARY KEY (`Id`)
+    INDEX `IX_DetalleVoucher_AjusteTipoId`(`ajusteTipoId`),
+    INDEX `IX_DetalleVoucher_VoucherPagoId`(`voucherPagoId`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -39,8 +39,8 @@ CREATE TABLE `Empleados` (
     `Vacaciones` INTEGER NOT NULL,
     `genero` LONGTEXT NOT NULL,
     `activo` BIT(1) NOT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     INDEX `IX_Empleados_jefe_id`(`jefe_id`),
     INDEX `IX_Empleados_puesto_id`(`puesto_id`),
@@ -66,8 +66,8 @@ CREATE TABLE `Puesto` (
     `Nombre` VARCHAR(100) NOT NULL,
     `Descripcion` VARCHAR(100) NOT NULL,
     `Activo` BIT(1) NOT NULL,
-    `Created_at` DATETIME(6) NULL,
-    `Updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -83,8 +83,8 @@ CREATE TABLE `ReporteDiseño` (
     `HoraInicio` TIME(6) NOT NULL,
     `HoraFin` TIME(6) NOT NULL,
     `Observacion` LONGTEXT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     INDEX `IX_ReporteDiseño_EmpleadoId`(`EmpleadoId`),
     INDEX `IX_ReporteDiseño_SeccionId`(`SeccionId`),
@@ -126,8 +126,8 @@ CREATE TABLE `SolicitudVacacion` (
     `FechaFin` DATETIME(6) NOT NULL,
     `Aprobado` BOOLEAN NULL,
     `Descripcion` VARCHAR(250) NOT NULL,
-    `CreatedAt` DATETIME(6) NOT NULL,
-    `UpdatedAt` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     INDEX `IX_SolicitudVacacion_EmpleadoId`(`EmpleadoId`),
     INDEX `IX_SolicitudVacacion_PuestoId`(`PuestoId`),
@@ -143,10 +143,10 @@ CREATE TABLE `SolicitudVacacionAprobacion` (
     `Nivel` INTEGER NOT NULL,
     `Descripcion` LONGTEXT NOT NULL,
     `Estado` VARCHAR(50) NOT NULL,
-    `CreatedAt` DATETIME(6) NOT NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
     `FechaDecision` DATETIME(6) NULL,
     `Comentarios` LONGTEXT NULL,
-    `UpdatedAt` DATETIME(6) NULL,
 
     INDEX `IX_SolicitudVacacionAprobacion_ConfiguracionAprobacionId`(`ConfiguracionAprobacionId`),
     INDEX `IX_SolicitudVacacionAprobacion_EmpleadoAprobadorId`(`EmpleadoAprobadorId`),
@@ -156,14 +156,16 @@ CREATE TABLE `SolicitudVacacionAprobacion` (
 
 -- CreateTable
 CREATE TABLE `TipoDeducciones` (
-    `Id` VARCHAR(36) NOT NULL,
-    `Nombre` VARCHAR(100) NOT NULL,
-    `Descripcion` VARCHAR(100) NOT NULL,
-    `Activo` BIT(1) NOT NULL,
-    `Created_at` DATETIME(6) NULL,
-    `Updated_at` DATETIME(6) NULL,
+    `id` VARCHAR(36) NOT NULL,
+    `nombre` VARCHAR(100) NOT NULL,
+    `descripcion` VARCHAR(100) NULL,
+    `categoria` ENUM('DEDUCCION', 'BONO') NOT NULL,
+    `montoPorDefecto` DECIMAL(10, 2) NOT NULL,
+    `activo` BIT(1) NOT NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
-    PRIMARY KEY (`Id`)
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -172,8 +174,8 @@ CREATE TABLE `TipoSeccion` (
     `Nombre` VARCHAR(100) NOT NULL,
     `Descripcion` VARCHAR(100) NOT NULL,
     `Activo` BIT(1) NOT NULL,
-    `Created_at` DATETIME(6) NULL,
-    `Updated_at` DATETIME(6) NULL,
+    `CreateAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `UpdateAt` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -184,8 +186,8 @@ CREATE TABLE `TipoSolicitud` (
     `Nombre` VARCHAR(100) NOT NULL,
     `Descripcion` VARCHAR(100) NOT NULL,
     `activo` BIT(1) NOT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
     PRIMARY KEY (`Id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -197,8 +199,8 @@ CREATE TABLE `Usuarios` (
     `usuario` VARCHAR(50) NOT NULL,
     `contrasena` LONGTEXT NOT NULL,
     `DebeCambiarPassword` BOOLEAN NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
     `rol_id` VARCHAR(36) NOT NULL,
     `activo` BIT(1) NOT NULL,
 
@@ -209,29 +211,29 @@ CREATE TABLE `Usuarios` (
 
 -- CreateTable
 CREATE TABLE `VoucherPagos` (
-    `Id` VARCHAR(36) NOT NULL,
-    `EmpleadoId` VARCHAR(36) NOT NULL,
-    `FechaPago` DATETIME(6) NOT NULL,
-    `DiasTrabajados` INTEGER NOT NULL,
-    `SalarioDiario` DECIMAL(65, 30) NOT NULL,
-    `SalarioMensual` DECIMAL(65, 30) NOT NULL,
-    `NetoPagar` DECIMAL(65, 30) NOT NULL,
-    `Observaciones` LONGTEXT NOT NULL,
-    `created_at` DATETIME(6) NULL,
-    `updated_at` DATETIME(6) NULL,
+    `id` VARCHAR(36) NOT NULL,
+    `empleadoId` VARCHAR(36) NOT NULL,
+    `fechaPago` DATETIME(6) NOT NULL,
+    `diasTrabajados` INTEGER NOT NULL,
+    `salarioDiario` DECIMAL(10, 2) NOT NULL,
+    `salarioMensual` DECIMAL(10, 2) NOT NULL,
+    `netoPagar` DECIMAL(10, 2) NOT NULL,
+    `observaciones` LONGTEXT NOT NULL,
+    `createAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updateAt` DATETIME(3) NOT NULL,
 
-    INDEX `IX_VoucherPagos_EmpleadoId`(`EmpleadoId`),
-    PRIMARY KEY (`Id`)
+    INDEX `IX_VoucherPagos_EmpleadoId`(`empleadoId`),
+    PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `ConfiguracionAprobacion` ADD CONSTRAINT `FK_ConfiguracionAprobacion_Puesto_puesto_id` FOREIGN KEY (`puesto_id`) REFERENCES `Puesto`(`Id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE `DetalleVoucherPagos` ADD CONSTRAINT `FK_DetalleVoucherPagos_TipoDeducciones_TipoDeduccionId` FOREIGN KEY (`TipoDeduccionId`) REFERENCES `TipoDeducciones`(`Id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `DetalleVoucherPagos` ADD CONSTRAINT `FK_DetalleVoucher_AjusteTipo` FOREIGN KEY (`ajusteTipoId`) REFERENCES `TipoDeducciones`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE `DetalleVoucherPagos` ADD CONSTRAINT `FK_DetalleVoucherPagos_VoucherPagos_VoucherPagoId` FOREIGN KEY (`VoucherPagoId`) REFERENCES `VoucherPagos`(`Id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `DetalleVoucherPagos` ADD CONSTRAINT `FK_DetalleVoucher_VoucherPagos` FOREIGN KEY (`voucherPagoId`) REFERENCES `VoucherPagos`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE `Empleados` ADD CONSTRAINT `FK_Empleados_Empleados_jefe_id` FOREIGN KEY (`jefe_id`) REFERENCES `Empleados`(`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
@@ -273,4 +275,4 @@ ALTER TABLE `Usuarios` ADD CONSTRAINT `FK_Usuarios_Empleados_empleado_id` FOREIG
 ALTER TABLE `Usuarios` ADD CONSTRAINT `Usuarios_rol_id_fkey` FOREIGN KEY (`rol_id`) REFERENCES `Rol`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `VoucherPagos` ADD CONSTRAINT `FK_VoucherPagos_Empleados_EmpleadoId` FOREIGN KEY (`EmpleadoId`) REFERENCES `Empleados`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `VoucherPagos` ADD CONSTRAINT `FK_VoucherPagos_Empleados` FOREIGN KEY (`empleadoId`) REFERENCES `Empleados`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;

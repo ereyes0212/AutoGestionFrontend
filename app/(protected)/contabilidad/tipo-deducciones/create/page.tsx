@@ -2,7 +2,7 @@ import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { PlusCircle } from "lucide-react";
-import { TipoDeduccionFormulario } from "../components/Form";
+import { AjusteTipoFormulario } from "../components/Form";
 
 export default async function Create() {
 
@@ -20,6 +20,10 @@ export default async function Create() {
     descripcion: "",
     id: "",
     activo: true,
+    categoria: "DEDUCCION" as const,  // Asignamos un valor por defecto y tipo literal
+    montoPorDefecto: 0,
+
+    // Asignamos un valor por defecto
   };
 
   return (
@@ -29,7 +33,7 @@ export default async function Create() {
         description="En este apartado podrá crear un nuevo tipo de deducción."
         screenName="Crear tipo de deducción"  // Cambié la pantalla a "Crear Empleado"
       />
-      <TipoDeduccionFormulario
+      <AjusteTipoFormulario
         isUpdate={false}  // Esto es para indicar que estamos creando, no actualizando
         initialData={initialData}  // Datos iniciales para crear un nuevo empleado
       />

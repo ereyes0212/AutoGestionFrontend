@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form"; // Importamos useForm
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,53 +25,41 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
-import { postTipoDeduccion, putTipoDeduccion } from "../actions"; // Tu función para enviar datos
-import { TipoDeduccionSchema } from "../schema"; // Tu esquema de Zod para tipo de deducción
 
-export function TipoDeduccionFormulario({
+import { postAjuste, putAjuste } from "../actions"; // Nuevas funciones
+import { AjusteTipoSchema } from "../schema"; // Nuevo esquema de Zod
+
+export function AjusteTipoFormulario({
   isUpdate,
   initialData,
 }: {
   isUpdate: boolean;
-  initialData: z.infer<typeof TipoDeduccionSchema>;
+  initialData: z.infer<typeof AjusteTipoSchema>;
 }) {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Usamos Zod para resolver la validación
-  const form = useForm<z.infer<typeof TipoDeduccionSchema>>({
-    resolver: zodResolver(TipoDeduccionSchema),
+  const form = useForm<z.infer<typeof AjusteTipoSchema>>({
+    resolver: zodResolver(AjusteTipoSchema),
     defaultValues: initialData,
   });
 
-  // Verificación de validez antes del submit
-  // const { formState } = form;
-
-  // //forma de saber si un form esta valido o no
-  // const isValid = formState.errors;
-  // console.log("🚀 ~ isValid:", isValid)
-  async function onSubmit(data: z.infer<typeof TipoDeduccionSchema>) {
-    const tipoDeduccionData = {
-      tipoDeduccion: data,
-    };
-
-
+  async function onSubmit(data: z.infer<typeof AjusteTipoSchema>) {
     try {
       if (isUpdate) {
-        await putTipoDeduccion(tipoDeduccionData.tipoDeduccion); // Llamada a la API para actualizar
+        await putAjuste(data);
       } else {
-        await postTipoDeduccion(tipoDeduccionData.tipoDeduccion); // Llamada a la API para crear un nuevo tipo de deducción
+        await postAjuste(data);
       }
 
-      // Notificación de éxito
       toast({
         title: isUpdate ? "Actualización Exitosa" : "Creación Exitosa",
         description: isUpdate
-          ? "El tipo de deduccion ha sido actualizado."
-          : "El tipo de deduccion ha sido creado.",
+          ? "El ajuste ha sido actualizado."
+          : "El ajuste ha sido creado.",
       });
 
-      router.push("/contabilidad/tipo-deducciones"); // Redirige después de la acción
+      router.push("/contabilidad/tipo-deducciones");
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);
@@ -89,46 +77,100 @@ export function TipoDeduccionFormulario({
         className="space-y-8 border rounded-md p-4"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {" "}
-          {/* Grid de 1 columna en móviles y 2 en pantallas más grandes */}
           {/* Nombre */}
           <FormField
             control={form.control}
             name="nombre"
             render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
+              <FormItem className="col-span-1">
                 <FormLabel>Nombre</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ingresa tu nombre" {...field} />
+                  <Input placeholder="Ej. Seguro Social" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Por favor ingresa tu nombre completo.
+                  Ingresa el nombre del ajuste.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {/* Nombre */}
+
+          {/* Descripción */}
           <FormField
             control={form.control}
             name="descripcion"
             render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
+              <FormItem className="col-span-1">
                 <FormLabel>Descripción</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ingresa tu nombre" {...field} />
+                  <Input placeholder="Descripción del ajuste" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Por favor ingresa la descripción de tipo de deducción.
+                  Breve descripción del ajuste.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Categoría */}
+          <FormField
+            control={form.control}
+            name="categoria"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Categoría</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DEDUCCION">Deducción</SelectItem>
+                      <SelectItem value="BONO">Bono</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>
+                  Especifica si es deducción o bono.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Monto por defecto */}
+          <FormField
+            control={form.control}
+            name="montoPorDefecto"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Monto por Defecto</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ej. 100.00"
+                    value={field.value ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Si la cadena está vacía, pasamos undefined para que no rompa
+                      field.onChange(val === "" ? undefined : parseFloat(val));
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                </FormControl>
+                <FormDescription>
+                  El monto base para este ajuste.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
         </div>
 
         {/* Estado Activo (solo si es actualización) */}
@@ -154,7 +196,7 @@ export function TipoDeduccionFormulario({
                   </Select>
                 </FormControl>
                 <FormDescription>
-                  Define si el registro está activo o inactivo.
+                  Define si el ajuste está activo o inactivo.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

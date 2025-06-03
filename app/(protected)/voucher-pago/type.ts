@@ -2,6 +2,7 @@ export interface DeduccionDetalle {
     id: string
     tipoDeduccionId: string
     tipoDeduccionNombre: string
+    categoria: "DEDUCCION" | "BONO"
     monto: number
 }
 

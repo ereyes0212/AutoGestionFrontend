@@ -38,8 +38,6 @@ export async function postConfiguracion(configs: OutputConfig[]): Promise<Config
     Tipo: c.tipo,
     nivel: c.nivel,
     Activo: true,
-    Created_at: now,
-    Updated_at: now,
   }));
 
   // 3️⃣ Crear nuevas configuraciones en bloque

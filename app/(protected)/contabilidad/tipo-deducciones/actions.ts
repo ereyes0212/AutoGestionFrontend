@@ -1,97 +1,105 @@
-'use server';
+"use server";
 
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
-import { TipoDeduccion } from './types';
+import { AjusteTipo } from './types';
 
 /**
- * Obtener todos los tipos de deducción
+ * Obtener todos los ajustes (deducciones y bonos)
  */
-export async function getTipoDeduccion(): Promise<TipoDeduccion[]> {
-  const records = await prisma.tipoDeducciones.findMany({
-    orderBy: { Nombre: 'asc' },
+export async function getAjustes(): Promise<AjusteTipo[]> {
+  const records = await prisma.ajusteTipo.findMany({
+    orderBy: { nombre: 'asc' },
   });
   return records.map(r => ({
-    id: r.Id,
-    nombre: r.Nombre,
-    descripcion: r.Descripcion,
-    activo: r.Activo,
-    createdAt: r.Created_at ?? new Date(),
-    updatedAt: r.Updated_at ?? new Date(),
+    id: r.id,
+    nombre: r.nombre,
+    descripcion: r.descripcion ?? '',
+    categoria: r.categoria as 'DEDUCCION' | 'BONO',
+    montoPorDefecto: r.montoPorDefecto.toNumber(),
+    activo: r.activo,
   }));
 }
 
 /**
- * Obtener tipos de deducción activos
+ * Obtener solo los ajustes activos
  */
-export async function getTipoDeduccionActivas(): Promise<TipoDeduccion[]> {
-  const records = await prisma.tipoDeducciones.findMany({
-    where: { Activo: true },
-    orderBy: { Nombre: 'asc' },
+export async function getAjustesActivos(): Promise<AjusteTipo[]> {
+  const records = await prisma.ajusteTipo.findMany({
+    where: { activo: true },
+    orderBy: { nombre: 'asc' },
   });
   return records.map(r => ({
-    id: r.Id,
-    nombre: r.Nombre,
-    descripcion: r.Descripcion,
-    activo: r.Activo,
-    createdAt: r.Created_at ?? new Date(),
-    updatedAt: r.Updated_at ?? new Date(),
+    id: r.id,
+    nombre: r.nombre,
+    descripcion: r.descripcion ?? '',
+    categoria: r.categoria as 'DEDUCCION' | 'BONO',
+    montoPorDefecto: r.montoPorDefecto.toNumber(),
+    activo: r.activo,
   }));
 }
 
 /**
- * Obtener un tipo de deducción por ID
+ * Obtener un ajuste por ID
  */
-export async function getTipoDeduccionById(id: string): Promise<TipoDeduccion | null> {
-  const r = await prisma.tipoDeducciones.findUnique({ where: { Id: id } });
+export async function getAjusteById(id: string): Promise<AjusteTipo | null> {
+  const r = await prisma.ajusteTipo.findUnique({ where: { id } });
   if (!r) return null;
   return {
-    id: r.Id,
-    nombre: r.Nombre,
-    descripcion: r.Descripcion,
-    activo: r.Activo,
+    id: r.id,
+    nombre: r.nombre,
+    descripcion: r.descripcion ?? '',
+    categoria: r.categoria as 'DEDUCCION' | 'BONO',
+    montoPorDefecto: r.montoPorDefecto.toNumber(),
+    activo: r.activo,
   };
 }
 
 /**
- * Crear un nuevo tipo de deducción
+ * Crear un nuevo ajuste (deducción o bono)
  */
-export async function postTipoDeduccion(data: TipoDeduccion): Promise<TipoDeduccion> {
+export async function postAjuste(data: AjusteTipo): Promise<AjusteTipo> {
   const id = randomUUID();
-  const r = await prisma.tipoDeducciones.create({
+  const r = await prisma.ajusteTipo.create({
     data: {
-      Id: id,
-      Nombre: data.nombre,
-      Descripcion: data.descripcion,
-      Activo: data.activo ?? true,
-      Created_at: new Date(),
+      id,
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      categoria: data.categoria,
+      montoPorDefecto: data.montoPorDefecto,
+      activo: data.activo ?? true,
     },
   });
   return {
-    id: r.Id,
-    nombre: r.Nombre,
-    descripcion: r.Descripcion,
-    activo: r.Activo,
+    id: r.id,
+    nombre: r.nombre,
+    descripcion: r.descripcion ?? '',
+    categoria: r.categoria as 'DEDUCCION' | 'BONO',
+    montoPorDefecto: r.montoPorDefecto.toNumber(),
+    activo: r.activo,
   };
 }
 
 /**
- * Actualizar un tipo de deducción existente
+ * Actualizar un ajuste existente
  */
-export async function putTipoDeduccion(data: TipoDeduccion): Promise<TipoDeduccion> {
-  const r = await prisma.tipoDeducciones.update({
-    where: { Id: data.id! },
+export async function putAjuste(data: AjusteTipo): Promise<AjusteTipo> {
+  const r = await prisma.ajusteTipo.update({
+    where: { id: data.id! },
     data: {
-      Nombre: data.nombre,
-      Descripcion: data.descripcion,
-      Activo: data.activo,
-      Updated_at: new Date(),
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      categoria: data.categoria,
+      montoPorDefecto: data.montoPorDefecto,
+      activo: data.activo,
     },
   });
   return {
-    id: r.Id,
-    nombre: r.Nombre,
-    descripcion: r.Descripcion,
-    activo: r.Activo,
+    id: r.id,
+    nombre: r.nombre,
+    descripcion: r.descripcion ?? '',
+    categoria: r.categoria as 'DEDUCCION' | 'BONO',
+    montoPorDefecto: r.montoPorDefecto.toNumber(),
+    activo: r.activo,
   };
 }

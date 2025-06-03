@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { TipoDeduccion } from "../types";
+import { AjusteTipo } from "../types";
 
-export const columns: ColumnDef<TipoDeduccion>[] = [
+export const columns: ColumnDef<AjusteTipo>[] = [
   {
     accessorKey: "nombre",
     header: ({ column }) => (
@@ -38,6 +38,32 @@ export const columns: ColumnDef<TipoDeduccion>[] = [
         className="text-center"
       >
         Descripción
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "categoria",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-center"
+      >
+        categoria
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "montoPorDefecto",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-center"
+      >
+        Monto por Defecto
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),

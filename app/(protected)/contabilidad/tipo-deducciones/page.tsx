@@ -2,7 +2,7 @@ import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { CircleDollarSignIcon } from "lucide-react";
-import { getTipoDeduccion } from "./actions";
+import { getAjustes } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
 import TipoDeduccionesListMobile from "./components/tipoDeduccion-list-mobile";
@@ -12,7 +12,7 @@ export default async function TipoDeduccion() {
   const permisos = await getSessionPermisos();
 
 
-  const data = await getTipoDeduccion();
+  const data = await getAjustes();
   if (!permisos?.includes("ver_tipodeducciones")) {
     return <NoAcceso />;
   }

@@ -16,8 +16,6 @@ export async function getTipoSeccion(): Promise<TipoSeccion[]> {
     nombre: r.Nombre,
     descripcion: r.Descripcion,
     activo: r.Activo,
-    createdAt: r.Created_at ?? new Date(),
-    updatedAt: r.Updated_at ?? new Date(),
   }));
 }
 
@@ -34,8 +32,6 @@ export async function getTipoSeccionActivas(): Promise<TipoSeccion[]> {
     nombre: r.Nombre,
     descripcion: r.Descripcion,
     activo: r.Activo,
-    createdAt: r.Created_at ?? new Date(),
-    updatedAt: r.Updated_at ?? new Date(),
   }));
 }
 
@@ -63,8 +59,7 @@ export async function postTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
       Id: id,
       Nombre: data.nombre,
       Descripcion: data.descripcion,
-      Activo: data.activo ?? true,
-      Created_at: new Date(),
+      Activo: data.activo ?? true
     },
   });
   return {
@@ -85,7 +80,6 @@ export async function putTipoSeccion(data: TipoSeccion): Promise<TipoSeccion> {
       Nombre: data.nombre,
       Descripcion: data.descripcion,
       Activo: data.activo,
-      Updated_at: new Date(),
     },
   });
   return {

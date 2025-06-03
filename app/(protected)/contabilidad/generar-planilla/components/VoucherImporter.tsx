@@ -1,4 +1,3 @@
-// components/VoucherImporter.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import {
+    AjusteTemplate,
     DetalleVoucherDto,
-    TipoDeduccionTemplate,
     VoucherDto,
     VoucherTemplateResponse,
 } from "../types";
@@ -37,7 +36,7 @@ export function VoucherImporter() {
 
     // Estados para archivos + template
     const [data, setData] = useState<RowData[]>([]);
-    const [tipos, setTipos] = useState<TipoDeduccionTemplate[]>([]);
+    const [ajustes, setAjustes] = useState<AjusteTemplate[]>([]);
     const [fechaPago, setFechaPago] = useState<string>("");
 
     // IDs de vouchers recién guardados
@@ -47,10 +46,10 @@ export function VoucherImporter() {
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [isSending, setIsSending] = useState<boolean>(false);
 
-    // Cargar el template (tipos de deducción) al iniciar
+    // Cargar el template (ajustes) al iniciar
     useEffect(() => {
         getTemplate().then((json: VoucherTemplateResponse) => {
-            setTipos(json.tiposDeducciones);
+            setAjustes(json.ajustes);
         });
     }, []);
 
@@ -96,13 +95,15 @@ export function VoucherImporter() {
                     detalles: [],
                 };
 
-                // Agregar cada deducción
-                tipos.forEach((t) => {
-                    const monto = Number(row[t.nombre] || 0);
+                // Agregar cada ajuste (deducción o bono)
+                ajustes.forEach((a) => {
+                    const monto = Number(row[a.nombre] || 0);
                     if (monto > 0) {
                         const det: DetalleVoucherDto = {
-                            tipoDeduccionId: t.id,
-                            tipoDeduccionNombre: t.nombre,
+                            ajusteTipoId: a.id,
+                            ajusteTipoNombre: a.nombre,
+                            categoria: a.categoria,
+                            montoPorDefecto: a.montoPorDefecto.toString(),
                             monto: monto.toString(),
                         };
                         v.detalles.push(det);
@@ -120,10 +121,6 @@ export function VoucherImporter() {
                 title: "Éxito",
                 description: "Los vouchers se han guardado correctamente.",
             });
-
-            // NO redirigimos automáticamente: permitimos al usuario hacer clic en "Enviar Emails"
-            // router.push("/contabilidad");
-            // router.refresh();
         } catch (error) {
             console.error(error);
             toast({

@@ -78,7 +78,6 @@ export async function createReporteDiseño(data: ReporteDiseño): Promise<Report
       HoraInicio: parseTimeToTodayDate(data.horaInicio),
       HoraFin: parseTimeToTodayDate(data.horaFin),
       Observacion: data.observacion,
-      created_at: now,
     },
     include: { TipoSeccion: true, Empleados: true },
   });

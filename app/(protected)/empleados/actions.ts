@@ -100,7 +100,6 @@ export async function createEmpleado(data: Empleado): Promise<Empleado> {
       activo: data.activo ?? true,
       puesto_id: data.puesto_id,
       jefe_id: data.jefe_id,
-      created_at: new Date(),
     },
   });
   return getEmpleadoById(r.id) as Promise<Empleado>;
@@ -123,7 +122,6 @@ export async function updateEmpleado(id: string, data: Partial<Empleado>): Promi
       activo: data.activo,
       puesto_id: data.puesto_id,
       jefe_id: data.jefe_id === '' ? null : data.jefe_id,
-      updated_at: new Date(),
     },
   });
   return getEmpleadoById(r.id);

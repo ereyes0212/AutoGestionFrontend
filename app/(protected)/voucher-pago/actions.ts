@@ -7,7 +7,7 @@ import { RegistroPago } from "./type";
 export async function getVoucherPagos(): Promise<RegistroPago[]> {
   try {
     const records = await prisma.voucherPagos.findMany({
-      orderBy: { FechaPago: "desc" },
+      orderBy: { fechaPago: "desc" },
       include: {
 
         Empleados: {
@@ -17,28 +17,29 @@ export async function getVoucherPagos(): Promise<RegistroPago[]> {
         },
         DetalleVoucherPagos: {
           include: {
-            TipoDeducciones: true,
+            AjusteTipo: true,
           },
         },
       },
     });
 
     return records.map(v => ({
-      id: v.Id,
-      fechaPago: v.FechaPago.toISOString(),
-      diasTrabajados: v.DiasTrabajados,
-      salarioDiario: Number(v.SalarioDiario),
-      salarioMensual: Number(v.SalarioMensual),
-      netoPagar: Number(v.NetoPagar),
-      observaciones: v.Observaciones,
+      id: v.id,
+      fechaPago: v.fechaPago.toISOString(),
+      diasTrabajados: v.diasTrabajados,
+      salarioDiario: Number(v.salarioDiario),
+      salarioMensual: Number(v.salarioMensual),
+      netoPagar: Number(v.netoPagar),
+      observaciones: v.observaciones,
       empleadoId: v.Empleados.id,
       empleadoNombre: `${v.Empleados.nombre} ${v.Empleados.apellido}`,
       empleadoPuesto: v.Empleados.Puesto.Nombre || "",
       detalles: v.DetalleVoucherPagos.map(d => ({
-        id: d.Id,
-        tipoDeduccionId: d.TipoDeduccionId,
-        tipoDeduccionNombre: d.TipoDeducciones?.Nombre || "",
-        monto: Number(d.Monto),
+        categoria: d.AjusteTipo.categoria, // "DEDUCCION" o "BONO"
+        id: d.id,
+        tipoDeduccionId: d.ajusteTipoId,
+        tipoDeduccionNombre: d.AjusteTipo?.nombre || "",
+        monto: Number(d.monto),
       })),
     }));
   } catch (error) {
@@ -51,8 +52,8 @@ export async function getVoucherPagosByEmpleado(): Promise<RegistroPago[]> {
   const idEmp = session?.IdEmpleado;
   try {
     const records = await prisma.voucherPagos.findMany({
-      where: { EmpleadoId: idEmp },
-      orderBy: { FechaPago: "desc" },
+      where: { empleadoId: idEmp },
+      orderBy: { fechaPago: "desc" },
       include: {
 
         Empleados: {
@@ -62,28 +63,29 @@ export async function getVoucherPagosByEmpleado(): Promise<RegistroPago[]> {
         },
         DetalleVoucherPagos: {
           include: {
-            TipoDeducciones: true,
+            AjusteTipo: true,
           },
         },
       },
     });
 
     return records.map(v => ({
-      id: v.Id,
-      fechaPago: v.FechaPago.toISOString(),
-      diasTrabajados: v.DiasTrabajados,
-      salarioDiario: Number(v.SalarioDiario),
-      salarioMensual: Number(v.SalarioMensual),
-      netoPagar: Number(v.NetoPagar),
-      observaciones: v.Observaciones,
+      id: v.id,
+      fechaPago: v.fechaPago.toISOString(),
+      diasTrabajados: v.diasTrabajados,
+      salarioDiario: Number(v.salarioDiario),
+      salarioMensual: Number(v.salarioMensual),
+      netoPagar: Number(v.netoPagar),
+      observaciones: v.observaciones,
       empleadoId: v.Empleados.id,
       empleadoNombre: `${v.Empleados.nombre} ${v.Empleados.apellido}`,
       empleadoPuesto: v.Empleados.Puesto.Nombre || "",
       detalles: v.DetalleVoucherPagos.map(d => ({
-        id: d.Id,
-        tipoDeduccionId: d.TipoDeduccionId,
-        tipoDeduccionNombre: d.TipoDeducciones?.Nombre || "",
-        monto: Number(d.Monto),
+        categoria: d.AjusteTipo.categoria, // "DEDUCCION" o "BONO"
+        id: d.id,
+        tipoDeduccionId: d.ajusteTipoId,
+        tipoDeduccionNombre: d.AjusteTipo?.nombre || "",
+        monto: Number(d.monto),
       })),
     }));
   } catch (error) {
@@ -95,7 +97,7 @@ export async function getVoucherPagosByEmpleado(): Promise<RegistroPago[]> {
 export async function getVoucherPagoId(id: string): Promise<RegistroPago | null> {
   try {
     const v = await prisma.voucherPagos.findUnique({
-      where: { Id: id },
+      where: { id: id },
       include: {
 
         Empleados: {
@@ -105,7 +107,7 @@ export async function getVoucherPagoId(id: string): Promise<RegistroPago | null>
         },
         DetalleVoucherPagos: {
           include: {
-            TipoDeducciones: true,
+            AjusteTipo: true,
           },
         },
       },
@@ -114,21 +116,22 @@ export async function getVoucherPagoId(id: string): Promise<RegistroPago | null>
     if (!v) return null;
 
     return {
-      id: v.Id,
-      fechaPago: v.FechaPago.toISOString(),
-      diasTrabajados: v.DiasTrabajados,
-      salarioDiario: Number(v.SalarioDiario),
-      salarioMensual: Number(v.SalarioMensual),
-      netoPagar: Number(v.NetoPagar),
-      observaciones: v.Observaciones,
+      id: v.id,
+      fechaPago: v.fechaPago.toISOString(),
+      diasTrabajados: v.diasTrabajados,
+      salarioDiario: Number(v.salarioDiario),
+      salarioMensual: Number(v.salarioMensual),
+      netoPagar: Number(v.netoPagar),
+      observaciones: v.observaciones,
       empleadoId: v.Empleados.id,
       empleadoNombre: `${v.Empleados.nombre} ${v.Empleados.apellido}`,
       empleadoPuesto: v.Empleados.Puesto?.Nombre || "",
       detalles: v.DetalleVoucherPagos.map(d => ({
-        id: d.Id,
-        tipoDeduccionId: d.TipoDeduccionId,
-        tipoDeduccionNombre: d.TipoDeducciones.Nombre || "",
-        monto: Number(d.Monto),
+        categoria: d.AjusteTipo.categoria, // "DEDUCCION" o "BONO"
+        id: d.id,
+        tipoDeduccionId: d.ajusteTipoId,
+        tipoDeduccionNombre: d.AjusteTipo.nombre || "",
+        monto: Number(d.monto),
       })),
     };
   } catch (error) {

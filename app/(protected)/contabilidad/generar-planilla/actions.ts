@@ -3,10 +3,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { VoucherDto, VoucherTemplateResponse } from "./types";
+import { AjusteTemplate, VoucherDto, VoucherTemplateResponse } from "./types";
 
 /**
  * Guarda un arreglo de VoucherDto y retorna los IDs generados de cada voucher.
+ * Ahora el detalle utiliza `ajusteTipoId` y el monto se toma de `d.monto`.
  */
 export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
     try {
@@ -17,22 +18,20 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
 
             await prisma.voucherPagos.create({
                 data: {
-                    Id: voucherId,
-                    EmpleadoId: v.empleadoId,
-                    DiasTrabajados: v.diasTrabajados,
-                    SalarioDiario: v.salarioDiario,
-                    SalarioMensual: v.salarioMensual,
-                    NetoPagar: v.netoPagar,
-                    FechaPago: new Date(v.fechaPago),
-                    Observaciones: v.observaciones,
-                    created_at: new Date(),
+                    id: voucherId,
+                    empleadoId: v.empleadoId,
+                    diasTrabajados: v.diasTrabajados,
+                    salarioDiario: v.salarioDiario,
+                    salarioMensual: v.salarioMensual,
+                    netoPagar: v.netoPagar,
+                    fechaPago: new Date(v.fechaPago),
+                    observaciones: v.observaciones,
                     DetalleVoucherPagos: {
                         createMany: {
                             data: v.detalles.map((d) => ({
-                                Id: randomUUID(),
-                                TipoDeduccionId: d.tipoDeduccionId,
-                                Monto: Number(d.monto),
-                                created_at: new Date(),
+                                id: randomUUID(),
+                                ajusteTipoId: d.ajusteTipoId,
+                                monto: Number(d.monto),
                             })),
                         },
                     },
@@ -53,6 +52,7 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
  * Dado un arreglo de voucherIds, envía los correos correspondientes
  * y retorna un objeto con dos arreglos: `sent` (IDs enviados con éxito)
  * y `failed` (IDs que fallaron).
+ * Ahora se incluye `AjusteTipo` en lugar de `TipoDeducciones`.
  */
 export async function sendVoucherEmails(voucherIds: string[]): Promise<{
     sent: string[];
@@ -68,14 +68,14 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
         try {
             // 1) Obtener datos del voucher junto con detalles y el correo del empleado
             const voucher = await prisma.voucherPagos.findUnique({
-                where: { Id: id },
+                where: { id },
                 include: {
                     DetalleVoucherPagos: {
                         select: {
-                            TipoDeducciones: {
-                                select: { Id: true, Nombre: true },
+                            AjusteTipo: {
+                                select: { id: true, nombre: true, categoria: true, montoPorDefecto: true },
                             },
-                            Monto: true,
+                            monto: true,
                         },
                     },
                     Empleados: {
@@ -96,25 +96,23 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
             }
 
             // 2) Mapear a VoucherDto
-            const detalles: {
-                tipoDeduccionId: string;
-                tipoDeduccionNombre: string;
-                monto: string;
-            }[] = voucher.DetalleVoucherPagos.map((d) => ({
-                tipoDeduccionId: d.TipoDeducciones.Id,
-                tipoDeduccionNombre: d.TipoDeducciones.Nombre,
-                monto: d.Monto.toString(),
+            const detalles = voucher.DetalleVoucherPagos.map((d) => ({
+                ajusteTipoId: d.AjusteTipo.id,
+                ajusteTipoNombre: d.AjusteTipo.nombre,
+                categoria: d.AjusteTipo.categoria,           // "DEDUCCION" o "BONO"
+                montoPorDefecto: d.AjusteTipo.montoPorDefecto.toString(),
+                monto: d.monto.toString(),                    // monto real aplicado
             }));
 
             const vDto: VoucherDto = {
-                empleadoId: voucher.EmpleadoId,
+                empleadoId: voucher.empleadoId,
                 empleadoNombre: `${voucher.Empleados.nombre} ${voucher.Empleados.apellido}`,
-                fechaPago: voucher.FechaPago.toISOString(),
-                diasTrabajados: voucher.DiasTrabajados,
-                salarioDiario: Number(voucher.SalarioDiario),
-                salarioMensual: Number(voucher.SalarioMensual),
-                netoPagar: Number(voucher.NetoPagar),
-                observaciones: voucher.Observaciones || "",
+                fechaPago: voucher.fechaPago.toISOString(),
+                diasTrabajados: voucher.diasTrabajados,
+                salarioDiario: Number(voucher.salarioDiario),
+                salarioMensual: Number(voucher.salarioMensual),
+                netoPagar: Number(voucher.netoPagar),
+                observaciones: voucher.observaciones || "",
                 detalles,
             };
 
@@ -138,7 +136,9 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
 }
 
 /**
- * Obtiene el template inicial para el formulario (empleados + tipos de deducción).
+ * Obtiene el template inicial para el formulario:
+ * - Empleados activos
+ * - Ajustes (bonos/deducciones) activos, incluyendo su montoPorDefecto
  */
 export async function getTemplate(): Promise<VoucherTemplateResponse> {
     try {
@@ -157,28 +157,30 @@ export async function getTemplate(): Promise<VoucherTemplateResponse> {
             netoPagar: 0,
         }));
 
-        // 2) Tipos de deducción activos
-        const tipos = await prisma.tipoDeducciones.findMany({
-            where: { Activo: true },
-            orderBy: { Nombre: "asc" },
+        // 2) Ajustes activos (antes TipoDeducciones)
+        const ajustes = await prisma.ajusteTipo.findMany({
+            where: { activo: true },
+            orderBy: { nombre: "asc" },
         });
 
-        const tiposMapped = tipos.map((td) => ({
-            id: td.Id,
-            nombre: td.Nombre,
-            descripcion: td.Descripcion ?? "",
-            activo: td.Activo,
+        const ajustesMapped: AjusteTemplate[] = ajustes.map((a) => ({
+            id: a.id,
+            nombre: a.nombre,
+            descripcion: a.descripcion ?? "",
+            categoria: a.categoria,               // "DEDUCCION" o "BONO"
+            montoPorDefecto: a.montoPorDefecto.toNumber(), // convertir Decimal a number
+            activo: a.activo,
         }));
 
         return {
             empleados: empleadosMapped,
-            tiposDeducciones: tiposMapped,
+            ajustes: ajustesMapped,
         };
     } catch (error) {
         console.error("Error al obtener el template:", error);
         return {
             empleados: [],
-            tiposDeducciones: [],
+            ajustes: [],
         };
     }
 }
