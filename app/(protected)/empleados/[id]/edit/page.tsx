@@ -25,16 +25,26 @@ export default async function Edit({ params }: { params: { id: string } }) {
     redirect("/empleados"); // Redirige si no se encuentra el cliente
   }
   const initialData = {
-    id: empleado.id,
+    id: empleado.id || "",
     nombre: empleado.nombre,
     apellido: empleado.apellido,
     correo: empleado.correo,
     genero: empleado.genero, // Valor por defecto
-    activo: empleado.activo,
+    activo: empleado.activo ?? false,
     fechaNacimiento: new Date(empleado.fechaNacimiento),
     nombreUsuario: empleado.usuario,
     jefe_id: empleado.jefe_id || "",
-    puesto_id: empleado.puesto_id || ""
+    puesto_id: empleado.puesto_id || "",
+    numeroIdentificacion: empleado.numeroIdentificacion || "",
+    fechaIngreso: empleado.fechaIngreso ? new Date(empleado.fechaIngreso) : new Date(),
+    departamentoDomicilio: empleado.departamentoDomicilio || "",
+    ciudadDomicilio: empleado.ciudadDomicilio || "",
+    direccionDomicilio: empleado.departamentoDomicilio || "",
+    telefono: empleado.telefono || "",
+    jefe: empleado.jefe || undefined,
+    colonia: empleado.colonia || "",
+    profesion: empleado.profesion || "",
+    vacaciones: empleado.vacaciones || 0
   };
 
   return (
