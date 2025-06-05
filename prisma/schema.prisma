@@ -220,17 +220,18 @@ model TipoSolicitud {
 }
 
 model Usuarios {
-  id                  String    @id @db.VarChar(36)
-  empleado_id         String    @unique(map: "IX_Usuarios_empleado_id") @db.VarChar(36)
-  usuario             String    @db.VarChar(50)
-  contrasena          String    @db.LongText
+  id                  String               @id @db.VarChar(36)
+  empleado_id         String               @unique(map: "IX_Usuarios_empleado_id") @db.VarChar(36)
+  usuario             String               @db.VarChar(50)
+  contrasena          String               @db.LongText
   DebeCambiarPassword Boolean?
-  createAt            DateTime  @default(now())
-  updateAt            DateTime  @updatedAt
-  rol_id              String    @db.VarChar(36)
-  activo              Boolean   @db.Bit(1)
-  Empleados           Empleados @relation(fields: [empleado_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Usuarios_Empleados_empleado_id")
-  rol                 Rol       @relation(fields: [rol_id], references: [id])
+  createAt            DateTime             @default(now())
+  updateAt            DateTime             @updatedAt
+  rol_id              String               @db.VarChar(36)
+  activo              Boolean              @db.Bit(1)
+  Empleados           Empleados            @relation(fields: [empleado_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Usuarios_Empleados_empleado_id")
+  rol                 Rol                  @relation(fields: [rol_id], references: [id])
+  PasswordResetToken  PasswordResetToken[]
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
 }
@@ -257,4 +258,16 @@ model VoucherPagos {
   Empleados           Empleados             @relation(fields: [empleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_VoucherPagos_Empleados")
 
   @@index([empleadoId], map: "IX_VoucherPagos_EmpleadoId")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @db.VarChar(36)
+  token     String   @unique @db.VarChar(128)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  Usuario Usuarios @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "IX_PasswordResetToken_userId")
 }
