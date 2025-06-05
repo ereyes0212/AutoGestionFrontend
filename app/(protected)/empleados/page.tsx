@@ -1,6 +1,7 @@
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
+import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { getEmpleados } from "./actions";
@@ -28,11 +29,10 @@ export default async function Empleados() {
 
       <div className="flex justify-end mb-4">
 
-        <Link
-          href="/empleados/carga-masiva"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
-        >
-          Carga Masiva
+        <Link href="/empleados/carga-masiva">
+          <Button className=" hover:bg-blue-700 ">
+            Carga Masiva
+          </Button>
         </Link>
       </div>
 

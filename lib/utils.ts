@@ -15,16 +15,7 @@ export function formatLempiras(amount: number): string {
   }).format(amount);
 }
 
-export function calcularEdad(fechaNacimiento: Date) {
-  const hoy = new Date();
-  let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-  const mes = hoy.getMonth() - fechaNacimiento.getMonth();
 
-  if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
-    edad--;
-  }
-  return edad;
-}
 export const formatearFecha = (fecha: string) => {
   if (!fecha) return "N/A"
   try {
@@ -40,4 +31,46 @@ export function parseTimeToTodayDate(time: string): Date {
   now.setHours(Number(hours), Number(minutes), Number(seconds), 0);
   return now;
 }
+
+export const calcularEdad = (birthDate: Date): number => {
+  const today = new Date()
+  const age = today.getFullYear() - birthDate.getFullYear()
+  const monthDiff = today.getMonth() - birthDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    return age - 1
+  }
+  return age
+}
+
+export const formatDate = (date: Date): string => {
+  return date.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
+
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount)
+}
+
+export const calculateYearsOfService = (startDate: Date): number => {
+  const today = new Date()
+  const years = today.getFullYear() - startDate.getFullYear()
+  const monthDiff = today.getMonth() - startDate.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < startDate.getDate())) {
+    return years - 1
+  }
+  return years
+}
+
+export const getEmployeeStatus = (
+  isActive: boolean,
+): { label: string; variant: "default" | "secondary" | "destructive" } => {
+  return isActive ? { label: "Activo", variant: "default" } : { label: "Inactivo", variant: "secondary" }
+}
+
 

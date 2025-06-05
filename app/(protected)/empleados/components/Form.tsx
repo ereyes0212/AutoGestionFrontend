@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"; // Usamos el resolutor de Zod
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form"; // Importamos useForm
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,11 +29,13 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Loader2 } from "lucide-react";
+
 import { z } from "zod";
 import { Puesto } from "../../puestos/types";
-import { createEmpleado, updateEmpleado } from "../actions"; // Tu función para enviar datos
-import { EmpleadoSchema } from "../schema"; // Tu esquema de Zod para empleados
+import { createEmpleado, updateEmpleado } from "../actions";
+import { EmpleadoSchema } from "../schema";
 import { Empleado as EmpleadoModel } from "../type";
+
 export function EmpleadoFormulario({
   isUpdate,
   initialData,
@@ -48,33 +50,31 @@ export function EmpleadoFormulario({
   const { toast } = useToast();
   const router = useRouter();
 
-  // Usamos Zod para resolver la validación
   const form = useForm<z.infer<typeof EmpleadoSchema>>({
-    resolver: zodResolver(EmpleadoSchema), // Pasamos el esquema Zod al resolver
-    defaultValues: initialData || {}, // Valores iniciales si es actualización
+    resolver: zodResolver(EmpleadoSchema),
+    defaultValues: initialData || {},
   });
 
-  // Verificación de validez antes del submit
-  // const { formState } = form;
-  //forma de saber si un form esta valido o no
-  // const isValid = formState.errors;
-  // console.log("isValid");
-  // console.log(isValid);
-  async function onSubmit(data: z.infer<typeof EmpleadoSchema>) {
+  const { formState } = form;
 
+  //forma de saber si un form esta valido o no
+  const isValid = formState.errors;
+  console.log("isValid");
+  console.log(isValid);
+  async function onSubmit(data: z.infer<typeof EmpleadoSchema>) {
+    // Verificación de validez antes del submit
     const empleadoData = {
-      id: initialData?.id, // Aquí pasamos el ID si es actualización
+      id: initialData?.id,
       empleado: data,
     };
 
     try {
       if (isUpdate) {
-        await updateEmpleado(empleadoData.id!, empleadoData.empleado); // Llamada a la API para actualizar
+        await updateEmpleado(empleadoData.id!, empleadoData.empleado);
       } else {
-        await createEmpleado(empleadoData.empleado); // Llamada a la API para crear un nuevo empleado
+        await createEmpleado(empleadoData.empleado);
       }
 
-      // Notificación de éxito
       toast({
         title: isUpdate ? "Actualización Exitosa" : "Creación Exitosa",
         description: isUpdate
@@ -82,7 +82,7 @@ export function EmpleadoFormulario({
           : "El empleado ha sido creado.",
       });
 
-      router.push("/empleados"); // Redirige después de la acción
+      router.push("/empleados");
       router.refresh();
     } catch (error) {
       console.error("Error en la operación:", error);
@@ -100,23 +100,17 @@ export function EmpleadoFormulario({
         className="space-y-8 border rounded-md p-4"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {" "}
-          {/* Grid de 1 columna en móviles y 2 en pantallas más grandes */}
           {/* Nombre */}
           <FormField
             control={form.control}
             name="nombre"
             render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
+              <FormItem className="col-span-1">
                 <FormLabel>Nombre</FormLabel>
                 <FormControl>
                   <Input placeholder="Ingresa tu nombre" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Por favor ingresa tu nombre completo.
-                </FormDescription>
+                <FormDescription>Por favor ingresa tu nombre completo.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -126,26 +120,58 @@ export function EmpleadoFormulario({
             control={form.control}
             name="apellido"
             render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
+              <FormItem className="col-span-1">
                 <FormLabel>Apellido</FormLabel>
                 <FormControl>
                   <Input placeholder="Ingresa tu apellido" {...field} />
                 </FormControl>
-                <FormDescription>
-                  Por favor ingresa tu apellido.
-                </FormDescription>
+                <FormDescription>Por favor ingresa tu apellido.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          {/* Edad */}
+
+          {/* Número de Identificación */}
+          <FormField
+            control={form.control}
+            name="numeroIdentificacion"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Número de Identificación</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Ej. 0801-1999-00001"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>Documento o cédula del empleado.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Correo */}
+          <FormField
+            control={form.control}
+            name="correo"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Correo electrónico</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="Ingresa tu correo" {...field} />
+                </FormControl>
+                <FormDescription>Debe ser un correo válido.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Fecha de Nacimiento */}
           <FormField
             control={form.control}
             name="fechaNacimiento"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem className="flex flex-col col-span-1">
                 <FormLabel>Fecha de nacimiento</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -178,9 +204,157 @@ export function EmpleadoFormulario({
                     />
                   </PopoverContent>
                 </Popover>
-                <FormDescription>
-                  Fecha de nacimiento del empleado.
-                </FormDescription>
+                <FormDescription>Fecha de nacimiento del empleado.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Fecha de Ingreso */}
+          <FormField
+            control={form.control}
+            name="fechaIngreso"
+            render={({ field }) => (
+              <FormItem className="flex flex-col col-span-1">
+                <FormLabel>Fecha de ingreso</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-[240px] pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP", { locale: es })
+                        ) : (
+                          <span>Selecciona una fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>Fecha en que ingresó a la empresa.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Departamento de Domicilio */}
+          <FormField
+            control={form.control}
+            name="departamentoDomicilio"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Departamento de domicilio</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ingresa el departamento" {...field} />
+                </FormControl>
+                <FormDescription>Departamento de residencia.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Ciudad de Domicilio */}
+          <FormField
+            control={form.control}
+            name="ciudadDomicilio"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Ciudad de domicilio</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ingresa la ciudad" {...field} />
+                </FormControl>
+                <FormDescription>Ciudad de residencia.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Colonia */}
+          <FormField
+            control={form.control}
+            name="colonia"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Colonia/Barrio</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ingresa la colonia" {...field} />
+                </FormControl>
+                <FormDescription>Colonia o barrio de residencia.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Teléfono */}
+          <FormField
+            control={form.control}
+            name="telefono"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Teléfono</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. 9999-9999" {...field} />
+                </FormControl>
+                <FormDescription>Número de teléfono móvil o fijo.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Profesión */}
+          <FormField
+            control={form.control}
+            name="profesion"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Profesión u oficio</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ingresa la profesión" {...field} />
+                </FormControl>
+                <FormDescription>Profesión del empleado.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Vacaciones */}
+          <FormField
+            control={form.control}
+            name="vacaciones"
+            render={({ field }) => (
+              <FormItem className="col-span-1">
+                <FormLabel>Días de vacaciones</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => {
+                      // Convertimos el string a número antes de pasarlo a Zod
+                      const val = e.target.value;
+                      field.onChange(val === "" ? undefined : Number(val));
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>Cantidad de días de vacaciones.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -191,9 +365,7 @@ export function EmpleadoFormulario({
             control={form.control}
             name="genero"
             render={({ field }) => (
-              <FormItem className="col-span-1 sm:col-span-1">
-                {" "}
-                {/* Asignamos el ancho adecuado */}
+              <FormItem className="col-span-1">
                 <FormLabel>Género</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -212,21 +384,23 @@ export function EmpleadoFormulario({
               </FormItem>
             )}
           />
+
+          {/* Puesto */}
           <FormField
             control={form.control}
             name="puesto_id"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Puestos</FormLabel>
+              <FormItem className="col-span-1">
+                <FormLabel>Puesto</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona un puesto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {puestos.map((puesto) => (
-                        <SelectItem key={puesto.id} value={puesto.id || ''} >
-                          {puesto.nombre}
+                      {puestos.map((puestoItem) => (
+                        <SelectItem key={puestoItem.id} value={puestoItem.id || ""}>
+                          {puestoItem.nombre}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -237,11 +411,13 @@ export function EmpleadoFormulario({
               </FormItem>
             )}
           />
+
+          {/* Jefe */}
           <FormField
             control={form.control}
             name="jefe_id"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="col-span-1">
                 <FormLabel>Jefe</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -249,44 +425,22 @@ export function EmpleadoFormulario({
                       <SelectValue placeholder="Selecciona un jefe" />
                     </SelectTrigger>
                     <SelectContent>
-                      {jefe.map((jefeSelected) => (
-                        <SelectItem key={jefeSelected.id} value={jefeSelected.id || ''} >
-                          {jefeSelected.nombre}
+                      {jefe.map((j) => (
+                        <SelectItem key={j.id} value={j.id!}>
+                          {j.nombre} {j.apellido}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </FormControl>
-                <FormDescription>Selecciona el jefe directo del empleado.</FormDescription>
+                <FormDescription>Selecciona el jefe directo.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
 
-        {/* Correo */}
-        <FormField
-          control={form.control}
-          name="correo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Correo electrónico</FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="Ingresa tu correo electrónico"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Debes ingresar un correo electrónico válido.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Estado Activo (solo si es actualización) */}
+        {/* Estado Activo (solo actualización) */}
         {isUpdate && (
           <FormField
             control={form.control}
@@ -309,7 +463,7 @@ export function EmpleadoFormulario({
                   </Select>
                 </FormControl>
                 <FormDescription>
-                  Define si el registro está activo o inactivo.
+                  Define si el empleado está activo o inactivo.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -317,7 +471,7 @@ export function EmpleadoFormulario({
           />
         )}
 
-        {/* Enviar */}
+        {/* Botón Enviar */}
         <div className="flex justify-end">
           <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (

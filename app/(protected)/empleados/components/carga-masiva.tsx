@@ -13,27 +13,12 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
 import * as XLSX from "xlsx";
+import { importEmpleadosFromExcel } from "../actions"; // <-- Importa la acción del servidor
+import { EmployeeDto } from "../type";
 
 type RawRow = Record<string, any>;
-
-interface EmployeeDto {
-    identidad: string;
-    nombres: string;
-    apellidos: string;
-    fechaNacimiento: string; // "YYYY-MM-DD"
-    genero: string;
-    departamento: string;
-    ciudad: string;
-    colonia: string;
-    telefono: string;
-    email: string;
-    profesion: string;
-    fechaIngreso: string; // "YYYY-MM-DD"
-    cargo: string;        // puesto
-}
 
 export function EmployeeImporter() {
     const { toast } = useToast();
@@ -42,9 +27,6 @@ export function EmployeeImporter() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string>("");
 
-    /**
-     * Mapeo de meses en español (sin tildes) a dos dígitos.
-     */
     const monthMap: Record<string, string> = {
         ENERO: "01",
         FEBRERO: "02",
@@ -60,39 +42,28 @@ export function EmployeeImporter() {
         DICIEMBRE: "12",
     };
 
-    /**
-     * Recibe tres claves (por ejemplo "Dia", "Mes", "Año") y arma "YYYY-MM-DD".
-     * - Si “Mes” viene escrito en texto (ej. "DICIEMBRE"), lo traduce a número.
-     * - Si día/mes/año vienen con “.0” (número Excel leído como float), se quita la parte decimal.
-     * - Si falta cualquiera de las piezas, devuelve cadena vacía.
-     */
     const parseDateFromParts = (
         row: RawRow,
         dayKey: string,
         monthKey: string,
         yearKey: string
     ): string => {
-        // --- Día ---
         const rawDay = row[dayKey];
         let day = "";
         if (rawDay != null) {
             day = rawDay.toString().trim();
-            // Si viene “2.0” o “02.0”, cortamos la parte decimal:
             if (day.includes(".") && /^\d+(\.\d+)?$/.test(day)) {
                 day = day.split(".")[0];
             }
-            day = day.padStart(2, "0"); // ej. "2" → "02"
+            day = day.padStart(2, "0");
         }
 
-        // --- Mes ---
         const rawMonth = row[monthKey]?.toString().trim().toUpperCase() ?? "";
         let month = "";
         if (rawMonth) {
-            // Si es palabra (“DICIEMBRE”), buscar en el map
             if (monthMap[rawMonth]) {
                 month = monthMap[rawMonth];
             } else {
-                // Si es número (ej. “12” o “12.0”), quita decimales y rellena
                 let m = rawMonth;
                 if (m.includes(".") && /^\d+(\.\d+)?$/.test(m)) {
                     m = m.split(".")[0];
@@ -101,12 +72,10 @@ export function EmployeeImporter() {
             }
         }
 
-        // --- Año ---
         const rawYear = row[yearKey];
         let year = "";
         if (rawYear != null) {
             year = rawYear.toString().trim();
-            // Si viene con “.0”, eliminar la parte decimal:
             if (year.includes(".") && /^\d+(\.\d+)?$/.test(year)) {
                 year = year.split(".")[0];
             }
@@ -120,13 +89,7 @@ export function EmployeeImporter() {
         return isNaN(d.getTime()) ? "" : iso;
     };
 
-    /**
-     * A partir de una fila “RawRow” convierte a EmployeeDto.
-     * - Para identidad: borra la parte decimal si aparece “.0”.
-     * - Para fechas, usa parseDateFromParts con las claves exactas ("Dia"/"Mes"/"Año" vs "Dia.1"/"Mes.1"/"Año.1").
-     */
     const transformRow = (row: RawRow): EmployeeDto => {
-        // --- Procesar “Numero de Identificacion” para quitar “.0” si fuera necesario ---
         const rawId = row["Numero de Identificacion"];
         let identidad = "";
         if (rawId != null) {
@@ -140,10 +103,7 @@ export function EmployeeImporter() {
             identidad,
             nombres: row["Nombres"]?.toString().trim() ?? "",
             apellidos: row["Apellidos"]?.toString().trim() ?? "",
-
-            // --- FECHA DE NACIMIENTO (columnas “Dia”, “Mes”, “Año”) ---
             fechaNacimiento: parseDateFromParts(row, "Dia", "Mes", "Año"),
-
             genero: row["Genero"]?.toString().trim() ?? "",
             departamento: row["Departamento de Domicilio"]?.toString().trim() ?? "",
             ciudad: row["Ciudad de Domicilio"]?.toString().trim() ?? "",
@@ -151,21 +111,11 @@ export function EmployeeImporter() {
             telefono: row["Número de Celular de Cliente"]?.toString().trim() ?? "",
             email: row["Correo Electronico Personal"]?.toString().trim() ?? "",
             profesion: row["Profesion u oficio"]?.toString().trim() ?? "",
-
-            // --- FECHA DE INGRESO (columnas “Dia.1”, “Mes.1”, “Año.1”) ---
             fechaIngreso: parseDateFromParts(row, "Dia.1", "Mes.1", "Año.1"),
-
             cargo: row["Cargo que desempeña"]?.toString().trim() ?? "",
         };
     };
 
-    /**
-     * Al cargar el archivo:
-     * 1) Leemos el Excel con header:1 para obtener la fila de encabezados en índice 1.
-     * 2) Creamos nombres únicos para los encabezados duplicados.
-     * 3) Reconstruimos cada fila solo con las columnas “útiles” (incluyendo “Dia” vs “Dia.1”).
-     * 4) Aplicamos transformRow para generar EmployeeDto.
-     */
     const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -188,9 +138,6 @@ export function EmployeeImporter() {
             }
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-            // --- IMPORTANTE: leemos con header:1 ---
-            // rawJson[0] = títulos generales (“FECHA DE NACIMIENTO”, “DATOS ECONOMICOS”, etc.)
-            // rawJson[1] = fila real de encabezados: “N°”, “Numero de Identificacion”, “Nombres”, “Apellidos”, “Dia”, “Mes”, “Año”, …, “Dia”, “Mes”, “Año”, “Cargo que desempeña”, …
             const rawJson: RawRow[] = XLSX.utils.sheet_to_json(worksheet, {
                 header: 1,
                 raw: false,
@@ -202,11 +149,9 @@ export function EmployeeImporter() {
                 throw new Error("El archivo debe tener al menos dos filas: una general y otra con encabezados.");
             }
 
-            // Obtenemos la segunda fila, que es la fila de encabezados reales
             const headersRow = rawJson[1] as string[];
-            const rows = rawJson.slice(2) as any[][]; // el resto de filas (datos)
+            const rows = rawJson.slice(2) as any[][];
 
-            // --- 1) Generar encabezados únicos (para no pisar “Dia” → “Dia.1”) ---
             const headerCounts: Record<string, number> = {};
             const uniqueHeaders = headersRow.map((h) => {
                 const title = h?.toString().trim() ?? "";
@@ -216,18 +161,17 @@ export function EmployeeImporter() {
                     return title;
                 } else {
                     headerCounts[title]++;
-                    return `${title}.${headerCounts[title]}`; // “Dia” → “Dia.1” en segundo encuentro
+                    return `${title}.${headerCounts[title]}`;
                 }
             });
 
-            // --- 2) Defino las columnas que necesito, ya con nombres únicos ---
             const columnasUtiles = [
                 "Numero de Identificacion",
                 "Nombres",
                 "Apellidos",
-                "Dia",     // fechaNacimiento - día
-                "Mes",     // fechaNacimiento - mes
-                "Año",     // fechaNacimiento - año
+                "Dia",
+                "Mes",
+                "Año",
                 "Genero",
                 "Departamento de Domicilio",
                 "Ciudad de Domicilio",
@@ -235,13 +179,12 @@ export function EmployeeImporter() {
                 "Número de Celular de Cliente",
                 "Correo Electronico Personal",
                 "Profesion u oficio",
-                "Dia.1",   // fechaIngreso - día
-                "Mes.1",   // fechaIngreso - mes
-                "Año.1",   // fechaIngreso - año
+                "Dia.1",
+                "Mes.1",
+                "Año.1",
                 "Cargo que desempeña",
             ];
 
-            // --- 3) Reconstruir cada fila usando uniqueHeaders como clave ---
             const reconstructed: RawRow[] = rows.map((rowArr) => {
                 const obj: RawRow = {};
                 uniqueHeaders.forEach((colName, idx) => {
@@ -252,7 +195,6 @@ export function EmployeeImporter() {
                 return obj;
             });
 
-            // --- 4) Transformar cada RawRow filtrado a EmployeeDto ---
             const empleados = reconstructed.map((r) => {
                 try {
                     return transformRow(r);
@@ -261,7 +203,6 @@ export function EmployeeImporter() {
                 }
             });
 
-            // Filtrar filas vacías (sin identidad, nombre o apellido)
             const empleadosValidos = empleados.filter(
                 (emp) =>
                     emp.identidad !== "" ||
@@ -303,17 +244,19 @@ export function EmployeeImporter() {
 
         setIsSaving(true);
         try {
-            // Acá podrías llamar tu API, por ejemplo:
-            // await fetch("/api/import-empleados", { method: "POST", body: JSON.stringify(data) });
-
-            // Simulación de retraso para mostrar “Guardando…”
-            await new Promise((r) => setTimeout(r, 1500));
+            // Llamamos al action del servidor:
+            await importEmpleadosFromExcel(
+                data.map((emp) => ({
+                    ...emp,
+                    numeroIdentificacion: emp.identidad,
+                }))
+            );
 
             toast({
                 title: "Empleados guardados",
                 description: `${data.length} registros procesados correctamente.`,
             });
-            // Si querés limpiar después:
+            // Si deseas limpiar después:
             // setData([]);
         } catch (err) {
             console.error("Error guardando:", err);
@@ -327,7 +270,6 @@ export function EmployeeImporter() {
         }
     };
 
-    // Columnas que mostramos en la tabla
     const columnLabels: { key: keyof EmployeeDto; label: string }[] = [
         { key: "identidad", label: "Identidad" },
         { key: "nombres", label: "Nombres" },
@@ -346,7 +288,6 @@ export function EmployeeImporter() {
 
     return (
         <div className="space-y-6">
-            {/* Zona de carga de archivo + botón de guardado */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex items-center gap-2">
                     <Input
@@ -374,7 +315,6 @@ export function EmployeeImporter() {
                 </Button>
             </div>
 
-            {/* Si ocurrió un error, lo mostramos */}
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -382,7 +322,6 @@ export function EmployeeImporter() {
                 </Alert>
             )}
 
-            {/* Tabla con los empleados filtrados */}
             {data.length > 0 && (
                 <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
