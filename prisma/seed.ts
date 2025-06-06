@@ -61,6 +61,19 @@ async function main() {
     { nombre: "ver_detalle_voucher_pago", descripcion: "Permiso para ver la pantalla de detalle de voucher" },
     // Perfil
     { nombre: "ver_profile", descripcion: "Permiso para ver el perfil" },
+
+    { nombre: "ver_inventario", descripcion: "Permiso para ver modulo de inventario" },
+
+    //Categoria activos
+    { nombre: "ver_categoria_activo", descripcion: "Permiso para ver las categorias de activos" },
+    { nombre: "crear_categoria_activo", descripcion: "Permiso para crear las categorias de activos" },
+    { nombre: "editar_categoria_activo", descripcion: "Permiso para editar las categorias de activos" },
+
+    //Estado activos
+    { nombre: "ver_estados_activo", descripcion: "Permiso para ver los estados de activos" },
+    { nombre: "crear_estados_activo", descripcion: "Permiso para crear los estados de activos" },
+    { nombre: "editar_estados_activo", descripcion: "Permiso para editar los estados de activos" },
+
   ];
 
   const permisoIds: string[] = [];

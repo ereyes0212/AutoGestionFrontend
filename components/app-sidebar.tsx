@@ -15,7 +15,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, Package, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
 import Link from "next/link";
 import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
@@ -91,6 +91,12 @@ const items = [
     url: "/contabilidad",
     icon: Calculator,
     permiso: "ver_contabilidad",
+  },
+  {
+    title: "Inventario",
+    url: "/inventario",
+    icon: Package,
+    permiso: "ver_inventario",
   },
   {
     title: "Voucher de Pago",

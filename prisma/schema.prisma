@@ -67,6 +67,7 @@ model Empleados {
   // Relaciones:
   Empleados                   Empleados?                    @relation("EmpleadosToEmpleados", fields: [jefe_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Empleados_Empleados_jefe_id")
   other_Empleados             Empleados[]                   @relation("EmpleadosToEmpleados")
+  activosAsignados            Activo[]                      @relation("EmpleadoActivos")
   Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Empleados_Puesto_puesto_id")
   ReporteDise_o               ReporteDise_o[]
   SolicitudVacacion           SolicitudVacacion[]
@@ -270,4 +271,66 @@ model PasswordResetToken {
   Usuario Usuarios @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "IX_PasswordResetToken_userId")
+}
+
+/// ==========================
+/// 1. Categorías de Activos
+model CategoriaActivo {
+  id          String   @id @default(uuid())
+  nombre      String   @db.VarChar(100)
+  descripcion String?  @db.Text
+  activo      Boolean  @db.Bit(1)
+  activos     Activo[]
+}
+
+/// ==========================
+/// 2. Estado de Activo (Catálogo)
+model EstadoActivo {
+  id          String  @id @default(uuid())
+  nombre      String  @db.VarChar(50) // “Bueno”, “Medio”, “Dañado”, etc.
+  descripcion String? @db.Text
+
+  activos   Activo[] // Relación inversa (estado actual)
+  historial HistorialActivo[] // Relación inversa (posición como FK en Historial)
+}
+
+/// ==========================
+/// 3. Activo (Inventario)
+model Activo {
+  id                 String          @id @default(uuid())
+  codigoBarra        String          @unique @db.VarChar(100)
+  nombre             String          @db.VarChar(150)
+  descripcion        String?         @db.Text
+  categoriaId        String          @db.VarChar(36)
+  empleadoAsignadoId String?         @db.VarChar(36)
+  fechaAsignacion    DateTime?       @db.DateTime(6)
+  fechaRegistro      DateTime        @default(now()) @db.DateTime(6)
+  estadoActualId     String?         @db.VarChar(36)
+  activo             Boolean         @db.Bit(1)
+  // Relaciones
+  categoria          CategoriaActivo @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  empleadoAsignado   Empleados?      @relation("EmpleadoActivos", fields: [empleadoAsignadoId], references: [id], onDelete: SetNull)
+  estadoActual       EstadoActivo?   @relation(fields: [estadoActualId], references: [id], onDelete: SetNull)
+
+  historialEstados HistorialActivo[]
+
+  @@index([categoriaId], map: "IX_Activo_categoriaId")
+  @@index([empleadoAsignadoId], map: "IX_Activo_empleadoAsignadoId")
+  @@index([estadoActualId], map: "IX_Activo_estadoActualId")
+}
+
+/// ==========================
+/// 4. Historial de Estados por Activo (Revisiones anuales)
+model HistorialActivo {
+  id            String   @id @default(uuid())
+  activoId      String   @db.VarChar(36)
+  fechaRevision DateTime @db.DateTime(6)
+  estadoId      String   @db.VarChar(36)
+  observaciones String?  @db.Text
+
+  activo Activo       @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  estado EstadoActivo @relation(fields: [estadoId], references: [id], onDelete: Restrict)
+
+  @@index([activoId], map: "IX_HistorialActivo_activoId")
+  @@index([estadoId], map: "IX_HistorialActivo_estadoId")
 }
