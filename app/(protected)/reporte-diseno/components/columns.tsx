@@ -17,7 +17,7 @@ import { ReporteDiseño } from "../type"
 
 export const columns: ColumnDef<ReporteDiseño>[] = [
   {
-    accessorKey: "empleado",
+    accessorKey: "Empleado",
     header: ({ column }) => {
       const sort = column.getIsSorted()
       return (
@@ -35,7 +35,7 @@ export const columns: ColumnDef<ReporteDiseño>[] = [
     },
   },
   {
-    accessorKey: "tipoSeccion",
+    accessorKey: "TipoSeccion",
     header: ({ column }) => {
       const sort = column.getIsSorted()
       return (
@@ -53,7 +53,7 @@ export const columns: ColumnDef<ReporteDiseño>[] = [
     },
   },
   {
-    accessorKey: "fechaRegistro",
+    accessorKey: "FechaRegistro",
     header: ({ column }) => {
       const sort = column.getIsSorted()
       return (
@@ -70,27 +70,27 @@ export const columns: ColumnDef<ReporteDiseño>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue<string>("fechaRegistro"))
+      const date = new Date(row.getValue<string>("FechaRegistro"))
       return <span>{date.toLocaleDateString()}</span>
     },
   },
   {
     id: "paginas",
     header: "Páginas",
-    accessorFn: row => `${row.paginaInicio} - ${row.paginaFin}`,
+    accessorFn: row => `${row.PaginaInicio} - ${row.PaginaFin}`,
     cell: info => <span>{info.getValue<string>()}</span>,
   },
   {
     id: "horario",
     header: "Horario",
-    accessorFn: row => `${row.horaInicio} - ${row.horaFin}`,
+    accessorFn: row => `${row.HoraInicio} - ${row.HoraFin}`,
     cell: info => <span>{info.getValue<string>()}</span>,
   },
   {
-    accessorKey: "observacion",
+    accessorKey: "Observacion",
     header: "Observación",
     cell: ({ row }) => {
-      const observacion = row.getValue<string>("observacion");
+      const observacion = row.getValue<string>("Observacion");
       return <span>{observacion ? observacion : "Sin Observación"}</span>;
     },
   },
@@ -111,7 +111,7 @@ export const columns: ColumnDef<ReporteDiseño>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/reporte-diseno/${reporte.id}/edit`}>
+            <Link href={`/reporte-diseno/${reporte.Id}/edit`}>
               <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

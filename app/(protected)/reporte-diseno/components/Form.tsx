@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,7 +27,7 @@ import { TipoSeccion } from "../../tipo-seccion/types";
 import { createReporteDiseño } from "../actions";
 import { ReporteDisenoDTOSchema } from "../schema";
 
-type ReporteFormValues = z.infer<typeof ReporteDisenoDTOSchema>;
+type ReporteFormValues = z.input<typeof ReporteDisenoDTOSchema>;
 
 interface FormularioReporteProps {
   isUpdate: boolean;
@@ -44,56 +43,44 @@ export function FormularioReporte({
   const { toast } = useToast();
   const router = useRouter();
 
-  const form = useForm<ReporteFormValues>({
+  const form = useForm<ReporteFormValues, any, ReporteFormValues>({
     resolver: zodResolver(ReporteDisenoDTOSchema),
     defaultValues: {
       SeccionId: initialData?.SeccionId ?? "",
-      PaginaInicio: initialData?.PaginaInicio?.toString() ?? "",
-      PaginaFin: initialData?.PaginaFin?.toString() ?? "",
+      PaginaInicio: initialData?.PaginaInicio ?? 1,
+      PaginaFin: initialData?.PaginaFin ?? 1,
       HoraInicio: initialData?.HoraInicio ?? "08:00:00",
       HoraFin: initialData?.HoraFin ?? "09:00:00",
       Observacion: initialData?.Observacion ?? "",
     },
   });
 
-  const onSubmit = async (data: ReporteFormValues) => {
+  const onSubmit = async (values: ReporteFormValues) => {
     try {
-      if (isUpdate && initialData?.id) {
-        // await putReporteDiseño({ reporte: { id: initialData.id, ...data } });
-        toast({
-          title: "Reporte actualizado",
-          description: "El reporte de diseño se actualizó correctamente",
-        });
+      const payload = {
+        ...values,
+        tipoSeccion: tipoSecciones.find(ts => ts.id === values.SeccionId)?.nombre ?? "",
+        empleado: "",
+        id: initialData?.id ?? "",
+        fechaRegistro: new Date().toISOString(),
+      };
+
+      if (isUpdate) {
+        toast({ title: "Reporte actualizado", description: "Actualizado correctamente" });
       } else {
-        await createReporteDiseño({
-          id: "",
-          empleado: "",
-          tipoSeccion: "",
-          tipoSeccionId: data.SeccionId,
-          fechaRegistro: "",
-          paginaInicio: data.PaginaInicio,
-          paginaFin: data.PaginaFin,
-          horaInicio: data.HoraInicio,
-          horaFin: data.HoraFin,
-          observacion: data.Observacion ?? "",
-        });
-        toast({
-          title: "Reporte creado",
-          description: "El reporte de diseño se creó correctamente",
-        });
+        await createReporteDiseño(payload as any);
+        toast({ title: "Reporte creado", description: "Creado correctamente" });
       }
       router.push("/reporte-diseno");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "Ocurrió un error al guardar el reporte" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo guardar el reporte" });
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 p-4 border rounded">
-        {/* Tipo Sección */}
+        {/* Sección */}
         <FormField
           control={form.control}
           name="SeccionId"
@@ -103,11 +90,10 @@ export function FormularioReporte({
               <FormControl>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger>
-                    {/* Aquí indicamos que muestre el valor actual */}
                     <SelectValue placeholder="Selecciona una sección" />
                   </SelectTrigger>
                   <SelectContent>
-                    {tipoSecciones.map((ts) => (
+                    {tipoSecciones.map(ts => (
                       <SelectItem key={ts.id} value={ts.id || ""}>
                         {ts.nombre}
                       </SelectItem>
@@ -115,7 +101,6 @@ export function FormularioReporte({
                   </SelectContent>
                 </Select>
               </FormControl>
-              <FormDescription>Elige la sección del reporte</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -130,7 +115,11 @@ export function FormularioReporte({
               <FormItem>
                 <FormLabel>Página Inicio</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    type="number"
+                    value={field.value}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -143,7 +132,11 @@ export function FormularioReporte({
               <FormItem>
                 <FormLabel>Página Fin</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    type="number"
+                    value={field.value}
+                    onChange={e => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -191,7 +184,6 @@ export function FormularioReporte({
               <FormControl>
                 <Input {...field} />
               </FormControl>
-              <FormDescription>Notas adicionales (opcional)</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -200,13 +192,9 @@ export function FormularioReporte({
         {/* Botón */}
         <div className="flex justify-end">
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : isUpdate ? (
-              "Actualizar"
-            ) : (
-              "Crear"
-            )}
+            {form.formState.isSubmitting
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : isUpdate ? "Actualizar" : "Crear"}
           </Button>
         </div>
       </form>

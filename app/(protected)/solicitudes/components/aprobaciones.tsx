@@ -141,7 +141,7 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                 )}
                             </CardContent>
 
-                            {solicitud.aprobado === null && (
+                            {solicitud.aprobado === 'Pendiente' && (
                                 <CardFooter key={solicitud.id} className="flex justify-end gap-1">
                                     <ApprovalDialog
                                         action="approve"

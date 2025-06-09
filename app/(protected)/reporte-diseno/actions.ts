@@ -2,134 +2,96 @@
 
 import { getSession } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { parseTimeToTodayDate } from '@/lib/utils';
 import { randomUUID } from 'crypto';
 import { ReporteDiseño } from './type';
 
-/**
- * Obtiene todos los reportes de diseño.
- */
+//
+// Obtener todos los reportes.
+//
 export async function getReportesDiseño(): Promise<ReporteDiseño[]> {
-  const records = await prisma.reporteDise_o.findMany({
+  const records = await prisma.reporteDiseño.findMany({
     include: { TipoSeccion: true, Empleados: true },
     orderBy: { FechaRegistro: 'desc' },
   });
+  console.log("🚀 ~ getReportesDiseño ~ records:", records)
 
   return records.map(r => ({
-    id: r.Id,
-    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-    tipoSeccion: r.TipoSeccion.Nombre,
-    tipoSeccionId: r.SeccionId,
-    fechaRegistro: r.FechaRegistro.toISOString(),
-    paginaInicio: r.PaginaInicio.toString(),
-    paginaFin: r.PaginaFin.toString(),
-    horaInicio: r.HoraInicio.toISOString(),
-    horaFin: r.HoraFin.toISOString(),
-    observacion: r.Observacion ?? '',
+    Id: r.Id,
+    Empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    TipoSeccion: r.TipoSeccion.Nombre,
+    SeccionId: r.SeccionId,
+    FechaRegistro: r.FechaRegistro,
+    PaginaInicio: r.PaginaInicio,
+    PaginaFin: r.PaginaFin,
+    HoraInicio: r.HoraInicio,
+    HoraFin: r.HoraFin,
+    Observacion: r.Observacion ?? '',
   }));
 }
 
-
-
-/**
- * Obtiene un reporte de diseño por ID.
- */
+//
+// Obtener un reporte por ID.
+//
 export async function getReporteDiseñoById(id: string): Promise<ReporteDiseño | null> {
-  const r = await prisma.reporteDise_o.findUnique({
+  const r = await prisma.reporteDiseño.findUnique({
     where: { Id: id },
     include: { TipoSeccion: true, Empleados: true },
   });
-
   if (!r) return null;
 
   return {
-    id: r.Id,
-    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-    tipoSeccion: r.TipoSeccion.Nombre,
-    tipoSeccionId: r.SeccionId,
-    fechaRegistro: r.FechaRegistro.toISOString(),
-    paginaInicio: r.PaginaInicio.toString(),
-    paginaFin: r.PaginaFin.toString(),
-    horaInicio: r.HoraInicio.toISOString(),
-    horaFin: r.HoraFin.toISOString(),
-    observacion: r.Observacion ?? '',
+    Id: r.Id,
+    Empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    TipoSeccion: r.TipoSeccion.Nombre,
+    SeccionId: r.SeccionId,
+    FechaRegistro: r.FechaRegistro,
+    PaginaInicio: r.PaginaInicio,
+    PaginaFin: r.PaginaFin,
+    HoraInicio: r.HoraInicio,
+    HoraFin: r.HoraFin,
+    Observacion: r.Observacion ?? '',
   };
 }
 
-/**
- * Crea un nuevo reporte de diseño.
- */
+//
+// Crear un nuevo reporte.
+//
 export async function createReporteDiseño(data: ReporteDiseño): Promise<ReporteDiseño> {
+  console.log("🚀 ~ createReporteDiseño ~ data:", data);
   const session = await getSession();
-  if (!session || !session.IdEmpleado) {
-    throw new Error('Empleado no autenticado');
+  if (!session?.IdEmpleado) {
+    throw new Error("Empleado no autenticado");
   }
+  console.log("🚀 ~ createReporteDiseño ~ session:", session?.IdEmpleado)
 
-  const now = new Date();
-
-  const r = await prisma.reporteDise_o.create({
+  const nuevo = await prisma.reporteDiseño.create({
     data: {
-      Id: randomUUID(),
+      Id: data.Id || randomUUID(),
       EmpleadoId: session.IdEmpleado,
-      SeccionId: data.tipoSeccionId,
-      FechaRegistro: now,
-      PaginaInicio: Number(data.paginaInicio),
-      PaginaFin: Number(data.paginaFin),
-      HoraInicio: parseTimeToTodayDate(data.horaInicio),
-      HoraFin: parseTimeToTodayDate(data.horaFin),
-      Observacion: data.observacion,
+      SeccionId: data.SeccionId,
+      FechaRegistro: new Date(),
+      PaginaInicio: data.PaginaInicio,
+      PaginaFin: data.PaginaFin,
+      HoraInicio: data.HoraInicio,
+      HoraFin: data.HoraFin,
+      Observacion: data.Observacion ?? '',
     },
-    include: { TipoSeccion: true, Empleados: true },
+    include: {
+      TipoSeccion: true,
+      Empleados: true,
+    },
   });
 
   return {
-    id: r.Id,
-    empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-    tipoSeccion: r.TipoSeccion.Nombre,
-    tipoSeccionId: r.SeccionId,
-    fechaRegistro: r.FechaRegistro.toISOString(),
-    paginaInicio: r.PaginaInicio.toString(),
-    paginaFin: r.PaginaFin.toString(),
-    horaInicio: r.HoraInicio.toISOString(),
-    horaFin: r.HoraFin.toISOString(),
-    observacion: r.Observacion ?? '',
+    Id: nuevo.Id,
+    Empleado: `${nuevo.Empleados.nombre} ${nuevo.Empleados.apellido}`,
+    TipoSeccion: nuevo.TipoSeccion.Nombre,
+    SeccionId: nuevo.SeccionId,
+    FechaRegistro: nuevo.FechaRegistro,
+    PaginaInicio: nuevo.PaginaInicio,
+    PaginaFin: nuevo.PaginaFin,
+    HoraInicio: nuevo.HoraInicio,
+    HoraFin: nuevo.HoraFin,
+    Observacion: nuevo.Observacion ?? '',
   };
 }
-
-/**
- * Actualiza un reporte de diseño existente.
- */
-// export async function updateReporteDiseño(input: unknown): Promise<ReporteDiseño | null> {
-//   const dto = ReporteDisenoDTOSchema.parse(input);
-//   if (!dto.id) return null;
-
-//   const now = new Date();
-
-//   const r = await prisma.reporteDise_o.update({
-//     where: { Id: dto.id },
-//     data: {
-//       SeccionId: dto.SeccionId,
-//       PaginaInicio: dto.PaginaInicio,
-//       PaginaFin: dto.PaginaFin,
-//       HoraInicio: dto.HoraInicio,
-//       HoraFin: dto.HoraFin,
-//       Observacion: dto.Observacion,
-//       Updated_at: now,
-//       modificado_por: 'Sistema',
-//     },
-//     include: { TipoSeccion: true, Empleados: true },
-//   });
-
-//   return {
-//     id: r.Id,
-//     empleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-//     tipoSeccion: r.TipoSeccion.Nombre,
-//     tipoSeccionId: r.SeccionId,
-//     fechaRegistro: r.FechaRegistro.toISOString(),
-//     paginaInicio: r.PaginaInicio.toString(),
-//     paginaFin: r.PaginaFin.toString(),
-//     horaInicio: r.HoraInicio.toISOString(),
-//     horaFin: r.HoraFin.toISOString(),
-//     observacion: r.Observacion ?? '',
-//   };
-// }

@@ -25,14 +25,14 @@ export default async function EditReporte({ params }: { params: { id: string } }
 
   // Inicializar datos del formulario
   const initialData = {
-    id: reporte.id,
-    SeccionId: reporte.tipoSeccionId,
-    FechaRegistro: reporte.fechaRegistro,
-    PaginaInicio: reporte.paginaInicio,
-    PaginaFin: reporte.paginaFin,
-    HoraInicio: reporte.horaInicio,
-    HoraFin: reporte.horaFin,
-    Observacion: reporte.observacion || "",
+    id: reporte.Id,
+    SeccionId: reporte.SeccionId,
+    FechaRegistro: reporte.FechaRegistro,
+    PaginaInicio: reporte.PaginaInicio,
+    PaginaFin: reporte.PaginaFin,
+    HoraInicio: reporte.HoraInicio,
+    HoraFin: reporte.HoraFin,
+    Observacion: reporte.Observacion || "",
   };
 
   return (

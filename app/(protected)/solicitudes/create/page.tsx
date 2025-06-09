@@ -32,8 +32,8 @@ export default async function Create() {
     <div>
       <HeaderComponent
         Icon={PlusCircle}
-        description="En este apartado podrá crear un nuevo empleado."
-        screenName="Crear Empleado" // Cambié la pantalla a "Crear Empleado"
+        description="En ese modulo podrá crear solicitudes de vacaciones."
+        screenName="Crear Solicitud de vacaciones" // Cambié la pantalla a "Crear Empleado"
       />
       <EmpleadoFormulario
         isUpdate={false} // Esto es para indicar que estamos creando, no actualizando

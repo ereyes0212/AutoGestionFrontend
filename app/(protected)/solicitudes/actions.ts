@@ -3,6 +3,8 @@
 
 import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { EmailService } from "@/lib/sendEmail";
+import { solicitudCreadaTemplate, SolicitudData, solicitudParaAprobadorTemplate } from "@/lib/templates/solicitudVacacionesEmail";
 import { randomUUID } from "crypto";
 import {
   Aprobacion,
@@ -379,7 +381,7 @@ export async function postSolicitud({
     throw new Error("Empleado no autenticado");
   }
 
-  // 1️⃣ Obtener configuraciones activas
+  // 1️⃣ Obtener configuraciones activas ordenadas por nivel
   const cfgs = await prisma.configuracionAprobacion.findMany({
     where: { Activo: true },
     orderBy: { nivel: "asc" },
@@ -397,16 +399,14 @@ export async function postSolicitud({
   const aprobacionesData: any[] = [];
   for (const cfg of cfgs) {
     let aprobadorId: string | null = null;
-    if (cfg.Tipo === "Fijo") {
-      const empleado = await prisma.empleados.findFirst({
-        where: cfg.puesto_id ? { puesto_id: cfg.puesto_id } : {},
+    if (cfg.Tipo === "Fijo" && cfg.puesto_id) {
+      const empleadoFijo = await prisma.empleados.findFirst({
+        where: { puesto_id: cfg.puesto_id },
       });
-      aprobadorId = empleado?.id ?? null;
+      aprobadorId = empleadoFijo?.id ?? null;
     } else {
-      const jefeEmpleado = await prisma.empleados.findUnique({
-        where: { id: IdEmpleado },
-      });
-      aprobadorId = jefeEmpleado?.jefe_id ?? null;
+      const jefe = await prisma.empleados.findUnique({ where: { id: IdEmpleado } });
+      aprobadorId = jefe?.jefe_id ?? null;
     }
     aprobacionesData.push({
       Id: randomUUID(),
@@ -415,11 +415,11 @@ export async function postSolicitud({
       Nivel: cfg.nivel,
       Estado: "Pendiente",
       EmpleadoAprobadorId: aprobadorId,
-      CreatedAt: new Date(),
+      createAt: new Date(),
     });
   }
 
-  // 4️⃣ Crear solicitud con sus aprobaciones anidadas
+  // 4️⃣ Crear solicitud con aprobaciones anidadas
   const now = new Date();
   const r = await prisma.solicitudVacacion.create({
     data: {
@@ -431,39 +431,69 @@ export async function postSolicitud({
       FechaFin: fechaFin,
       Descripcion: data.descripcion,
       Aprobado: null,
-      SolicitudVacacionAprobacion: {
-        create: aprobacionesData,
-      },
+      SolicitudVacacionAprobacion: { create: aprobacionesData },
     },
     include: {
       Empleados: true,
-      Puesto: true,
       SolicitudVacacionAprobacion: {
         orderBy: { Nivel: "asc" },
-        include: { Empleados: true, ConfiguracionAprobacion: { include: { Puesto: true } } },
+        include: { Empleados: true, ConfiguracionAprobacion: true },
       },
     },
   });
 
+  // 5️⃣ Enviar emails
+  const emailService = new EmailService();
 
+  // Datos comunes
+  const dto: SolicitudData = {
+    empleadoNombre: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    fechaInicio,
+    fechaFin,
+    descripcion: data.descripcion,
+  };
 
-  // 6️⃣ Mapear a DTO de salida si es necesario
+  // 5.1️⃣ Email al solicitante
+  if (r.Empleados.correo) {
+    await emailService.sendMail({
+      to: r.Empleados.correo,
+      subject: `Tu solicitud de vacaciones está registrada`,
+      html: solicitudCreadaTemplate(dto),
+    });
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // 5.2️⃣ Emails a aprobadores
+  const frontendBase = process.env.FRONTEND_URL || "";
+  await Promise.all(
+    r.SolicitudVacacionAprobacion.map(async (ap) => {
+      const mail = ap.Empleados?.correo;
+      if (!mail) return;
+      const nivel = ap.Nivel;
+      const linkRevisar = `${baseUrl}${frontendBase}/solicitudes/${r.Id}`;
+      await emailService.sendMail({
+        to: mail,
+        subject: `Revisión requerida: solicitud de vacaciones nivel ${nivel}`,
+        html: solicitudParaAprobadorTemplate({ ...dto, nivel, linkRevisar }),
+      });
+    })
+  );
+
+  // 6️⃣ Mapear a DTO de salida
   const fechaSolicitudStr = r.FechaSolicitud.toISOString();
   const fechaInicioStr = r.FechaInicio.toISOString();
   const fechaFinStr = r.FechaFin.toISOString();
   const diasSolicitados = calcularDiasSolicitados(r.FechaInicio, r.FechaFin);
 
-  const aprobacionesOut: Aprobacion[] = r.SolicitudVacacionAprobacion.map(a => ({
+  const aprobacionesOut: Aprobacion[] = r.SolicitudVacacionAprobacion.map((a) => ({
     id: a.Id,
     nivel: a.Nivel,
     aprobado: null,
     comentario: null,
     fechaAprobacion: null,
     empleadoId: a.EmpleadoAprobadorId ?? null,
-    nombreEmpleado: a.Empleados
-      ? `${a.Empleados.nombre} ${a.Empleados.apellido}`
-      : null,
-    puestoId: a.ConfiguracionAprobacion.puesto_id ?? null,
+    nombreEmpleado: a.Empleados ? `${a.Empleados.nombre} ${a.Empleados.apellido}` : null,
+    puestoId: a.ConfiguracionAprobacion?.puesto_id ?? null,
     fechaSolicitud: fechaSolicitudStr,
     fechaInicio: fechaInicioStr,
     fechaFin: fechaFinStr,
@@ -474,15 +504,14 @@ export async function postSolicitud({
   return {
     id: r.Id,
     empleadoId: r.EmpleadoId,
-    nombreEmpleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-    puestoId: r.Puesto.Id,
-    puesto: r.Puesto.Nombre,
+    nombreEmpleado: dto.empleadoNombre,
+    puestoId: r.PuestoId,
     fechaSolicitud: fechaSolicitudStr,
     fechaInicio: fechaInicioStr,
     fechaFin: fechaFinStr,
     diasSolicitados,
     aprobado: null,
-    descripcion: r.Descripcion ?? "",
+    descripcion: r.Descripcion,
     aprobaciones: aprobacionesOut,
   };
 }

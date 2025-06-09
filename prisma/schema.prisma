@@ -69,7 +69,7 @@ model Empleados {
   other_Empleados             Empleados[]                   @relation("EmpleadosToEmpleados")
   activosAsignados            Activo[]                      @relation("EmpleadoActivos")
   Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Empleados_Puesto_puesto_id")
-  ReporteDise_o               ReporteDise_o[]
+  ReporteDise_o               ReporteDiseño[]
   SolicitudVacacion           SolicitudVacacion[]
   SolicitudVacacionAprobacion SolicitudVacacionAprobacion[]
   Usuarios                    Usuarios?
@@ -101,20 +101,21 @@ model Puesto {
   SolicitudVacacion       SolicitudVacacion[]
 }
 
-model ReporteDise_o {
-  Id            String      @id @db.VarChar(36)
-  EmpleadoId    String      @db.VarChar(36)
-  SeccionId     String      @db.VarChar(36)
-  FechaRegistro DateTime    @db.DateTime(6)
+model ReporteDiseño {
+  Id            String   @id @db.VarChar(36)
+  EmpleadoId    String   @db.VarChar(36)
+  SeccionId     String   @db.VarChar(36)
+  FechaRegistro DateTime @db.DateTime(6)
   PaginaInicio  Int
   PaginaFin     Int
-  HoraInicio    DateTime    @db.Time(6)
-  HoraFin       DateTime    @db.Time(6)
-  Observacion   String?     @db.LongText
-  createAt      DateTime    @default(now())
-  updateAt      DateTime    @updatedAt
-  Empleados     Empleados   @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_Empleados_EmpleadoId")
-  TipoSeccion   TipoSeccion @relation(fields: [SeccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_TipoSeccion_SeccionId")
+  HoraInicio    String   @db.VarChar(36) // almacenará "HH:MM:SS"
+  HoraFin       String   @db.VarChar(36) // almacenará "HH:MM:SS"
+  Observacion   String?  @db.LongText
+  createAt      DateTime @default(now())
+  updateAt      DateTime @updatedAt
+
+  Empleados   Empleados   @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_Empleados_EmpleadoId")
+  TipoSeccion TipoSeccion @relation(fields: [SeccionId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ReporteDiseño_TipoSeccion_SeccionId")
 
   @@index([EmpleadoId], map: "IX_ReporteDiseño_EmpleadoId")
   @@index([SeccionId], map: "IX_ReporteDiseño_SeccionId")
@@ -202,13 +203,13 @@ model AjusteTipo {
 }
 
 model TipoSeccion {
-  Id            String          @id @db.VarChar(36)
-  Nombre        String          @db.VarChar(100)
-  Descripcion   String          @db.VarChar(100)
-  Activo        Boolean         @db.Bit(1)
-  CreateAt      DateTime        @default(now())
-  UpdateAt      DateTime        @updatedAt
-  ReporteDise_o ReporteDise_o[]
+  Id            String           @id @db.VarChar(36)
+  Nombre        String           @db.VarChar(100)
+  Descripcion   String           @db.VarChar(100)
+  Activo        Boolean          @db.Bit(1)
+  CreateAt      DateTime         @default(now())
+  UpdateAt      DateTime         @updatedAt
+  ReporteDise_o ReporteDiseño[]
 }
 
 model TipoSolicitud {

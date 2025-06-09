@@ -22,8 +22,8 @@ export default async function EstadoServicio() {
     <div className="container mx-auto py-2">
       <HeaderComponent
         Icon={ListCheck}
-        description="En este apartado podrá ver todos los usuarios"
-        screenName="Usuarios"
+        description="En este apartado podrá ver todos los reportes de diseño generados por los usuarios."
+        screenName="Reporte de diseño"
       />
       <div className="hidden md:block">
         <DataTable columns={columns} data={data} />

@@ -15,8 +15,8 @@ export default async function CreateReporte() {
   const initialData = {
     SeccionId: "",          // UUID de la sección seleccionada
     FechaRegistro: new Date().toISOString().slice(0, 16), // 'YYYY-MM-DDTHH:mm'
-    PaginaInicio: "",
-    PaginaFin: "",
+    PaginaInicio: 0,
+    PaginaFin: 0,
     HoraInicio: "08:00:00",
     HoraFin: "09:00:00",
     Observacion: "",
