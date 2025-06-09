@@ -310,6 +310,7 @@ export async function putSolicitud({ solicitud }: { solicitud: SolicitudCreateIn
  */
 export async function processApproval({
   id,
+  nivel,
   aprobado,
   comentarios,
 }: {
@@ -318,6 +319,8 @@ export async function processApproval({
   aprobado: boolean;
   comentarios: string;
 }) {
+  console.log("🚀 ~ id:", id)
+  console.log("🚀 ~ aprobado:", aprobado)
   const now = new Date();
 
   const r = await prisma.solicitudVacacionAprobacion.update({
@@ -338,7 +341,37 @@ export async function processApproval({
       Empleados: true,
     },
   });
+  console.log("🚀 ~ r:", r)
 
+  const solicitudId = r.SolicitudVacacionId;
+
+  // Buscar todas las aprobaciones para esta solicitud
+  const aprobaciones = await prisma.solicitudVacacionAprobacion.findMany({
+    where: { SolicitudVacacionId: solicitudId },
+    select: { Estado: true },
+  });
+
+  const estados = aprobaciones.map(a => a.Estado);
+
+  const todasAprobadas = estados.every(e => e === "Aprobado");
+  const algunaRechazada = estados.some(e => e === "Rechazado");
+
+  if (algunaRechazada) {
+    // Si alguna fue rechazada, marcar la solicitud como no aprobada
+    await prisma.solicitudVacacion.update({
+      where: { Id: solicitudId },
+      data: { Aprobado: false },
+    });
+  } else if (todasAprobadas) {
+    // Si todas fueron aprobadas, marcar la solicitud como aprobada
+    await prisma.solicitudVacacion.update({
+      where: { Id: solicitudId },
+      data: { Aprobado: true },
+    });
+  }
+  // Si hay pendientes y ninguna fue rechazada, se deja como null (no se actualiza)
+
+  // Preparar la respuesta
   const parent = r.SolicitudVacacion;
   const fechaSolicitudStr = parent.FechaSolicitud.toISOString();
   const fechaInicioStr = parent.FechaInicio.toISOString();
@@ -347,15 +380,13 @@ export async function processApproval({
 
   return {
     id: r.Id,
-    idSolicitud: r.SolicitudVacacionId,
+    idSolicitud: solicitudId,
     nivel: r.Nivel,
-    aprobado: aprobado ? true : false,
+    aprobado,
     comentario: comentarios,
     fechaAprobacion: now.toISOString(),
     empleadoId: r.EmpleadoAprobadorId,
-    nombreEmpleado: r.Empleados
-      ? `${r.Empleados.nombre} ${r.Empleados.apellido}`
-      : "",
+    nombreEmpleado: r.Empleados ? `${r.Empleados.nombre} ${r.Empleados.apellido}` : "",
     puestoId: r.ConfiguracionAprobacion.puesto_id,
     puesto: r.ConfiguracionAprobacion.Puesto?.Nombre ?? "",
     fechaSolicitud: fechaSolicitudStr,
@@ -470,7 +501,7 @@ export async function postSolicitud({
       const mail = ap.Empleados?.correo;
       if (!mail) return;
       const nivel = ap.Nivel;
-      const linkRevisar = `${baseUrl}${frontendBase}/solicitudes/${r.Id}`;
+      const linkRevisar = `${baseUrl}${frontendBase}/solicitudes/aprobacion`;
       await emailService.sendMail({
         to: mail,
         subject: `Revisión requerida: solicitud de vacaciones nivel ${nivel}`,

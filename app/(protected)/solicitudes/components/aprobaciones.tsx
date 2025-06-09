@@ -175,7 +175,7 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                         onConfirm={async (comentario) => {
                                             try {
                                                 await processApproval({
-                                                    id: solicitud.idSolicitud,
+                                                    id: solicitud.id,
                                                     nivel: solicitud.nivel,
                                                     aprobado: false,
                                                     comentarios: comentario,
