@@ -72,17 +72,17 @@ export default function ActivoListMobile({ activos }: ActivoListProps) {
                     <div className="flex flex-col items-center gap-2 ml-4">
                         <Link href={`/inventario/activo/${activo.id}`}>
                             <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalles">
-                                <FileText className="h-4 w-4 rotate-90" />
+                                <FileText className="h-4 w-4 " />
                             </Button>
                         </Link>
                         <Link href={`/inventario/activo/${activo.id}/registros`}>
                             <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver registros">
-                                <Search className="h-4 w-4 rotate-90" />
+                                <Search className="h-4 w-4 " />
                             </Button>
                         </Link>
                         <Link href={`/inventario/activo/${activo.id}/edit`}>
                             <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar">
-                                <Pencil className="h-4 w-4 rotate-90" />
+                                <Pencil className="h-4 w-4 " />
                             </Button>
                         </Link>
                     </div>
