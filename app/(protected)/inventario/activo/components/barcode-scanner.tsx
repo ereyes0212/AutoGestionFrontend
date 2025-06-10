@@ -162,18 +162,19 @@ export default function BarcodeScanner() {
             setLastScannedCode(decodedText);
 
             // Crear un nuevo timeout para procesar el escaneo
+            const timeout = setTimeout(async () => {
+                await stopScanner();
 
-            await stopScanner();
+                toast({
+                    title: "Escaneo Exitoso",
+                    description: "El código de barras ha sido escaneado correctamente.",
+                });
 
-            toast({
-                title: "Escaneo Exitoso",
-                description: "El código de barras ha sido escaneado correctamente.",
-            });
+                router.push("/inventario/activo/check/" + decodedText);
+                router.refresh();
+            }, 500);
 
-            router.push("/inventario/activo/check/" + decodedText);
-            router.refresh();
-
-
+            setScanTimeout(timeout);
 
         } catch (error) {
             console.error("Error al procesar el código escaneado:", error);
