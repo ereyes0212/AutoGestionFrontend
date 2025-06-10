@@ -149,7 +149,7 @@ export const columns: ColumnDef<Activo>[] = [
                         <Link href={`/inventario/activo/${activo.id}/edit`}>
                             <DropdownMenuItem>Editar</DropdownMenuItem>
                         </Link>
-                        <Link href={`/inventario/activo/${activo.id}/historial`}>
+                        <Link href={`/inventario/activo/${activo.id}/registros`}>
                             <DropdownMenuItem>Ver Historial</DropdownMenuItem>
                         </Link>
                     </DropdownMenuContent>
