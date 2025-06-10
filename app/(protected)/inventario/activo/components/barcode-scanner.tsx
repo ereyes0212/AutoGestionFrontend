@@ -16,7 +16,7 @@ export default function BarcodeScanner() {
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
     const router = useRouter();
 
-    // Inicia el escáner cuando isScanning sea true
+    // Inicia el escáner cuando isScanning sea true o cambia la cámara
     useEffect(() => {
         let active = true;
         const initScanner = async () => {
@@ -25,9 +25,17 @@ export default function BarcodeScanner() {
                 if (!active) return;
                 if (devices && devices.length) {
                     setCameras(devices);
+                    // Si el índice excede, reiniciar
+                    const index = currentCameraIndex % devices.length;
+                    // Limpia scanner previo si existe
+                    if (scanner) {
+                        await scanner.stop();
+                        await scanner.clear();
+                        setScanner(null);
+                    }
                     const newScanner = new Html5Qrcode("reader");
                     await newScanner.start(
-                        devices[currentCameraIndex].id,
+                        devices[index].id,
                         {
                             fps: 10,
                             qrbox: { width: 250, height: 250 },
@@ -48,7 +56,7 @@ export default function BarcodeScanner() {
             }
         };
 
-        if (isScanning && !scanner) {
+        if (isScanning) {
             initScanner();
         }
 
@@ -57,7 +65,7 @@ export default function BarcodeScanner() {
         };
     }, [isScanning, currentCameraIndex]);
 
-    // Limpia al desmontar
+    // Limpia al desmontar el componente
     useEffect(() => {
         return () => {
             if (scanner) {
@@ -66,21 +74,31 @@ export default function BarcodeScanner() {
         };
     }, [scanner]);
 
-    const stopScanner = () => {
+    const stopScanner = async () => {
         if (scanner) {
-            scanner.stop().then(() => {
-                scanner.clear();
-                setScanner(null);
-                setIsScanning(false);
-            });
+            try {
+                await scanner.stop();
+                await scanner.clear();
+            } catch (err) {
+                console.error("Error al detener/limpiar el escáner:", err);
+            }
+            setScanner(null);
         }
+        setIsScanning(false);
     };
 
     const switchCamera = async () => {
-        if (scanner && cameras.length > 1) {
+        if (!isScanning || !scanner || cameras.length <= 1) return;
+        // Detener actual
+        try {
             await scanner.stop();
-            setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
+            await scanner.clear();
+        } catch (err) {
+            console.error("Error al cambiar cámara (stop):", err);
         }
+        setScanner(null);
+        // Cambiar índice y relanzar useEffect
+        setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
     };
 
     const onScanSuccess = (decodedText: string) => {
