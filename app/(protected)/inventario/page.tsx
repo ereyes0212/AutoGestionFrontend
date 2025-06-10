@@ -62,7 +62,7 @@ export default async function Empleados() {
                         </div>
                     </div>
                     <Button asChild>
-                        <Link href="/inventario/activos">Ir</Link>
+                        <Link href="/inventario/activo">Ir</Link>
                     </Button>
                 </div>
             </div>

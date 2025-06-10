@@ -88,18 +88,23 @@ export default function BarcodeScanner() {
     const stopScanner = async () => {
         if (scanner) {
             try {
-                await scanner.stop();
-            } catch (e) {
-                console.warn("Error al detener el escáner:", e);
+                // Verifica si está escaneando antes de parar
+                if (scanner.isScanning) {
+                    await scanner.stop();
+                }
+            } catch (error) {
+                console.warn("No se pudo detener el escáner:", error);
             }
+
             try {
-                scanner.clear();
-            } catch (e) {
-                console.warn("Error al limpiar el escáner:", e);
+                await scanner.clear();
+            } catch (error) {
+                console.warn("No se pudo limpiar el escáner:", error);
             }
+
             setScanner(null);
+            setIsScanning(false);
         }
-        setIsScanning(false);
     };
 
     const switchCamera = async () => {
