@@ -3,7 +3,7 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { List, QrCode } from "lucide-react";
+import { Barcode, List } from "lucide-react";
 import { getActivos } from "./actions";
 import ActivoListMobile from "./components/activo-list-mobile";
 import BarcodeScanner from "./components/barcode-scanner";
@@ -30,7 +30,7 @@ export default async function Activo() {
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button className="flex items-center gap-2">
-                            <QrCode className="h-4 w-4" />
+                            <Barcode className="h-4 w-4" />
                             Escanear Activo
                         </Button>
                     </DialogTrigger>

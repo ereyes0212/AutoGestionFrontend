@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Plus, Search } from "lucide-react";
+import { FileText, Pencil, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Activo } from "../types";
@@ -69,10 +69,20 @@ export default function ActivoListMobile({ activos }: ActivoListProps) {
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center ml-4">
+                    <div className="flex flex-col items-center gap-2 ml-4">
+                        <Link href={`/inventario/activo/${activo.id}`}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver detalles">
+                                <FileText className="h-4 w-4 rotate-90" />
+                            </Button>
+                        </Link>
+                        <Link href={`/inventario/activo/${activo.id}/registros`}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver registros">
+                                <Search className="h-4 w-4 rotate-90" />
+                            </Button>
+                        </Link>
                         <Link href={`/inventario/activo/${activo.id}/edit`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Pencil className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar">
+                                <Pencil className="h-4 w-4 rotate-90" />
                             </Button>
                         </Link>
                     </div>
