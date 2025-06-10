@@ -186,6 +186,32 @@ export default function BarcodeScanner() {
         };
     }, [scanTimeout]);
 
+    // Efecto para manejar la visibilidad del documento
+    useEffect(() => {
+        const handleVisibilityChange = async () => {
+            if (document.hidden && scanner) {
+                try {
+                    await scanner.stop();
+                    scanner.clear();
+                    setScanner(null);
+                    setIsScanning(false);
+                } catch (error) {
+                    console.error("Error al detener el scanner:", error);
+                }
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            if (scanner) {
+                scanner.stop().catch(console.error);
+                scanner.clear();
+            }
+        };
+    }, [scanner]);
+
     return (
         <Card className="p-6">
             <div className="space-y-4">
