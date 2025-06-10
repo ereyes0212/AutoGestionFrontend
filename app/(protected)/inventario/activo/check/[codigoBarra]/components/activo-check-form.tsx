@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 import { registrarCheckActivo } from "../../../actions";
 import { Activo, EstadoActivo } from "../../../types";
@@ -26,7 +25,8 @@ interface ActivoCheckFormProps {
 
 export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProps) {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -35,33 +35,41 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
         },
     });
 
-
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
-        setIsLoading(true);
         try {
             if (!activo.id) {
                 throw new Error("ID del activo no encontrado");
             }
+
             const result = await registrarCheckActivo({
                 activoId: activo.id,
                 ...values,
             });
 
             if (result.success) {
-                toast.success("Check registrado exitosamente");
+                toast({
+                    title: "Registro Exitoso",
+                    description: "El check del activo ha sido registrado correctamente.",
+                });
                 router.push("/inventario/activo");
+                router.refresh();
             } else {
-                toast.error(result.error || "Error al registrar el check");
+                toast({
+                    title: "Error",
+                    description: "Ha ocurrido un error al registrar el check del activo.",
+                });
             }
         } catch (error) {
-            toast.error("Error al registrar el check");
-        } finally {
-            setIsLoading(false);
+            console.error("Error en la operación:", error);
+            toast({
+                title: "Error",
+                description: "Ha ocurrido un error al registrar el check del activo.",
+            });
         }
     };
 
     return (
-        <div className="  p-4 space-y-6">
+        <div className="p-4 space-y-6">
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold">Check de Activo</h2>
                 <div className="border p-6 rounded-lg">
@@ -121,13 +129,19 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => router.push("/inventario/activo")}
-                            disabled={isLoading}
+                            onClick={() => {
+                                router.push("/inventario/activo");
+                                router.refresh();
+                            }}
+                            disabled={form.formState.isSubmitting}
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
+                        <Button
+                            type="submit"
+                            disabled={form.formState.isSubmitting}
+                        >
+                            {form.formState.isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Guardando...

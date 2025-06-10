@@ -3,11 +3,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { Html5Qrcode } from "html5-qrcode";
 import { Camera, FlipHorizontal, Scan, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export default function BarcodeScanner() {
     const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
@@ -15,6 +15,7 @@ export default function BarcodeScanner() {
     const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
     const router = useRouter();
+    const { toast } = useToast();
 
     useEffect(() => {
         const initScanner = async () => {
@@ -25,12 +26,18 @@ export default function BarcodeScanner() {
                     const index = currentCameraIndex % devices.length;
                     startScanner(devices[index].id);
                 } else {
-                    toast.error("No se encontraron cámaras disponibles");
+                    toast({
+                        title: "Error",
+                        description: "No se encontraron cámaras disponibles",
+                    });
                     setIsScanning(false);
                 }
             } catch (err) {
                 console.error("Error al iniciar la cámara:", err);
-                toast.error("Error al iniciar la cámara");
+                toast({
+                    title: "Error",
+                    description: "Error al iniciar la cámara",
+                });
                 setIsScanning(false);
             }
         };
@@ -57,7 +64,10 @@ export default function BarcodeScanner() {
                 setScanner(newScanner);
             } catch (err) {
                 console.error("Error al iniciar el escáner:", err);
-                toast.error("Error al iniciar la cámara");
+                toast({
+                    title: "Error",
+                    description: "Error al iniciar la cámara",
+                });
                 setIsScanning(false);
             }
         };
@@ -83,33 +93,50 @@ export default function BarcodeScanner() {
                 scanner.clear();
                 setScanner(null);
             }
-            // Esperamos un momento para asegurarnos que la cámara anterior se ha liberado
             await new Promise(resolve => setTimeout(resolve, 500));
             setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
         } catch (error) {
             console.error("Error al cambiar de cámara:", error);
-            toast.error("Error al cambiar de cámara");
+            toast({
+                title: "Error",
+                description: "Error al cambiar de cámara.",
+            });
         }
     };
 
     const onScanSuccess = async (decodedText: string) => {
         try {
             if (!decodedText || decodedText.trim().length === 0) {
-                toast.error("Código inválido");
+                toast({
+                    title: "Error",
+                    description: "El código de barras es inválido.",
+                });
                 return;
             }
 
             if (scanner) {
                 await scanner.stop();
                 scanner.clear();
+                setScanner(null);
+                setIsScanning(false);
             }
-            setScanner(null);
-            setIsScanning(false);
-            toast.success("Código escaneado correctamente");
-            router.push(`/inventario/activo/check/${decodedText}`);
+
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            toast({
+                title: "Escaneo Exitoso",
+                description: "El código de barras ha sido escaneado correctamente.",
+            });
+
+            router.push("/inventario/activo/check/" + decodedText);
+            router.refresh();
+
         } catch (error) {
             console.error("Error al procesar el código escaneado:", error);
-            toast.error("Error al procesar el código");
+            toast({
+                title: "Error",
+                description: "Ha ocurrido un error al procesar el código de barras.",
+            });
         }
     };
 
@@ -175,7 +202,10 @@ export default function BarcodeScanner() {
                                         setIsScanning(false);
                                     } catch (error) {
                                         console.error("Error al cerrar la cámara:", error);
-                                        toast.error("Error al cerrar la cámara");
+                                        toast({
+                                            title: "Error",
+                                            description: "Error al cerrar la cámara",
+                                        });
                                     }
                                 }}
                                 variant="destructive"
