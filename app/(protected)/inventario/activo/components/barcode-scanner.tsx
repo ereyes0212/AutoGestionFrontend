@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Html5Qrcode } from "html5-qrcode";
-import { Camera, Scan, X } from "lucide-react";
+import { Camera, FlipHorizontal, Scan, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 export default function BarcodeScanner() {
     const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
     const [isScanning, setIsScanning] = useState(false);
+    const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
+    const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
     const router = useRouter();
 
     // Inicia el escáner cuando isScanning sea true
@@ -22,9 +24,10 @@ export default function BarcodeScanner() {
                 const devices = await Html5Qrcode.getCameras();
                 if (!active) return;
                 if (devices && devices.length) {
+                    setCameras(devices);
                     const newScanner = new Html5Qrcode("reader");
                     await newScanner.start(
-                        devices[0].id,
+                        devices[currentCameraIndex].id,
                         {
                             fps: 10,
                             qrbox: { width: 250, height: 250 },
@@ -52,7 +55,7 @@ export default function BarcodeScanner() {
         return () => {
             active = false;
         };
-    }, [isScanning]);
+    }, [isScanning, currentCameraIndex]);
 
     // Limpia al desmontar
     useEffect(() => {
@@ -70,6 +73,13 @@ export default function BarcodeScanner() {
                 setScanner(null);
                 setIsScanning(false);
             });
+        }
+    };
+
+    const switchCamera = async () => {
+        if (scanner && cameras.length > 1) {
+            await scanner.stop();
+            setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
         }
     };
 
@@ -118,12 +128,20 @@ export default function BarcodeScanner() {
                             className="w-full aspect-square rounded-lg overflow-hidden"
                             style={{ minHeight: '300px' }}
                         ></div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10 flex justify-between items-center">
+                            <Button
+                                onClick={switchCamera}
+                                variant="secondary"
+                                size="icon"
+                                className={cameras.length <= 1 ? "hidden" : ""}
+                                title="Cambiar cámara"
+                            >
+                                <FlipHorizontal className="h-4 w-4" />
+                            </Button>
                             <Button
                                 onClick={stopScanner}
                                 variant="destructive"
                                 size="icon"
-                                className="ml-auto"
                             >
                                 <X className="h-4 w-4" />
                             </Button>
