@@ -14,50 +14,66 @@ export default function BarcodeScanner() {
     const [isScanning, setIsScanning] = useState(false);
     const router = useRouter();
 
-    const startScanner = async () => {
-        try {
-            const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length) {
-                const newScanner = new Html5Qrcode("reader");
-                await newScanner.start(
-                    devices[0].id,
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0,
-                    },
-                    onScanSuccess,
-                    onScanError
-                );
-                setScanner(newScanner);
-                setIsScanning(true);
-            } else {
-                toast.error("No se encontraron cámaras disponibles");
+    // Inicia el escáner cuando isScanning sea true
+    useEffect(() => {
+        let active = true;
+        const initScanner = async () => {
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                if (!active) return;
+                if (devices && devices.length) {
+                    const newScanner = new Html5Qrcode("reader");
+                    await newScanner.start(
+                        devices[0].id,
+                        {
+                            fps: 10,
+                            qrbox: { width: 250, height: 250 },
+                            aspectRatio: 1.0,
+                        },
+                        onScanSuccess,
+                        onScanError
+                    );
+                    setScanner(newScanner);
+                } else {
+                    toast.error("No se encontraron cámaras disponibles");
+                    setIsScanning(false);
+                }
+            } catch (err) {
+                console.error("Error al iniciar la cámara:", err);
+                toast.error("Error al iniciar la cámara");
+                setIsScanning(false);
             }
-        } catch (err) {
-            toast.error("Error al iniciar la cámara");
-            console.error("Error al iniciar la cámara:", err);
+        };
+
+        if (isScanning && !scanner) {
+            initScanner();
         }
-    };
+
+        return () => {
+            active = false;
+        };
+    }, [isScanning]);
+
+    // Limpia al desmontar
+    useEffect(() => {
+        return () => {
+            if (scanner) {
+                scanner.stop().then(() => scanner.clear());
+            }
+        };
+    }, [scanner]);
 
     const stopScanner = () => {
         if (scanner) {
             scanner.stop().then(() => {
+                scanner.clear();
                 setScanner(null);
                 setIsScanning(false);
             });
         }
     };
 
-    useEffect(() => {
-        return () => {
-            if (scanner) {
-                scanner.stop();
-            }
-        };
-    }, [scanner]);
-
-    const onScanSuccess = async (decodedText: string) => {
+    const onScanSuccess = (decodedText: string) => {
         toast.success("Código escaneado correctamente");
         stopScanner();
         router.push(`/inventario/activo/check/${decodedText}`);
@@ -83,7 +99,7 @@ export default function BarcodeScanner() {
                                 </p>
                             </div>
                             <Button
-                                onClick={startScanner}
+                                onClick={() => setIsScanning(true)}
                                 className="flex items-center gap-2"
                                 size="lg"
                             >
@@ -117,4 +133,4 @@ export default function BarcodeScanner() {
             </div>
         </Card>
     );
-} 
+}
