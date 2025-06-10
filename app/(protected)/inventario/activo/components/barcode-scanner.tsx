@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Html5Qrcode } from "html5-qrcode";
-import { Camera, FlipHorizontal, Scan } from "lucide-react";
+import { Camera, FlipHorizontal, Scan, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -155,7 +155,7 @@ export default function BarcodeScanner() {
                             >
                                 <FlipHorizontal className="h-4 w-4" />
                             </Button>
-                            {/* <Button
+                            <Button
                                 onClick={() => {
                                     if (scanner) {
                                         scanner.stop().catch(console.error);
@@ -168,7 +168,7 @@ export default function BarcodeScanner() {
                                 size="icon"
                             >
                                 <X className="h-4 w-4" />
-                            </Button> */}
+                            </Button>
                         </div>
                     </div>
                 )}
