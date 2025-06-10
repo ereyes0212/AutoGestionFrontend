@@ -4,7 +4,6 @@ import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-
     images: {
         domains: ['res.cloudinary.com'],
     },
