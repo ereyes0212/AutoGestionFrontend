@@ -288,16 +288,30 @@ export async function getEstadosActivo(): Promise<EstadoActivo[]> {
 
 export async function registrarCheckActivo(data: ActivoCheckForm) {
     try {
-        const check = await prisma.historialActivo.create({
-            data: {
-                activoId: data.activoId,
-                estadoId: data.estadoId,
-                observaciones: data.observaciones,
-                fechaRevision: new Date(),
-            },
+        const result = await prisma.$transaction(async (tx) => {
+            const check = await tx.historialActivo.create({
+                data: {
+                    activoId: data.activoId,
+                    estadoId: data.estadoId,
+                    observaciones: data.observaciones,
+                    fechaRevision: new Date(),
+                },
+            });
+
+            await tx.activo.update({
+                where: { id: data.activoId },
+                data: { estadoActualId: data.estadoId },
+            });
+
+            return check;
         });
-        return check;
+
+        return { success: true, data: result };
     } catch (error) {
-        throw new Error("Error al registrar el check del activo");
+        console.error("Error al registrar check:", error);
+        return {
+            success: false,
+            error: "Error al registrar el check del activo"
+        };
     }
 } 

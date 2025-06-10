@@ -5,7 +5,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -24,6 +26,7 @@ interface ActivoCheckFormProps {
 
 export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProps) {
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -34,18 +37,26 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
 
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
+        setIsLoading(true);
         try {
             if (!activo.id) {
                 throw new Error("ID del activo no encontrado");
             }
-            await registrarCheckActivo({
+            const result = await registrarCheckActivo({
                 activoId: activo.id,
                 ...values,
             });
-            toast.success("Check registrado exitosamente");
-            router.push("/inventario/activo");
+
+            if (result.success) {
+                toast.success("Check registrado exitosamente");
+                router.push("/inventario/activo");
+            } else {
+                toast.error(result.error || "Error al registrar el check");
+            }
         } catch (error) {
             toast.error("Error al registrar el check");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -109,10 +120,20 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
                             type="button"
                             variant="outline"
                             onClick={() => router.push("/inventario/activo")}
+                            disabled={isLoading}
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit">Guardar</Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Guardando...
+                                </>
+                            ) : (
+                                "Guardar"
+                            )}
+                        </Button>
                     </div>
                 </form>
             </Form>

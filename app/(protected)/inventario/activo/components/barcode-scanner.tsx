@@ -76,11 +76,20 @@ export default function BarcodeScanner() {
 
     const switchCamera = async () => {
         if (!isScanning || cameras.length <= 1) return;
-        if (scanner) {
-            await scanner.stop();
-            scanner.clear();
+
+        try {
+            if (scanner) {
+                await scanner.stop();
+                scanner.clear();
+                setScanner(null);
+            }
+            // Esperamos un momento para asegurarnos que la cámara anterior se ha liberado
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
+        } catch (error) {
+            console.error("Error al cambiar de cámara:", error);
+            toast.error("Error al cambiar de cámara");
         }
-        setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
     };
 
     const onScanSuccess = async (decodedText: string) => {
@@ -156,13 +165,18 @@ export default function BarcodeScanner() {
                                 <FlipHorizontal className="h-4 w-4" />
                             </Button>
                             <Button
-                                onClick={() => {
-                                    if (scanner) {
-                                        scanner.stop().catch(console.error);
-                                        scanner.clear();
+                                onClick={async () => {
+                                    try {
+                                        if (scanner) {
+                                            await scanner.stop();
+                                            scanner.clear();
+                                        }
+                                        setScanner(null);
+                                        setIsScanning(false);
+                                    } catch (error) {
+                                        console.error("Error al cerrar la cámara:", error);
+                                        toast.error("Error al cerrar la cámara");
                                     }
-                                    setScanner(null);
-                                    setIsScanning(false);
                                 }}
                                 variant="destructive"
                                 size="icon"
