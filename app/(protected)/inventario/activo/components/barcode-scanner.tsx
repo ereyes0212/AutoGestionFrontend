@@ -24,6 +24,7 @@ export default function BarcodeScanner() {
                     {
                         fps: 10,
                         qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0,
                     },
                     onScanSuccess,
                     onScanError
@@ -93,11 +94,15 @@ export default function BarcodeScanner() {
                     </div>
                 ) : (
                     <div className="relative">
-                        <div className="absolute top-0 left-0 right-0 p-4 bg-black/50 text-white text-center">
+                        <div className="absolute top-0 left-0 right-0 p-4 bg-black/50 text-white text-center z-10">
                             <p className="text-sm">Apunta la cámara al código de barras</p>
                         </div>
-                        <div id="reader" className="w-full aspect-square rounded-lg overflow-hidden"></div>
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+                        <div
+                            id="reader"
+                            className="w-full aspect-square rounded-lg overflow-hidden"
+                            style={{ minHeight: '300px' }}
+                        ></div>
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
                             <Button
                                 onClick={stopScanner}
                                 variant="destructive"
