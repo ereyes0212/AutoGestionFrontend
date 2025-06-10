@@ -86,15 +86,32 @@ export default function BarcodeScanner() {
         };
     }, [isScanning, currentCameraIndex]);
 
+    // Función para detener el scanner de forma segura
+    const stopScanner = async () => {
+        if (!scanner) return;
+
+        try {
+            const isRunning = await scanner.isScanning;
+            if (isRunning) {
+                await scanner.stop();
+            }
+            scanner.clear();
+            setScanner(null);
+            setIsScanning(false);
+        } catch (error) {
+            console.error("Error al detener el scanner:", error);
+            // Forzar limpieza incluso si hay error
+            scanner.clear();
+            setScanner(null);
+            setIsScanning(false);
+        }
+    };
+
     const switchCamera = async () => {
         if (!isScanning || cameras.length <= 1) return;
 
         try {
-            if (scanner) {
-                await scanner.stop();
-                scanner.clear();
-                setScanner(null);
-            }
+            await stopScanner();
             await new Promise(resolve => setTimeout(resolve, 500));
             setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
         } catch (error) {
@@ -144,12 +161,7 @@ export default function BarcodeScanner() {
 
             // Crear un nuevo timeout para procesar el escaneo
             const timeout = setTimeout(async () => {
-                if (scanner) {
-                    await scanner.stop();
-                    scanner.clear();
-                    setScanner(null);
-                    setIsScanning(false);
-                }
+                await stopScanner();
 
                 toast({
                     title: "Escaneo Exitoso",
@@ -189,15 +201,8 @@ export default function BarcodeScanner() {
     // Efecto para manejar la visibilidad del documento
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.hidden && scanner) {
-                try {
-                    await scanner.stop();
-                    scanner.clear();
-                    setScanner(null);
-                    setIsScanning(false);
-                } catch (error) {
-                    console.error("Error al detener el scanner:", error);
-                }
+            if (document.hidden) {
+                await stopScanner();
             }
         };
 
@@ -205,10 +210,7 @@ export default function BarcodeScanner() {
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
-            if (scanner) {
-                scanner.stop().catch(console.error);
-                scanner.clear();
-            }
+            stopScanner();
         };
     }, [scanner]);
 
@@ -258,22 +260,7 @@ export default function BarcodeScanner() {
                                 <FlipHorizontal className="h-4 w-4" />
                             </Button>
                             <Button
-                                onClick={async () => {
-                                    try {
-                                        if (scanner) {
-                                            await scanner.stop();
-                                            scanner.clear();
-                                        }
-                                        setScanner(null);
-                                        setIsScanning(false);
-                                    } catch (error) {
-                                        console.error("Error al cerrar la cámara:", error);
-                                        toast({
-                                            title: "Error",
-                                            description: "Error al cerrar la cámara",
-                                        });
-                                    }
-                                }}
+                                onClick={stopScanner}
                                 variant="destructive"
                                 size="icon"
                             >
