@@ -61,13 +61,15 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-4 space-y-6">
+        <div className="  p-4 space-y-6">
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold">Check de Activo</h2>
-                <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="border p-6 rounded-lg">
                     <h3 className="font-medium">{activo.nombre}</h3>
                     <p className="text-sm text-gray-500">Código: {activo.codigoBarra}</p>
                     <p className="text-sm text-gray-500">Categoría: {activo.categoria!.nombre}</p>
+                    <p className="text-sm text-gray-500">Estado: {activo.estadoActual?.nombre}</p>
+                    <p className="text-sm text-gray-500">Empleado Asignado: {activo.empleadoAsignado?.nombre} {activo.empleadoAsignado?.apellido}</p>
                 </div>
             </div>
 

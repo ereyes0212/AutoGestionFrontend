@@ -22,7 +22,7 @@ const formatearFecha = (fecha: string) => {
 }
 
 export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: SolicitudAprobacion[] }) {
-    console.log("🚀 ~ SolicitudAprobaciones ~ solicitudes:", solicitudes)
+
 
     const { toast } = useToast();
     const router = useRouter();

@@ -13,7 +13,6 @@ export async function getReportesDiseño(): Promise<ReporteDiseño[]> {
     include: { TipoSeccion: true, Empleados: true },
     orderBy: { FechaRegistro: 'desc' },
   });
-  console.log("🚀 ~ getReportesDiseño ~ records:", records)
 
   return records.map(r => ({
     Id: r.Id,
@@ -57,12 +56,10 @@ export async function getReporteDiseñoById(id: string): Promise<ReporteDiseño 
 // Crear un nuevo reporte.
 //
 export async function createReporteDiseño(data: ReporteDiseño): Promise<ReporteDiseño> {
-  console.log("🚀 ~ createReporteDiseño ~ data:", data);
   const session = await getSession();
   if (!session?.IdEmpleado) {
     throw new Error("Empleado no autenticado");
   }
-  console.log("🚀 ~ createReporteDiseño ~ session:", session?.IdEmpleado)
 
   const nuevo = await prisma.reporteDiseño.create({
     data: {

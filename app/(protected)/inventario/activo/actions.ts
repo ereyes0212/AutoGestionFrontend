@@ -57,7 +57,6 @@ export async function getActivosActivos(): Promise<Activo[]> {
         },
         orderBy: { fechaRegistro: 'desc' },
     });
-    console.log("🚀 ~ getActivosActivos ~ records:", records)
     return records.map(r => ({
         id: r.id,
         codigoBarra: r.codigoBarra,
@@ -105,7 +104,6 @@ export async function getActivoById(id: string): Promise<Activo | null> {
             },
         },
     });
-    console.log("🚀 ~ getActivoById ~ r:", r)
     if (!r) return null;
     return {
         id: r.id,
