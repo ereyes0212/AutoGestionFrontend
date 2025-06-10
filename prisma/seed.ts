@@ -74,6 +74,11 @@ async function main() {
     { nombre: "crear_estados_activo", descripcion: "Permiso para crear los estados de activos" },
     { nombre: "editar_estados_activo", descripcion: "Permiso para editar los estados de activos" },
 
+    //Activo
+    { nombre: "ver_activo", descripcion: "Permiso para ver los activos" },
+    { nombre: "crear_activo", descripcion: "Permiso para crear los activos" },
+    { nombre: "editar_activo", descripcion: "Permiso para editar los activos" },
+
   ];
 
   const permisoIds: string[] = [];

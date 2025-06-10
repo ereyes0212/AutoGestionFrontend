@@ -12,8 +12,22 @@ body {
   }
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+  }
 
+  .print\:mx-auto,
+  .print\:mx-auto * {
+    visibility: visible;
+  }
 
+  .print\:mx-auto {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
 
 @layer base {
   :root {
@@ -88,16 +102,12 @@ body {
   }
 }
 
-
-
-
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
-
-
