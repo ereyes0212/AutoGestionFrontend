@@ -232,7 +232,7 @@ export async function postCambioEstado(
     });
 }
 
-export async function getActivoByCodigoBarra(codigoBarra: string) {
+export async function getActivoByCodigoBarra(codigoBarra: string): Promise<Activo | null> {
     try {
         const activo = await prisma.activo.findUnique({
             where: { codigoBarra },
@@ -242,7 +242,32 @@ export async function getActivoByCodigoBarra(codigoBarra: string) {
                 empleadoAsignado: true,
             },
         });
-        return activo;
+        if (!activo) return null;
+        return {
+            id: activo.id,
+            codigoBarra: activo.codigoBarra,
+            nombre: activo.nombre,
+            descripcion: activo.descripcion || '',
+            categoriaId: activo.categoriaId,
+            categoria: activo.categoria ? {
+                id: activo.categoria.id,
+                nombre: activo.categoria.nombre
+            } : undefined,
+            empleadoAsignadoId: activo.empleadoAsignadoId || undefined,
+            empleadoAsignado: activo.empleadoAsignado ? {
+                id: activo.empleadoAsignado.id,
+                nombre: activo.empleadoAsignado.nombre,
+                apellido: activo.empleadoAsignado.apellido
+            } : undefined,
+            fechaAsignacion: activo.fechaAsignacion || undefined,
+            fechaRegistro: activo.fechaRegistro,
+            estadoActualId: activo.estadoActualId || undefined,
+            estadoActual: activo.estadoActual ? {
+                id: activo.estadoActual.id,
+                nombre: activo.estadoActual.nombre
+            } : undefined,
+            activo: activo.activo,
+        };
     } catch (error) {
         throw new Error("Error al buscar el activo");
     }
