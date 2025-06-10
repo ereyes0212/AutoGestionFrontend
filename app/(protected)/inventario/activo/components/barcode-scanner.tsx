@@ -18,6 +18,7 @@ export default function BarcodeScanner() {
     const [scanTimeout, setScanTimeout] = useState<NodeJS.Timeout | null>(null);
     const router = useRouter();
     const { toast } = useToast();
+    const [isDialogOpen, setIsDialogOpen] = useState(true);
 
     useEffect(() => {
         const initScanner = async () => {
@@ -98,12 +99,13 @@ export default function BarcodeScanner() {
             scanner.clear();
             setScanner(null);
             setIsScanning(false);
+            setIsDialogOpen(false);
         } catch (error) {
             console.error("Error al detener el scanner:", error);
-            // Forzar limpieza incluso si hay error
             scanner.clear();
             setScanner(null);
             setIsScanning(false);
+            setIsDialogOpen(false);
         }
     };
 
@@ -111,7 +113,11 @@ export default function BarcodeScanner() {
         if (!isScanning || cameras.length <= 1) return;
 
         try {
-            await stopScanner();
+            if (scanner) {
+                await scanner.stop();
+                scanner.clear();
+                setScanner(null);
+            }
             await new Promise(resolve => setTimeout(resolve, 500));
             setCurrentCameraIndex((prev) => (prev + 1) % cameras.length);
         } catch (error) {
@@ -144,10 +150,6 @@ export default function BarcodeScanner() {
 
             // Validar el formato del código
             if (!isValidFormat(decodedText)) {
-                toast({
-                    title: "Error",
-                    description: "El formato del código no es válido. Debe ser ACT seguido de 8 números.",
-                });
                 return;
             }
 
@@ -170,7 +172,7 @@ export default function BarcodeScanner() {
 
                 router.push("/inventario/activo/check/" + decodedText);
                 router.refresh();
-            }, 1000); // Esperar 1 segundo antes de procesar
+            }, 500);
 
             setScanTimeout(timeout);
 
@@ -230,7 +232,10 @@ export default function BarcodeScanner() {
                                 </p>
                             </div>
                             <Button
-                                onClick={() => setIsScanning(true)}
+                                onClick={() => {
+                                    setIsScanning(true);
+                                    setIsDialogOpen(true);
+                                }}
                                 className="flex items-center gap-2"
                                 size="lg"
                             >
