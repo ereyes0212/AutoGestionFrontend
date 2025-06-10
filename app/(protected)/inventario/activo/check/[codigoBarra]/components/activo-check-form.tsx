@@ -32,6 +32,7 @@ export default function ActivoCheckForm({ activo, estados }: ActivoCheckFormProp
         },
     });
 
+
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         try {
             if (!activo.id) {
