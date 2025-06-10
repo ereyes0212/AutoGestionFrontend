@@ -14,6 +14,8 @@ export default function BarcodeScanner() {
     const [isScanning, setIsScanning] = useState(false);
     const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+    const [lastScannedCode, setLastScannedCode] = useState<string>("");
+    const [scanTimeout, setScanTimeout] = useState<NodeJS.Timeout | null>(null);
     const router = useRouter();
     const { toast } = useToast();
 
@@ -104,32 +106,61 @@ export default function BarcodeScanner() {
         }
     };
 
+    // Función para validar el formato del código
+    const isValidFormat = (code: string): boolean => {
+        // Validar formato ACT + 8 números
+        const formatRegex = /^ACT\d{8}$/;
+        return formatRegex.test(code);
+    };
+
     const onScanSuccess = async (decodedText: string) => {
         try {
+            // Si el código es el mismo que el último escaneado, ignorar
+            if (decodedText === lastScannedCode) {
+                return;
+            }
+
+            // Validar que el código no esté vacío
             if (!decodedText || decodedText.trim().length === 0) {
+                return;
+            }
+
+            // Validar el formato del código
+            if (!isValidFormat(decodedText)) {
                 toast({
                     title: "Error",
-                    description: "El código de barras es inválido.",
+                    description: "El formato del código no es válido. Debe ser ACT seguido de 8 números.",
                 });
                 return;
             }
 
-            if (scanner) {
-                await scanner.stop();
-                scanner.clear();
-                setScanner(null);
-                setIsScanning(false);
+            // Limpiar el timeout anterior si existe
+            if (scanTimeout) {
+                clearTimeout(scanTimeout);
             }
 
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Establecer el nuevo código escaneado
+            setLastScannedCode(decodedText);
 
-            toast({
-                title: "Escaneo Exitoso",
-                description: "El código de barras ha sido escaneado correctamente.",
-            });
+            // Crear un nuevo timeout para procesar el escaneo
+            const timeout = setTimeout(async () => {
+                if (scanner) {
+                    await scanner.stop();
+                    scanner.clear();
+                    setScanner(null);
+                    setIsScanning(false);
+                }
 
-            router.push("/inventario/activo/check/" + decodedText);
-            router.refresh();
+                toast({
+                    title: "Escaneo Exitoso",
+                    description: "El código de barras ha sido escaneado correctamente.",
+                });
+
+                router.push("/inventario/activo/check/" + decodedText);
+                router.refresh();
+            }, 1000); // Esperar 1 segundo antes de procesar
+
+            setScanTimeout(timeout);
 
         } catch (error) {
             console.error("Error al procesar el código escaneado:", error);
@@ -145,6 +176,15 @@ export default function BarcodeScanner() {
             console.warn(`Error al escanear: ${error}`);
         }
     };
+
+    // Limpiar el timeout cuando el componente se desmonte
+    useEffect(() => {
+        return () => {
+            if (scanTimeout) {
+                clearTimeout(scanTimeout);
+            }
+        };
+    }, [scanTimeout]);
 
     return (
         <Card className="p-6">
