@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Briefcase, CalendarDays, Clock, FileText, User } from 'lucide-react'
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { processApproval } from "../actions"
 import { SolicitudAprobacion } from "../type"
 import { ApprovalDialog } from "./dialog-aprobacion"
@@ -22,10 +23,10 @@ const formatearFecha = (fecha: string) => {
 }
 
 export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: SolicitudAprobacion[] }) {
-
-
     const { toast } = useToast();
     const router = useRouter();
+    const [diasRestantes, setDiasRestantes] = useState<number>(0);
+
     return (
         <Accordion type="single" collapsible className="space-y-2">
             {solicitudes.map((solicitud) => (
@@ -145,13 +146,19 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
                                 <CardFooter key={solicitud.id} className="flex justify-end gap-1">
                                     <ApprovalDialog
                                         action="approve"
-                                        onConfirm={async (comentario) => {
+                                        fechaInicio={new Date(solicitud.fechaInicio)}
+                                        fechaFin={new Date(solicitud.fechaFin)}
+                                        onConfirm={async (comentario, diasRestantes, diasGozados, periodo, fechaPresentacion) => {
                                             try {
                                                 await processApproval({
                                                     id: solicitud.id,
                                                     nivel: solicitud.nivel,
                                                     aprobado: true,
                                                     comentarios: comentario,
+                                                    diasRestantes: diasRestantes,
+                                                    diasGozados: diasGozados,
+                                                    periodo: periodo,
+                                                    fechaPresentacion: fechaPresentacion,
                                                 });
                                                 toast({
                                                     title: "Aprobación exitosa",
@@ -172,14 +179,20 @@ export default function SolicitudAprobaciones({ solicitudes }: { solicitudes: So
 
                                     <ApprovalDialog
                                         action="reject"
-                                        onConfirm={async (comentario) => {
+                                        fechaInicio={new Date(solicitud.fechaInicio)}
+                                        fechaFin={new Date(solicitud.fechaFin)}
+                                        onConfirm={async (comentario, diasRestantes, diasGozados, periodo, fechaPresentacion) => {
                                             try {
                                                 await processApproval({
                                                     id: solicitud.id,
                                                     nivel: solicitud.nivel,
                                                     aprobado: false,
                                                     comentarios: comentario,
-                                                })
+                                                    diasRestantes: diasRestantes,
+                                                    diasGozados: diasGozados,
+                                                    periodo: periodo,
+                                                    fechaPresentacion: fechaPresentacion,
+                                                });
                                                 toast({
                                                     title: "Aprobación rechazada",
                                                     description: "La solicitud de vacaciones fue rechazada.",

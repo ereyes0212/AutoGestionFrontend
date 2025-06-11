@@ -85,23 +85,6 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
     ),
   },
   {
-    accessorKey: "diasSolicitados",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="text-left"
-      >
-        Dias Solicitados
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const diasSolicitados = row.getValue<number>("diasSolicitados");
-      return <span>{diasSolicitados}</span>;
-    },
-  },
-  {
     accessorKey: "aprobado",
     header: ({ column }) => (
       <Button

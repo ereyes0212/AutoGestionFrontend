@@ -11,12 +11,12 @@ const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       <Image
         src="/logoTiempo.png"
         alt="Marca de agua"
-        layout="fill"
-        objectFit="contain"
+        fill
         className="
           hidden 
           print:block 
           pointer-events-none
+          object-contain
         "
       />
       {children}

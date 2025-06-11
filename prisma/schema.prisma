@@ -45,21 +45,21 @@ model Empleados {
   jefe_id   String? @db.VarChar(36)
 
   // Del Excel:
-  numeroIdentificacion  String    @db.VarChar(50) // “Número de Identificación”
-  nombre                String    @db.VarChar(100) // “Nombres”
-  apellido              String    @db.VarChar(100) // “Apellidos”
-  correo                String    @db.LongText // “Correo Electrónico Personal”
-  FechaNacimiento       DateTime? @db.DateTime(6) // armada a partir de “Dia”/“Mes”/“Año”
-  fechaIngreso          DateTime? @db.DateTime(6) // armada a partir de “Dia.1”/“Mes.1”/“Año.1”
-  departamentoDomicilio String?   @db.VarChar(100) // “Departamento de Domicilio”
-  ciudadDomicilio       String?   @db.VarChar(100) // “Ciudad de Domicilio”
-  colonia               String?   @db.VarChar(100) // “Colonia/Barrio/Aldea”
-  telefono              String?   @db.VarChar(20) // “Número de Celular de Cliente”
-  profesion             String?   @db.VarChar(100) // “Profesión u oficio”
+  numeroIdentificacion  String    @db.VarChar(50) // "Número de Identificación"
+  nombre                String    @db.VarChar(100) // "Nombres"
+  apellido              String    @db.VarChar(100) // "Apellidos"
+  correo                String    @db.LongText // "Correo Electrónico Personal"
+  FechaNacimiento       DateTime? @db.DateTime(6) // armada a partir de "Dia"/"Mes"/"Año"
+  fechaIngreso          DateTime? @db.DateTime(6) // armada a partir de "Dia.1"/"Mes.1"/"Año.1"
+  departamentoDomicilio String?   @db.VarChar(100) // "Departamento de Domicilio"
+  ciudadDomicilio       String?   @db.VarChar(100) // "Ciudad de Domicilio"
+  colonia               String?   @db.VarChar(100) // "Colonia/Barrio/Aldea"
+  telefono              String?   @db.VarChar(20) // "Número de Celular de Cliente"
+  profesion             String?   @db.VarChar(100) // "Profesión u oficio"
 
   // Campos que ya tenías:
   Vacaciones Int
-  genero     String?  @db.VarChar(20) // “Genero”
+  genero     String?  @db.VarChar(20) // "Genero"
   activo     Boolean  @db.Bit(1)
   createAt   DateTime @default(now())
   updateAt   DateTime @updatedAt
@@ -153,8 +153,12 @@ model SolicitudVacacion {
   FechaSolicitud              DateTime                      @db.DateTime(6)
   FechaInicio                 DateTime                      @db.DateTime(6)
   FechaFin                    DateTime                      @db.DateTime(6)
+  FechaPresentacion           DateTime?                     @db.DateTime(6)
   Aprobado                    Boolean?
   Descripcion                 String                        @db.VarChar(250)
+  Periodo                     String?                       @db.VarChar(250)
+  DiasGozados                 Int? // Changed to nullable
+  DiasRestantes               Int? // Changed to nullable
   createAt                    DateTime                      @default(now())
   updateAt                    DateTime                      @updatedAt
   Empleados                   Empleados                     @relation(fields: [EmpleadoId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_SolicitudVacacion_Empleados_EmpleadoId")
@@ -288,7 +292,7 @@ model CategoriaActivo {
 /// 2. Estado de Activo (Catálogo)
 model EstadoActivo {
   id          String  @id @default(uuid())
-  nombre      String  @db.VarChar(50) // “Bueno”, “Medio”, “Dañado”, etc.
+  nombre      String  @db.VarChar(50) // "Bueno", "Medio", "Dañado", etc.
   descripcion String? @db.Text
 
   activos   Activo[] // Relación inversa (estado actual)

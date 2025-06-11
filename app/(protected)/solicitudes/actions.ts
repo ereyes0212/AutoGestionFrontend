@@ -263,9 +263,13 @@ export async function getSolicitudesById(id: string): Promise<SolicitudPermiso |
     fechaInicio: fechaInicioStr,
     fechaFin: fechaFinStr,
     diasSolicitados,
+    diasGozados: r.DiasGozados ?? 0,
+    diasRestantes: r.DiasRestantes ?? 0,
     aprobado: r.Aprobado ?? null,
     descripcion: r.Descripcion ?? "",
     aprobaciones,
+    periodo: r.Periodo ?? "",
+    fechaPresentacion: r.FechaPresentacion?.toISOString() ?? "",
   };
 }
 
@@ -313,14 +317,21 @@ export async function processApproval({
   nivel,
   aprobado,
   comentarios,
+  diasRestantes,
+  diasGozados,
+  periodo,
+  fechaPresentacion,
 }: {
   id: string;
   nivel: number;
   aprobado: boolean;
   comentarios: string;
+  diasRestantes: number;
+  diasGozados: number;
+  periodo: string;
+  fechaPresentacion: string;
 }) {
-  console.log("🚀 ~ id:", id)
-  console.log("🚀 ~ aprobado:", aprobado)
+
   const now = new Date();
 
   const r = await prisma.solicitudVacacionAprobacion.update({
@@ -341,7 +352,6 @@ export async function processApproval({
       Empleados: true,
     },
   });
-  console.log("🚀 ~ r:", r)
 
   const solicitudId = r.SolicitudVacacionId;
 
@@ -357,19 +367,33 @@ export async function processApproval({
   const algunaRechazada = estados.some(e => e === "Rechazado");
 
   if (algunaRechazada) {
-    // Si alguna fue rechazada, marcar la solicitud como no aprobada
     await prisma.solicitudVacacion.update({
       where: { Id: solicitudId },
-      data: { Aprobado: false },
+      data: {
+        Aprobado: false,
+        DiasGozados: diasGozados,
+        DiasRestantes: diasRestantes,
+        Periodo: periodo,
+        FechaPresentacion: fechaPresentacion ? new Date(fechaPresentacion) : null,
+      },
     });
   } else if (todasAprobadas) {
-    // Si todas fueron aprobadas, marcar la solicitud como aprobada
     await prisma.solicitudVacacion.update({
       where: { Id: solicitudId },
-      data: { Aprobado: true },
+      data: {
+        Aprobado: true,
+        DiasGozados: diasGozados,
+        DiasRestantes: diasRestantes,
+        Periodo: periodo,
+        FechaPresentacion: fechaPresentacion ? new Date(fechaPresentacion) : null,
+      },
     });
   }
-  // Si hay pendientes y ninguna fue rechazada, se deja como null (no se actualiza)
+
+  await prisma.empleados.update({
+    where: { id: r.SolicitudVacacion.Empleados.id },
+    data: { Vacaciones: diasRestantes },
+  });
 
   // Preparar la respuesta
   const parent = r.SolicitudVacacion;
@@ -532,6 +556,10 @@ export async function postSolicitud({
     descripcion: r.Descripcion ?? null,
   }));
 
+  const ultimoComentario = aprobacionesOut.length
+    ? aprobacionesOut[aprobacionesOut.length - 1].comentario
+    : null;
+
   return {
     id: r.Id,
     empleadoId: r.EmpleadoId,
@@ -544,5 +572,6 @@ export async function postSolicitud({
     aprobado: null,
     descripcion: r.Descripcion,
     aprobaciones: aprobacionesOut,
+    ultimoComentario,
   };
 }

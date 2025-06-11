@@ -1,7 +1,7 @@
 
 import { getVoucherPagoId } from "@/app/(protected)/voucher-pago/actions";
 import { Inbox } from "lucide-react";
-import { PayrollPrintLayout } from "./voucher";
+import VoucherPrintView from "./voucher";
 
 
 export default async function ImprimirPage({ params }: { params: { id: string } }) {
@@ -15,5 +15,5 @@ export default async function ImprimirPage({ params }: { params: { id: string } 
         );
     }
 
-    return <PayrollPrintLayout registro={solicitud} companyName="Medio Publicitarios S.A" />;
+    return <VoucherPrintView registro={solicitud} />;
 }

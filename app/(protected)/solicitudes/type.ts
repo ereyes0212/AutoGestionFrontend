@@ -14,7 +14,7 @@ export type Aprobacion = {
   descripcion: string | null;
 };
 
-export type SolicitudPermiso = {
+export interface SolicitudPermiso {
   id: string;
   empleadoId: string;
   nombreEmpleado: string;
@@ -23,11 +23,15 @@ export type SolicitudPermiso = {
   fechaSolicitud: string;
   fechaInicio: string;
   fechaFin: string;
+  fechaPresentacion?: string;
   diasSolicitados: number;
   aprobado: boolean | null;
   descripcion: string;
   aprobaciones: Aprobacion[];
-};
+  diasGozados?: number;
+  diasRestantes?: number;
+  periodo?: string;
+}
 
 export type SolicitudAprobacion = {
   id: string;
