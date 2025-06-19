@@ -187,7 +187,7 @@ export default function BarcodeScanner() {
 
     const onScanError = (error: any) => {
         if (!error?.includes("NotFoundException")) {
-            console.warn(`Error al escanear: ${error}`);
+            console.log(`Error al escanear: ${error}`);
         }
     };
 
@@ -217,10 +217,10 @@ export default function BarcodeScanner() {
     }, [scanner]);
 
     return (
-        <Card className="p-6">
+        <Card className="p-6 border-none">
             <div className="space-y-4">
                 {!isScanning ? (
-                    <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg bg-gray-50">
+                    <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg ">
                         <div className="flex flex-col items-center gap-4">
                             <div className="p-4 bg-primary/10 rounded-full">
                                 <Scan className="h-8 w-8 text-primary" />
