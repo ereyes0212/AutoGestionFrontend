@@ -4,7 +4,6 @@ import NoAcceso from "@/components/noAccess";
 import { User } from "lucide-react";
 import { getProfile } from "./actions";
 import EmployeeProfile from "./components/empleado-perfil";
-import BotonFetchNonce from "./components/nonce";
 
 export default async function EstadoServicio() {
 
@@ -28,7 +27,6 @@ export default async function EstadoServicio() {
                 description="En este apartado podrá tu perfil, asi como ver tus solicitudes."
                 screenName="Perfil"
             />
-            <BotonFetchNonce />
             <EmployeeProfile employee={employeeData!} />
             {/* 
 
