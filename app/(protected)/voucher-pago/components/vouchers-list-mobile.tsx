@@ -27,7 +27,7 @@ export default function PayrollListMobile({ registros }: PayrollListMobileProps)
         new Intl.NumberFormat("es-HN", { style: "currency", currency: "HNL" }).format(n);
 
     return (
-        <div className="space-y-4 p-4">
+        <div className="space-y-4 ">
             <div className="relative">
                 <Input
                     placeholder="Buscar pago por empleado…"
