@@ -152,7 +152,6 @@ export function EmpleadoFormulario({
                       disabled={(date) =>
                         date < new Date("1900-01-01")
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -197,7 +196,6 @@ export function EmpleadoFormulario({
                       disabled={(date) =>
                         date < new Date("1900-01-01")
                       }
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>

@@ -196,11 +196,9 @@ export function VoucherImporter() {
                     <PopoverContent className="w-auto p-0">
                         <Calendar
                             mode="single"
-                            selected={fechaPago ? new Date(fechaPago) : undefined}
                             onSelect={(date) =>
                                 setFechaPago(date ? date.toISOString().split("T")[0] : "")
                             }
-                            initialFocus
                         />
                     </PopoverContent>
                 </Popover>
