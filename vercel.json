@@ -2,7 +2,7 @@
     "crons": [
         {
             "path": "/api/a4?emails=erickjosepineda33@gmail.com,erick.reyes@tiempo.hn",
-            "schedule": "12 16 * * *"
+            "schedule": "21 16 * * *"
         }
     ]
 }
