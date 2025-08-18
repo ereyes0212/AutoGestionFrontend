@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { EmailService, MailPayload } from "@/lib/sendEmail";
 import { AnalyticsData, generateAnalyticsReportHtml } from "@/lib/templates/analyticReport";
 import { google } from "googleapis";
