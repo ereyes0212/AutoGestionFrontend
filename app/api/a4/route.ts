@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         const analytics = await getAnalyticsClient();
 
         // Fecha de antier en formato YYYY-MM-DD
-        const antier = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        const antier = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
         const antierStr = antier.toISOString().split("T")[0];
         console.log("🚀 ~ GET ~ antierStr:", antierStr)
 
