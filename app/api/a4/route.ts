@@ -25,6 +25,24 @@ async function getAnalyticsClient() {
     return google.analyticsdata({ version: "v1beta", auth });
 }
 
+/* helper: YYYY-MM-DD */
+function ymd(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
+/* Normaliza la date que viene de GA4: puede ser "20250817" o "2025-08-17" */
+function normalizeGa4Date(raw: string) {
+    if (!raw) return raw;
+    // si viene en formato YYYYMMDD -> convertir a YYYY-MM-DD
+    const m = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    // si ya viene con guiones, devolvemos tal cual
+    return raw;
+}
+
 export async function GET(req: NextRequest) {
     try {
         if (!PROPERTY_ID) throw new Error("GA4_PROPERTY_ID no definido");
@@ -36,75 +54,109 @@ export async function GET(req: NextRequest) {
 
         const analytics = await getAnalyticsClient();
 
-        // Fecha de antier en formato YYYY-MM-DD
+        // Fechas: antier = hoy -2, antesAntier = hoy -3
         const antier = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-        const antierStr = antier.toISOString().split("T")[0];
-        console.log("🚀 ~ GET ~ antierStr:", antierStr)
+        const antesAntier = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        const dateA = ymd(antesAntier); // día antes de antier (ej: 2025-08-17)
+        const dateB = ymd(antier);      // antier (ej: 2025-08-18)
 
+        // Petición GA4: pedimos date + country para sumar totales y USA por fecha
         const resp = await analytics.properties.runReport({
             property: `properties/${PROPERTY_ID}`,
             requestBody: {
-                dateRanges: [{ startDate: antierStr, endDate: antierStr }],
-                dimensions: [{ name: "country" }],
+                dateRanges: [{ startDate: dateA, endDate: dateB }],
+                dimensions: [{ name: "date" }, { name: "country" }],
                 metrics: [
                     { name: "screenPageViews" },
                     { name: "activeUsers" },
                     { name: "newUsers" }
                 ],
-                limit: 1000
+                limit: 10000
             } as any
         });
 
         const rows = resp.data.rows || [];
 
-        let totalActiveUsers = 0;
-        let totalViews = 0;
-        let totalNewUsers = 0;
-        let usaActiveUsers = 0;
-        let usaViews = 0;
+        // DEBUG: mostrar las primeras filas tal cual vienen (para ayudar a debug en logs)
+        if (rows.length) {
+            console.log("GA4 sample rows (first 5):", rows.slice(0, 5).map(r => ({
+                dims: r.dimensionValues?.map((d: any) => d.value),
+                mets: r.metricValues?.map((m: any) => m.value)
+            })));
+        } else {
+            console.log("GA4: no rows returned");
+        }
 
+        // Inicializar AnalyticsData para cada fecha
+        const init = (d: string): AnalyticsData => ({
+            page: "ALL",
+            totalViews: 0,
+            totalUsers: 0,
+            totalNewUsers: 0,
+            usaViews: 0,
+            usaUsers: 0,
+            usaUserPercent: 0,
+            date: d
+        });
+
+        const map: Record<string, AnalyticsData> = { [dateA]: init(dateA), [dateB]: init(dateB) };
+
+        // Agregar datos (normalizando el formato de la fecha que viene de GA4)
         rows.forEach(row => {
-            const country = row.dimensionValues?.[0]?.value;
-            const views = Number(row.metricValues?.[0]?.value ?? 0);
-            const activeUsers = Number(row.metricValues?.[1]?.value ?? 0);
-            const newUsers = Number(row.metricValues?.[2]?.value ?? 0);
+            const dims = row.dimensionValues || [];
+            const mets = row.metricValues || [];
 
-            totalViews += views;
-            totalActiveUsers += activeUsers;
-            totalNewUsers += newUsers;
+            // normalize date from GA4 (YYYYMMDD -> YYYY-MM-DD)
+            const rawDate = dims[0]?.value ?? "";
+            const date = normalizeGa4Date(String(rawDate));
+
+            const country = dims[1]?.value ?? "";
+            const views = Number(mets[0]?.value ?? 0);
+            const activeUsers = Number(mets[1]?.value ?? 0);
+            const newUsers = Number(mets[2]?.value ?? 0);
+
+            if (!map[date]) map[date] = init(date);
+
+            map[date].totalViews += views;
+            map[date].totalUsers += activeUsers;
+            map[date].totalNewUsers += newUsers;
 
             if (country === "United States") {
-                usaActiveUsers += activeUsers;
-                usaViews += views;
+                map[date].usaViews += views;
+                map[date].usaUsers += activeUsers;
             }
         });
 
-        const usaUserPercent = totalActiveUsers ? (usaActiveUsers / totalActiveUsers) * 100 : 0;
+        // Calcular usaUserPercent por fecha
+        [dateA, dateB].forEach(d => {
+            const obj = map[d];
+            obj.usaUserPercent = obj.totalUsers ? Number(((obj.usaUsers / obj.totalUsers) * 100).toFixed(2)) : 0;
+        });
 
-        const analyticsData: AnalyticsData = {
-            page: "ALL",
-            totalViews,
-            totalUsers: totalActiveUsers,
-            totalNewUsers,
-            usaViews,
-            usaUsers: usaActiveUsers,
-            usaUserPercent: Number(usaUserPercent.toFixed(2)),
-            date: antierStr
-        };
+        const dataA = map[dateA];
+        const dataB = map[dateB];
 
-        const html = generateAnalyticsReportHtml(analyticsData);
+        // Generar HTML usando la función que acepta (earlier, later)
+        const html = generateAnalyticsReportHtml(dataA, dataB);
+
+        // Enviar correo (misma lógica que tenías antes)
         const emailService = new EmailService();
-
         await Promise.all(emails.map(email => {
             const mailPayload: MailPayload = {
                 to: email,
-                subject: `Reporte de Analytics ${analyticsData.date}`,
+                subject: `Reporte comparativo Analytics ${dataA.date} → ${dataB.date}`,
                 html
             };
             return emailService.sendMail(mailPayload);
         }));
 
-        return new Response(JSON.stringify({ success: true, sentTo: emails }), {
+        return new Response(JSON.stringify({
+            success: true,
+            sentTo: emails,
+            dates: { earlier: dateA, later: dateB },
+            analytics: { [dateA]: dataA, [dateB]: dataB },
+            rowsCount: rows.length
+        }), {
             status: 200,
             headers: { "Content-Type": "application/json" }
         });
