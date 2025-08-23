@@ -36,11 +36,14 @@ function ymd(d: Date) {
 /* Normaliza la date que viene de GA4: puede ser "20250817" o "2025-08-17" */
 function normalizeGa4Date(raw: string) {
     if (!raw) return raw;
-    // si viene en formato YYYYMMDD -> convertir a YYYY-MM-DD
     const m = raw.match(/^(\d{4})(\d{2})(\d{2})$/);
     if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-    // si ya viene con guiones, devolvemos tal cual
     return raw;
+}
+
+// helper para esperar (5 segundos)
+function sleep(ms: number) {
+    return new Promise<void>(resolve => setTimeout(resolve, ms));
 }
 
 export async function GET(req: NextRequest) {
@@ -60,7 +63,6 @@ export async function GET(req: NextRequest) {
         const dateA = ymd(antesAntier); // día antes de antier (ej: 2025-08-17)
         const dateB = ymd(antier);      // antier (ej: 2025-08-18)
 
-        // Petición GA4: pedimos date + country para sumar totales y USA por fecha
         const resp = await analytics.properties.runReport({
             property: `properties/${PROPERTY_ID}`,
             requestBody: {
@@ -77,7 +79,6 @@ export async function GET(req: NextRequest) {
 
         const rows = resp.data.rows || [];
 
-        // DEBUG: mostrar las primeras filas tal cual vienen (para ayudar a debug en logs)
         if (rows.length) {
             console.log("GA4 sample rows (first 5):", rows.slice(0, 5).map(r => ({
                 dims: r.dimensionValues?.map((d: any) => d.value),
@@ -87,7 +88,6 @@ export async function GET(req: NextRequest) {
             console.log("GA4: no rows returned");
         }
 
-        // Inicializar AnalyticsData para cada fecha
         const init = (d: string): AnalyticsData => ({
             page: "ALL",
             totalViews: 0,
@@ -101,12 +101,10 @@ export async function GET(req: NextRequest) {
 
         const map: Record<string, AnalyticsData> = { [dateA]: init(dateA), [dateB]: init(dateB) };
 
-        // Agregar datos (normalizando el formato de la fecha que viene de GA4)
         rows.forEach(row => {
             const dims = row.dimensionValues || [];
             const mets = row.metricValues || [];
 
-            // normalize date from GA4 (YYYYMMDD -> YYYY-MM-DD)
             const rawDate = dims[0]?.value ?? "";
             const date = normalizeGa4Date(String(rawDate));
 
@@ -127,7 +125,6 @@ export async function GET(req: NextRequest) {
             }
         });
 
-        // Calcular usaUserPercent por fecha
         [dateA, dateB].forEach(d => {
             const obj = map[d];
             obj.usaUserPercent = obj.totalUsers ? Number(((obj.usaUsers / obj.totalUsers) * 100).toFixed(2)) : 0;
@@ -136,26 +133,42 @@ export async function GET(req: NextRequest) {
         const dataA = map[dateA];
         const dataB = map[dateB];
 
-        // Generar HTML usando la función que acepta (earlier, later)
         const html = generateAnalyticsReportHtml(dataA, dataB);
 
-        // Enviar correo (misma lógica que tenías antes)
+        // Envío secuencial: 1 correo cada 5 segundos
         const emailService = new EmailService();
-        await Promise.all(emails.map(email => {
+        const results: { email: string, ok: boolean, error?: string }[] = [];
+
+        for (let i = 0; i < emails.length; i++) {
+            const email = emails[i];
             const mailPayload: MailPayload = {
                 to: email,
                 subject: `Reporte comparativo Analytics ${dataA.date} → ${dataB.date}`,
                 html
             };
-            return emailService.sendMail(mailPayload);
-        }));
+
+            try {
+                await emailService.sendMail(mailPayload);
+                results.push({ email, ok: true });
+                console.log(`Email enviado a ${email}`);
+            } catch (sendErr: any) {
+                console.error(`Error enviando a ${email}:`, sendErr);
+                results.push({ email, ok: false, error: sendErr?.message || String(sendErr) });
+            }
+
+            // esperar 5s antes del siguiente (salta el sleep después del último)
+            if (i < emails.length - 1) {
+                await sleep(5000);
+            }
+        }
 
         return new Response(JSON.stringify({
             success: true,
             sentTo: emails,
             dates: { earlier: dateA, later: dateB },
             analytics: { [dateA]: dataA, [dateB]: dataB },
-            rowsCount: rows.length
+            rowsCount: rows.length,
+            sendResults: results
         }), {
             status: 200,
             headers: { "Content-Type": "application/json" }

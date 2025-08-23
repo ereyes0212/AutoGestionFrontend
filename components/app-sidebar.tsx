@@ -103,6 +103,12 @@ const items = [
     url: "/voucher-pago",
     icon: File,
     permiso: "ver_voucher_pago",
+  },
+  {
+    title: "notas",
+    url: "/redaccion",
+    icon: LucideFilePen,
+    permiso: "ver_notas",
   }
 ];
 

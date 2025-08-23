@@ -45,38 +45,42 @@ model Empleados {
   jefe_id   String? @db.VarChar(36)
 
   // Del Excel:
-  numeroIdentificacion  String    @db.VarChar(50) // "Número de Identificación"
-  nombre                String    @db.VarChar(100) // "Nombres"
-  apellido              String    @db.VarChar(100) // "Apellidos"
-  correo                String    @db.LongText // "Correo Electrónico Personal"
-  FechaNacimiento       DateTime? @db.DateTime(6) // armada a partir de "Dia"/"Mes"/"Año"
-  fechaIngreso          DateTime? @db.DateTime(6) // armada a partir de "Dia.1"/"Mes.1"/"Año.1"
-  departamentoDomicilio String?   @db.VarChar(100) // "Departamento de Domicilio"
-  ciudadDomicilio       String?   @db.VarChar(100) // "Ciudad de Domicilio"
-  colonia               String?   @db.VarChar(100) // "Colonia/Barrio/Aldea"
-  telefono              String?   @db.VarChar(20) // "Número de Celular de Cliente"
-  profesion             String?   @db.VarChar(100) // "Profesión u oficio"
+  numeroIdentificacion  String    @db.VarChar(50)
+  nombre                String    @db.VarChar(100)
+  apellido              String    @db.VarChar(100)
+  correo                String    @db.LongText
+  FechaNacimiento       DateTime? @db.DateTime(6)
+  fechaIngreso          DateTime? @db.DateTime(6)
+  departamentoDomicilio String?   @db.VarChar(100)
+  ciudadDomicilio       String?   @db.VarChar(100)
+  colonia               String?   @db.VarChar(100)
+  telefono              String?   @db.VarChar(20)
+  profesion             String?   @db.VarChar(100)
 
-  // Campos que ya tenías:
+  // Campos existentes
   Vacaciones Int
-  genero     String?  @db.VarChar(20) // "Genero"
+  genero     String?  @db.VarChar(20)
   activo     Boolean  @db.Bit(1)
   createAt   DateTime @default(now())
   updateAt   DateTime @updatedAt
 
-  // Relaciones:
-  Empleados                   Empleados?                    @relation("EmpleadosToEmpleados", fields: [jefe_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Empleados_Empleados_jefe_id")
+  // Relaciones
+  Empleados                   Empleados?                    @relation("EmpleadosToEmpleados", fields: [jefe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   other_Empleados             Empleados[]                   @relation("EmpleadosToEmpleados")
   activosAsignados            Activo[]                      @relation("EmpleadoActivos")
-  Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Empleados_Puesto_puesto_id")
+  Puesto                      Puesto                        @relation(fields: [puesto_id], references: [Id], onDelete: Cascade, onUpdate: NoAction)
   ReporteDise_o               ReporteDiseño[]
   SolicitudVacacion           SolicitudVacacion[]
   SolicitudVacacionAprobacion SolicitudVacacionAprobacion[]
   Usuarios                    Usuarios?
   VoucherPagos                VoucherPagos[]
 
-  @@index([jefe_id], map: "IX_Empleados_jefe_id")
-  @@index([puesto_id], map: "IX_Empleados_puesto_id")
+  NotasCreadas   Nota[] @relation("NotasCreadas")
+  NotasAsignadas Nota[] @relation("NotasAsignadas")
+  NotasAprobadas Nota[] @relation("NotasAprobador")
+
+  @@index([jefe_id])
+  @@index([puesto_id])
 }
 
 model Permiso {
@@ -338,4 +342,33 @@ model HistorialActivo {
 
   @@index([activoId], map: "IX_HistorialActivo_activoId")
   @@index([estadoId], map: "IX_HistorialActivo_estadoId")
+}
+
+enum NotaEstado {
+  PENDIENTE
+  APROBADA
+  FINALIZADA
+  RECHAZADA
+  REVISION
+}
+
+model Nota {
+  id                  String     @id @default(uuid()) @db.VarChar(36)
+  creadorEmpleadoId   String     @db.VarChar(36)
+  asignadoEmpleadoId  String?    @db.VarChar(36)
+  aprobadorEmpleadoId String?    @db.VarChar(36)
+  estado              NotaEstado
+  titulo              String     @db.VarChar(250)
+  fellback            String?    @db.LongText
+  createAt            DateTime   @default(now()) @db.DateTime(6)
+  updateAt            DateTime   @updatedAt @db.DateTime(6)
+
+  creador   Empleados  @relation("NotasCreadas", fields: [creadorEmpleadoId], references: [id])
+  asignado  Empleados? @relation("NotasAsignadas", fields: [asignadoEmpleadoId], references: [id])
+  aprobador Empleados? @relation("NotasAprobador", fields: [aprobadorEmpleadoId], references: [id])
+
+  @@index([creadorEmpleadoId])
+  @@index([asignadoEmpleadoId])
+  @@index([aprobadorEmpleadoId])
+  @@index([estado])
 }
