@@ -1,18 +1,38 @@
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 import { EmailService, MailPayload } from "@/lib/sendEmail";
 import { generatePostsAnalyticsHtml } from "@/lib/templates/analyticViewsReport";
 import { google } from "googleapis";
 import type { NextRequest } from "next/server";
 
-const PROPERTY_ID = process.env.GA4_PROPERTY_ID!;
-const SA_B64 = process.env.GA4_SA_B64!;
-const SITE_BASE = process.env.WP_SITE_URL!.replace(/\/$/, "");
+/** helpers para leer/validar envs en runtime */
+function getSiteBase(): string {
+    const wp = process.env.WP_SITE_URL;
+    if (!wp) throw new Error("Missing env WP_SITE_URL");
+    return wp.replace(/\/$/, "");
+}
+
+function getPropertyId(): string {
+    const id = process.env.GA4_PROPERTY_ID;
+    if (!id) throw new Error("Missing env GA4_PROPERTY_ID");
+    return id;
+}
 
 function loadServiceAccount() {
-    const sa = JSON.parse(Buffer.from(SA_B64, "base64").toString("utf8"));
-    sa.private_key = sa.private_key.replace(/\\n/g, "\n");
-    return sa;
+    const saB64 = process.env.GA4_SA_B64;
+    if (!saB64) throw new Error("Missing env GA4_SA_B64 (base64 service account)");
+    let saObj: any;
+    try {
+        saObj = JSON.parse(Buffer.from(saB64, "base64").toString("utf8"));
+    } catch (err) {
+        throw new Error("GA4_SA_B64 is not valid base64 JSON: " + String(err));
+    }
+    if (!saObj.private_key || !saObj.client_email) {
+        throw new Error("Service account JSON missing private_key or client_email");
+    }
+    saObj.private_key = saObj.private_key.replace(/\\n/g, "\n");
+    return saObj;
 }
 
 async function getAnalyticsClient() {
@@ -36,29 +56,33 @@ function safePathFromLocation(loc: string) {
         const u = new URL(loc);
         let path = u.pathname;
         if (path === "/") return ""; // raíz excluida
-        // quitar barra inicial y final
         path = path.replace(/^\/|\/$/g, "");
         return path;
     } catch {
-        return loc.replace(/^\/|\/$/g, ""); // fallback
+        return loc.replace(/^\/|\/$/g, "");
     }
 }
 
-
-// helper para esperar N ms
 function sleep(ms: number) {
-    return new Promise<void>(resolve => setTimeout(resolve, ms));
+    return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 export async function GET(req: NextRequest) {
     try {
+        // validar envs aquí (errores claros si falta algo)
+        const SITE_BASE = getSiteBase();
+        const PROPERTY_ID = getPropertyId();
+
         const url = req.nextUrl;
         const dateParam = url.searchParams.get("date");
         const limit = Number(url.searchParams.get("limit") || "10");
 
         const emailsParam = url.searchParams.get("emails");
-        if (!emailsParam) throw new Error("Debes enviar al menos un email como query param: ?emails=a@a.com,b@b.com");
-        const emails = emailsParam.split(",").map(e => e.trim()).filter(Boolean);
+        if (!emailsParam)
+            throw new Error(
+                "Debes enviar al menos un email como query param: ?emails=a@a.com,b@b.com"
+            );
+        const emails = emailsParam.split(",").map((e) => e.trim()).filter(Boolean);
 
         const antier = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
         const date = dateParam || ymd(antier);
@@ -78,29 +102,29 @@ export async function GET(req: NextRequest) {
                             {
                                 filter: {
                                     fieldName: "pageLocation",
-                                    stringFilter: { matchType: "BEGINS_WITH", value: SITE_BASE }
-                                }
+                                    stringFilter: { matchType: "BEGINS_WITH", value: SITE_BASE },
+                                },
                             },
                             {
                                 notExpression: {
                                     filter: {
                                         fieldName: "pageLocation",
-                                        stringFilter: { matchType: "EXACT", value: `${SITE_BASE}/` }
-                                    }
-                                }
+                                        stringFilter: { matchType: "EXACT", value: `${SITE_BASE}/` },
+                                    },
+                                },
                             },
                             {
                                 notExpression: {
                                     filter: {
                                         fieldName: "pageLocation",
-                                        stringFilter: { matchType: "EXACT", value: SITE_BASE }
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
+                                        stringFilter: { matchType: "EXACT", value: SITE_BASE },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
         });
 
         const rows = resp.data.rows || [];
@@ -111,41 +135,42 @@ export async function GET(req: NextRequest) {
                 const title = safePathFromLocation(loc);
                 return { link: loc, views, title };
             })
-            .filter(i => i.title); // eliminamos la raíz
+            .filter((i) => i.title);
 
         if (!items.length) {
-            return new Response(JSON.stringify({ success: true, date, count: 0, mostViewed: [], leastViewed: [] }), {
-                status: 200, headers: { "Content-Type": "application/json" }
-            });
+            return new Response(
+                JSON.stringify({ success: true, date, count: 0, mostViewed: [], leastViewed: [] }),
+                { status: 200, headers: { "Content-Type": "application/json" } }
+            );
         }
 
         const byViewsDesc = [...items].sort((a, b) => b.views - a.views);
         const byViewsAsc = [...items].sort((a, b) => a.views - b.views);
 
-        const leastCandidates = byViewsAsc.filter(i => i.views > 0);
-        const leastViewed = leastCandidates.slice(0, limit).map(i => ({
+        const leastCandidates = byViewsAsc.filter((i) => i.views > 0);
+        const leastViewed = leastCandidates.slice(0, limit).map((i) => ({
             id: null,
             title: i.title,
             slug: i.title,
             link: i.link,
             created_at: date,
-            views: i.views
+            views: i.views,
         }));
 
-        const mostViewed = byViewsDesc.slice(0, limit).map(i => ({
+        const mostViewed = byViewsDesc.slice(0, limit).map((i) => ({
             id: null,
             title: i.title,
             slug: i.title,
             link: i.link,
             created_at: date,
-            views: i.views
+            views: i.views,
         }));
 
         const html = generatePostsAnalyticsHtml({ date, leastViewed, mostViewed });
 
         // Envío secuencial: 1 email cada 5 segundos
         const emailService = new EmailService();
-        const results: { email: string, ok: boolean, error?: string }[] = [];
+        const results: { email: string; ok: boolean; error?: string }[] = [];
 
         for (let i = 0; i < emails.length; i++) {
             const email = emails[i];
@@ -163,23 +188,22 @@ export async function GET(req: NextRequest) {
             if (i < emails.length - 1) await sleep(5000);
         }
 
-        return new Response(JSON.stringify({
-            success: true,
-            date,
-            count: items.length,
-            leastViewed,
-            mostViewed,
-            sendResults: results
-        }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-        });
-
+        return new Response(
+            JSON.stringify({
+                success: true,
+                date,
+                count: items.length,
+                leastViewed,
+                mostViewed,
+                sendResults: results,
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+        );
     } catch (err: any) {
         console.error("analyticsTopPages error:", err);
         return new Response(JSON.stringify({ error: err.message || String(err) }), {
             status: 500,
-            headers: { "Content-Type": "application/json" }
+            headers: { "Content-Type": "application/json" },
         });
     }
 }
