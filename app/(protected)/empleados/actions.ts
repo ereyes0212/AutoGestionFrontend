@@ -113,7 +113,7 @@ export async function getEmpleadoById(id: string): Promise<Empleado | null> {
  * Crea un nuevo empleado
  */
 export async function createEmpleado(data: Empleado): Promise<Empleado> {
-  const id = data.id ?? randomUUID();
+  const id = randomUUID();
   const r = await prisma.empleados.create({
     data: {
       id,

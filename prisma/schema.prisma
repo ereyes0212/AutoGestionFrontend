@@ -349,7 +349,6 @@ enum NotaEstado {
   APROBADA
   FINALIZADA
   RECHAZADA
-  REVISION
 }
 
 model Nota {

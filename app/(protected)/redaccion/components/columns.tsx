@@ -1,8 +1,4 @@
 "use client";
-import { ArrowUpDown } from "lucide-react";
-// import { FormateadorFecha } from "@/lib/utils";
-import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +8,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ColumnDef } from "@tanstack/react-table";
+import { ArrowUpDown, Award, CheckCircle, Clock, MoreHorizontal, XCircle } from "lucide-react";
 import Link from "next/link";
 import { Nota } from "../types";
 
@@ -68,9 +66,7 @@ export const columns: ColumnDef<Nota>[] = [
       </Button>
     ),
   },
-
-
-
+  // columna estado con icono y color
   {
     accessorKey: "estado",
     header: ({ column }) => (
@@ -83,13 +79,37 @@ export const columns: ColumnDef<Nota>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: ({ row }) => {
+      const estado = row.original.estado as
+        | "PENDIENTE"
+        | "APROBADA"
+        | "FINALIZADA"
+        | "RECHAZADA";
 
+      const map = {
+        PENDIENTE: { Icon: Clock, color: "text-yellow-500", label: "PENDIENTE" },
+        APROBADA: { Icon: CheckCircle, color: "text-green-600", label: "APROBADA" },
+        FINALIZADA: { Icon: Award, color: "text-blue-600", label: "FINALIZADA" },
+        RECHAZADA: { Icon: XCircle, color: "text-red-600", label: "RECHAZADA" },
+      } as const;
+
+      const info = map[estado] ?? map.PENDIENTE;
+      const Icon = info.Icon;
+
+      return (
+        <div className="flex items-center">
+          <Icon className={`mr-2 h-4 w-4 ${info.color}`} />
+          <span className="text-sm font-medium">{info.label}</span>
+        </div>
+      );
+    },
   },
+  // acciones
   {
     id: "actions",
     header: "Acciones",
     cell: ({ row }) => {
-      const puesto = row.original;
+      const redaccion = row.original;
 
       return (
         <DropdownMenu>
@@ -101,7 +121,7 @@ export const columns: ColumnDef<Nota>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/puestos/${puesto.id}/edit`}>
+            <Link href={`/redaccion/${redaccion.id}/edit`}>
               <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>

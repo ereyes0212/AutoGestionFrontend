@@ -5,8 +5,7 @@ export const NotaEstadoEnum = z.enum([
   'PENDIENTE',
   'APROBADA',
   'FINALIZADA',
-  'RECHAZADA',
-  'REVISION',
+  'RECHAZADA'
 ]);
 
 // Schema Zod para Nota (coincide con Prisma)

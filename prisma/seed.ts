@@ -83,6 +83,7 @@ async function main() {
     { nombre: "ver_notas", descripcion: "Permiso para ver las notas" },
     { nombre: "crear_notas", descripcion: "Permiso para crear las notas" },
     { nombre: "editar_notas", descripcion: "Permiso para editar las notas" },
+    { nombre: "cambiar_estado_notas", descripcion: "Permiso para cambiar el estado de las notas" },
   ];
 
   const permisoIds: string[] = [];
