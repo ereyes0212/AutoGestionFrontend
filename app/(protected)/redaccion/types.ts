@@ -3,6 +3,7 @@ export type Nota = {
   creadorEmpleadoId: string;
   asignadoEmpleadoId?: string | null;
   aprobadorEmpleadoId?: string | null;
+  descripcion: string;
   estado: 'PENDIENTE' | 'APROBADA' | 'FINALIZADA' | 'RECHAZADA';
   titulo: string;
   fellback?: string | null;

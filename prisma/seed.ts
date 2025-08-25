@@ -146,7 +146,7 @@ async function main() {
   }
 
   // 6. Crear Empleado
-  let empleado = await prisma.empleados.findFirst({ where: { correo: "marta.rapalo@tiempo.hn" } });
+  let empleado = await prisma.empleados.findFirst({ where: { correo: "erickjosepineda33@gmail.com" } });
   if (!empleado) {
     empleado = await prisma.empleados.create({
       data: {

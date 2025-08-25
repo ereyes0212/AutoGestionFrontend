@@ -15,6 +15,7 @@ export const NotaSchema = z.object({
   asignadoEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)
   aprobadorEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)
   estado: NotaEstadoEnum,
+  descripcion: z.string().min(1, 'La descripción es requerida'), // String @db.LongText
   titulo: z.string().min(1, 'El título es requerido').max(250),
   fellback: z.string().nullable().optional(),          // String? @db.LongText
   createAt: z.date().optional(),                       // DateTime

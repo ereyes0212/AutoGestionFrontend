@@ -22,8 +22,10 @@ import { z } from "zod";
 
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Select } from "@radix-ui/react-select";
-import { aprobarNota, createNota, finalizarNota, tomarNota } from "../actions";
+import { aprobarNota, createNota, finalizarNota, tomarNota, updateNota } from "../actions";
 import { NotaSchema } from "../schema";
+
+type NotaFormValues = z.infer<typeof NotaSchema>;
 
 export function NotaFormulario({
   isUpdate,
@@ -33,34 +35,47 @@ export function NotaFormulario({
 }: {
   isUpdate: boolean;
   permiso: string;
-  initialData: z.infer<typeof NotaSchema>;
+  initialData: NotaFormValues;
   currentUserEmpleadoId: string;
 }) {
   const { toast } = useToast();
   const router = useRouter();
-  const [extraTitles, setExtraTitles] = useState<string[]>([]);
-
-  const form = useForm<z.infer<typeof NotaSchema>>({
+  // ahora cada extra tiene título + descripción
+  const [extraTitles, setExtraTitles] = useState<{ titulo: string; descripcion: string }[]>([]);
+  const form = useForm<NotaFormValues>({
     resolver: zodResolver(NotaSchema),
     defaultValues: initialData,
   });
+  const estado = form.watch("estado");
 
   const canChangeEstado = permiso === "cambiar_estado_notas";
 
   function handleAddTitle() {
-    setExtraTitles((s) => [...s, ""]);
+    setExtraTitles((s) => [...s, { titulo: "", descripcion: "" }]);
   }
 
   function handleRemoveExtra(index: number) {
     setExtraTitles((s) => s.filter((_, i) => i !== index));
   }
 
-  function handleChangeExtra(index: number, value: string) {
-    setExtraTitles((s) => s.map((v, i) => (i === index ? value : v)));
+  function handleChangeExtraTitle(index: number, value: string) {
+    setExtraTitles((s) => s.map((v, i) => (i === index ? { ...v, titulo: value } : v)));
   }
 
-  async function onSubmit(data: z.infer<typeof NotaSchema>) {
-    const allTitles = [data.titulo, ...extraTitles].map((t) => t?.trim()).filter(Boolean);
+  function handleChangeExtraDescription(index: number, value: string) {
+    setExtraTitles((s) => s.map((v, i) => (i === index ? { ...v, descripcion: value } : v)));
+  }
+
+  async function onSubmit(data: NotaFormValues) {
+    // construimos arrays paralelos de títulos y descripciones
+    const mainTitle = data.titulo?.trim();
+    const mainDescription = (data as any).descripcion?.trim() ?? "";
+
+    const extraTitulos = extraTitles.map((e) => e.titulo?.trim()).filter(Boolean);
+    const extraDescripciones = extraTitles.map((e) => e.descripcion?.trim() ?? "");
+
+    const allTitles = [mainTitle, ...extraTitulos].map((t) => String(t).trim()).filter(Boolean);
+    const allDescriptions = [mainDescription, ...extraDescripciones].slice(0, allTitles.length);
 
     if (allTitles.length === 0) {
       toast({ title: "Error", description: "Debes enviar al menos un título." });
@@ -69,51 +84,76 @@ export function NotaFormulario({
 
     try {
       if (isUpdate) {
+        // update single nota
         if (!data.id) {
           toast({ title: "Error", description: "Falta el identificador de la nota." });
           return;
         }
 
         if (canChangeEstado) {
-          // Jefe aprueba/rechaza
+          // JEFE: cambia estado/fellback y luego actualiza título/descripcion si hace falta
           await aprobarNota(data.id, data.estado, data.fellback || null);
-          toast({ title: "Actualización Exitosa", description: "La nota ha sido aprobada." });
+
+          // Actualizar título/descripcion si cambiaron (evita sobreescribir campos nulos)
+          const tituloParaActualizar = data.titulo?.trim();
+          const descripcionParaActualizar = (data as any).descripcion;
+          if (tituloParaActualizar !== undefined || descripcionParaActualizar !== undefined) {
+            await updateNota(data.id, {
+              ...(tituloParaActualizar !== undefined ? { titulo: tituloParaActualizar } : {}),
+              ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
+            });
+          }
+
+          toast({ title: "Actualización Exitosa", description: "La nota ha sido actualizada." });
           router.push("/redaccion");
           router.refresh();
         } else {
-          // Redactor acciona
-          if (data.estado === "APROBADA") {
-            await finalizarNota(data.id);
-            toast({ title: "Actualización Exitosa", description: "La nota ha sido finalizada." });
-            router.push("/redaccion");
-            router.refresh();
-          } else if (data.estado === "PENDIENTE") {
-            await tomarNota(data.id);
-            toast({ title: "Actualización Exitosa", description: "Has tomado la nota." });
-            router.push("/redaccion");
-            router.refresh();
+          // REDACTOR: el submit solo actualiza título/descripcion (no toca estado).
+          const tituloParaActualizar = data.titulo?.trim();
+          const descripcionParaActualizar = (data as any).descripcion;
+
+          // Si no hay cambios en título/descripcion, solo mostramos mensaje y salimos
+          if (tituloParaActualizar === undefined && descripcionParaActualizar === undefined) {
+            toast({ title: "Sin cambios", description: "No hay cambios para guardar." });
+            return;
           }
+
+          await updateNota(data.id, {
+            ...(tituloParaActualizar !== undefined ? { titulo: tituloParaActualizar } : {}),
+            ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
+          });
+
+          toast({ title: "Actualización Exitosa", description: "La nota ha sido actualizada." });
+          router.push("/redaccion");
+          router.refresh();
         }
       } else {
-        // Crear nota(s)
+        // CREACIÓN: crear una nota por cada título+descripción
+        if (!data.creadorEmpleadoId) {
+          toast({ title: "Error", description: "Falta el creador (sesión inválida)." });
+          return;
+        }
+
         await Promise.all(
-          allTitles.map((titulo) =>
+          allTitles.map((titulo, i) =>
             createNota({
-              ...data,
+              creadorEmpleadoId: data.creadorEmpleadoId,
               titulo,
+              descripcion: allDescriptions[i] ?? "",
             })
           )
         );
-        toast({ title: "Creación Exitosa", description: `Se crearon ${allTitles.length} nota(s).` });
-      }
 
-      router.push("/redaccion");
-      router.refresh();
+        toast({ title: "Creación Exitosa", description: `Se crearon ${allTitles.length} nota(s).` });
+        router.push("/redaccion");
+        router.refresh();
+      }
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: `Hubo un problema: ${String(error)}` });
     }
   }
+
 
   return (
     <Form {...form}>
@@ -128,46 +168,90 @@ export function NotaFormulario({
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
-          <FormField
-            control={form.control}
-            name="titulo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Título</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ingresa el título de la nota" {...field} />
-                </FormControl>
-                <FormDescription>Por favor ingresa el título.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+        <div className="grid grid-cols-1 gap-4">
+          {/* Título principal */}
           <div className="col-span-1 sm:col-span-2">
-            {extraTitles.map((val, idx) => (
-              <div key={idx} className="flex items-center gap-2 mb-2">
-                <Input
-                  value={val}
-                  onChange={(e) => handleChangeExtra(idx, e.target.value)}
-                  placeholder={`Título adicional #${idx + 1}`}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleRemoveExtra(idx)}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
+            <FormField
+              control={form.control}
+              name="titulo"
+              render={({ field }) => (
+                <FormItem className="w-full">
+                  <FormLabel>Título</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ingresa el título de la nota"
+                      {...field}
+                      disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
+                    />
+                  </FormControl>
+                  <FormDescription>Por favor ingresa el título.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Descripción principal — queda debajo porque está dentro del mismo bloque que hace span en sm */}
+            <FormField
+              control={form.control}
+              name="descripcion"
+              render={({ field }) => (
+                <FormItem className="w-full mt-2">
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
+                      placeholder="Ingresa una descripción (opcional)" {...field} />
+                  </FormControl>
+                  <FormDescription>Descripción asociada al título.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+
+          {/* Extras: títulos + descripciones (descripcion abajo) */}
+          <div className="col-span-1 sm:col-span-2">
+            {extraTitles.map((et, idx) => (
+              <div key={idx} className="mb-3 space-y-2 border p-3 rounded">
+                {/* fila superior: título (full) + trash */}
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={et.titulo}
+                      onChange={(e) => handleChangeExtraTitle(idx, e.target.value)}
+                      placeholder={`Título adicional #${idx + 1}`}
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveExtra(idx)}
+                      aria-label={`Eliminar título adicional ${idx + 1}`}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* descripción (debajo, full width) */}
+                <div>
+                  <Input
+                    value={et.descripcion}
+                    onChange={(e) => handleChangeExtraDescription(idx, e.target.value)}
+                    placeholder={`Descripción para título adicional #${idx + 1}`}
+                  />
+                </div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Campos visibles en update (estado + fellback) — siempre visibles pero deshabilitados para redactores */}
         {isUpdate && (
           <>
-            {/* Estado */}
             <FormField
               control={form.control}
               name="estado"
@@ -175,11 +259,7 @@ export function NotaFormulario({
                 <FormItem>
                   <FormLabel>Estado</FormLabel>
                   <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value as string}
-                      disabled={!canChangeEstado} // 👈 redactor lo ve bloqueado
-                    >
+                    <Select onValueChange={field.onChange} value={field.value as string} disabled={!canChangeEstado}>
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecciona un estado" />
                       </SelectTrigger>
@@ -197,7 +277,6 @@ export function NotaFormulario({
               )}
             />
 
-            {/* Fellback */}
             <FormField
               control={form.control}
               name="fellback"
@@ -206,13 +285,13 @@ export function NotaFormulario({
                   <FormLabel>Fellback</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Observación/rechazo"
+                      placeholder="Observación / motivo (opcional)"
                       value={field.value ?? ""}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       name={field.name}
                       ref={field.ref}
-                      disabled={!canChangeEstado} // 👈 redactor lo ve bloqueado
+                      disabled={!canChangeEstado}
                     />
                   </FormControl>
                   <FormDescription>Texto de observación/rechazo.</FormDescription>
@@ -223,63 +302,57 @@ export function NotaFormulario({
           </>
         )}
 
-        {/* Botones solo para redactores */}
+        {/* Botones solo para redactores cuando corresponde */}
         {!canChangeEstado && isUpdate && (
           <div className="flex gap-2 mt-4">
-            {form.getValues("estado") === "PENDIENTE" &&
-              !form.getValues("asignadoEmpleadoId") && (
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const notaId = form.getValues("id");
-                    if (!notaId) {
-                      toast({ title: "Error", description: "Falta el ID de la nota" });
-                      return;
-                    }
+            {form.getValues("estado") === "PENDIENTE" && !form.getValues("asignadoEmpleadoId") && (
+              <Button
+                type="button"
+                onClick={async () => {
+                  const notaId = form.getValues("id");
+                  if (!notaId) {
+                    toast({ title: "Error", description: "Falta el ID de la nota" });
+                    return;
+                  }
+                  try {
+                    await tomarNota(notaId);
+                    toast({ title: "Nota tomada", description: "Ahora puedes editar la nota." });
+                    router.replace("/redaccion");
+                  } catch (err) {
+                    toast({ title: "Error", description: String(err) });
+                  }
+                }}
+              >
+                Tomar nota
+              </Button>
+            )}
 
-                    try {
-                      await tomarNota(notaId);
-                      toast({ title: "Nota tomada", description: "Ahora puedes editar la nota." });
-                      router.replace("/redaccion"); // 👈 reemplaza y refresca la página
-                    } catch (err) {
-                      toast({ title: "Error", description: String(err) });
-                    }
-                  }}
-                >
-                  Tomar nota
-                </Button>
-
-              )}
-
-            {form.getValues("estado") === "APROBADA" &&
-              form.getValues("asignadoEmpleadoId") === currentUserEmpleadoId && (
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const notaId = form.getValues("id");
-                    if (!notaId) {
-                      toast({ title: "Error", description: "Falta el ID de la nota" });
-                      return;
-                    }
-
-                    try {
-                      await finalizarNota(notaId);
-                      toast({ title: "Nota finalizada", description: "La nota ha sido finalizada." });
-                      router.replace("/redaccion"); // 👈 reemplaza y refresca la página
-                    } catch (err) {
-                      toast({ title: "Error", description: String(err) });
-                    }
-                  }}
-                >
-                  Finalizar nota
-                </Button>
-
-              )}
+            {form.getValues("estado") === "APROBADA" && form.getValues("asignadoEmpleadoId") === currentUserEmpleadoId && (
+              <Button
+                type="button"
+                onClick={async () => {
+                  const notaId = form.getValues("id");
+                  if (!notaId) {
+                    toast({ title: "Error", description: "Falta el ID de la nota" });
+                    return;
+                  }
+                  try {
+                    await finalizarNota(notaId);
+                    toast({ title: "Nota finalizada", description: "La nota ha sido finalizada." });
+                    router.replace("/redaccion");
+                  } catch (err) {
+                    toast({ title: "Error", description: String(err) });
+                  }
+                }}
+              >
+                Finalizar nota
+              </Button>
+            )}
           </div>
         )}
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting} >
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

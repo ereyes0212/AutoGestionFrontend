@@ -1,7 +1,7 @@
 {
     "crons": [
         {
-            "path": "/api/a4?emails=erick.reyes@tiempo.hn,Carlos@tiempo.hn,juan@jymagencia.com,German.Quintanilla@tiempo.hn,rosa.galindo@tiempo.hn,andres.rosenthal@miprestadito.com",
+            "path": "/api/a4?emails=andres.rosenthal@miprestadito.com,Carlos@tiempo.hn,juan@jymagencia.com,German.Quintanilla@tiempo.hn,rosa.galindo@tiempo.hn,erick.reyes@tiempo.hn",
             "schedule": "0 15 * * *"
         }
     ]

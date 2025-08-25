@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Mail, Phone } from "lucide-react"
-import { calcularEdad, calculateYearsOfService } from "../../../../lib/utils"
+import { calcularEdad, calculateServiceDuration } from "../../../../lib/utils"
 import type { Employee } from "../type"
 
 interface EmployeeProfileProps {
@@ -14,7 +14,7 @@ interface EmployeeProfileProps {
 
 export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
     const initials = `${employee.nombre.charAt(0)}${employee.apellido.charAt(0)}`
-    const yearsOfService = calculateYearsOfService(new Date(employee.fechaIngreso))
+    const yearsOfService = calculateServiceDuration(employee.fechaIngreso)
 
     return (
         <div className=" mx-auto ">
@@ -86,7 +86,7 @@ export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
                                 </dd>
 
                                 <dt className="font-medium text-muted-foreground">Años de Servicio:</dt>
-                                <dd>{yearsOfService} años</dd>
+                                <dd>{yearsOfService.years} años {yearsOfService.months} meses {yearsOfService.days} dias</dd>
 
                                 <dt className="font-medium text-muted-foreground">Vacaciones:</dt>
                                 <dd>{employee.vacaciones} días</dd>

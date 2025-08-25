@@ -9,9 +9,11 @@ import { Nota } from "./types";
 export async function createNota({
     creadorEmpleadoId,
     titulo,
+    descripcion
 }: {
     creadorEmpleadoId: string;
     titulo: string;
+    descripcion: string;
 }) {
     const permisos = await getSessionPermisos();
 
@@ -22,6 +24,7 @@ export async function createNota({
             titulo,
             estado: "PENDIENTE",
             creadorEmpleadoId,
+            descripcion,
             asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
             aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
         },
@@ -32,6 +35,7 @@ export async function createNota({
 
 // Redactor toma nota
 export async function tomarNota(id: string) {
+    console.log("entro al tomar nota :", id);
     const session = await getSession();
     const nota = await prisma.nota.findUnique({ where: { id } });
 
@@ -46,7 +50,33 @@ export async function tomarNota(id: string) {
         },
     });
 }
+export async function updateNota(
+    id: string,
+    data: { titulo?: string; descripcion?: string | null }
+): Promise<Nota> {
+    try {
+        const updatePayload: Record<string, any> = {};
+        if (data.titulo !== undefined) updatePayload.titulo = data.titulo;
+        if (data.descripcion !== undefined) updatePayload.descripcion = data.descripcion ?? undefined;
 
+        const nota = await prisma.nota.update({
+            where: { id },
+            data: updatePayload,
+            include: { creador: true, asignado: true, aprobador: true },
+        });
+
+        // Mapear nombres legibles y devolver el objeto con la forma que usas en front
+        return {
+            ...nota,
+            empleadoCreador: (nota as any).creador?.nombre ?? "No asignado",
+            empleadoAsignado: (nota as any).asignado?.nombre ?? "No asignado",
+            empleadoAprobador: (nota as any).aprobador?.nombre ?? "No asignado",
+        } as Nota;
+    } catch (error) {
+        console.error("Error al actualizar nota:", error);
+        throw new Error("No se pudo actualizar la nota");
+    }
+}
 
 // Aprobar nota (jefe)
 export async function aprobarNota(id: string, estado: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'FINALIZADA', fellback: string | null) {

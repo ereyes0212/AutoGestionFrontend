@@ -57,15 +57,29 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount)
 }
 
-export const calculateYearsOfService = (startDate: Date): number => {
-  const today = new Date()
-  const years = today.getFullYear() - startDate.getFullYear()
-  const monthDiff = today.getMonth() - startDate.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < startDate.getDate())) {
-    return years - 1
+export const calculateServiceDuration = (startDate: Date) => {
+  const today = new Date();
+
+  let years = today.getFullYear() - startDate.getFullYear();
+  let months = today.getMonth() - startDate.getMonth();
+  let days = today.getDate() - startDate.getDate();
+
+  // Ajustar si los días son negativos
+  if (days < 0) {
+    months -= 1;
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
   }
-  return years
-}
+
+  // Ajustar si los meses son negativos
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  return { years, months, days };
+};
+
 
 export const getEmployeeStatus = (
   isActive: boolean,
