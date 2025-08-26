@@ -2,7 +2,7 @@
     "crons": [
         {
             "path": "/api/a4?emails=andres.rosenthal@miprestadito.com,Carlos@tiempo.hn,juan@jymagencia.com,German.Quintanilla@tiempo.hn,rosa.galindo@tiempo.hn,erick.reyes@tiempo.hn",
-            "schedule": "0 15 * * *"
+            "schedule": "0 15 15,30 * *"
         }
     ]
 }

@@ -48,7 +48,22 @@ function sleep(ms: number) {
 
 export async function GET(req: NextRequest) {
     try {
+
+        const now = new Date();
+
+        // // Si querés forzar TZ Tegucigalpa, descomenta la línea siguiente:
+        // // const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Tegucigalpa" }));
+        // const day = now.getDate();
+        // if (day !== 15 && day !== 30) {
+        //     console.log(`No es día programado (hoy ${now.toISOString().slice(0, 10)}). Salimos.`);
+        //     return new Response(JSON.stringify({ ok: false, reason: "not scheduled day", today: now.toISOString().slice(0, 10) }), {
+        //         status: 200,
+        //         headers: { "Content-Type": "application/json" }
+        //     });
+        // }
+
         if (!PROPERTY_ID) throw new Error("GA4_PROPERTY_ID no definido");
+        const propertyId = PROPERTY_ID as string;
 
         const emailsParam = req.nextUrl.searchParams.get("emails");
         if (!emailsParam) throw new Error("Debes enviar al menos un email como query param: ?emails=a@a.com,b@b.com");
@@ -57,85 +72,120 @@ export async function GET(req: NextRequest) {
 
         const analytics = await getAnalyticsClient();
 
-        // Fechas: antier = hoy -2, antesAntier = hoy -3
-        const antier = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-        const antesAntier = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-        const dateA = ymd(antesAntier); // día antes de antier (ej: 2025-08-17)
-        const dateB = ymd(antier);      // antier (ej: 2025-08-18)
+        // helpers (expresiones)
+        const lastDayOfMonth = (year: number, monthZeroBased: number) =>
+            new Date(year, monthZeroBased + 1, 0).getDate();
 
-        const resp = await analytics.properties.runReport({
-            property: `properties/${PROPERTY_ID}`,
-            requestBody: {
-                dateRanges: [{ startDate: dateA, endDate: dateB }],
-                dimensions: [{ name: "date" }, { name: "country" }],
-                metrics: [
-                    { name: "screenPageViews" },
-                    { name: "activeUsers" },
-                    { name: "newUsers" }
-                ],
-                limit: 10000
-            } as any
-        });
+        const formatRangeLabel = (start: string, end: string) => `${start} → ${end}`;
 
-        const rows = resp.data.rows || [];
+        // Calcula la "última quincena completa" (later) y la quincena anterior (earlier)
+        const computeQuincenaRanges = (now: Date) => {
+            const day = now.getDate();
+            const year = now.getFullYear();
+            const month = now.getMonth(); // 0-based
 
-        if (rows.length) {
-            console.log("GA4 sample rows (first 5):", rows.slice(0, 5).map(r => ({
-                dims: r.dimensionValues?.map((d: any) => d.value),
-                mets: r.metricValues?.map((m: any) => m.value)
-            })));
-        } else {
-            console.log("GA4: no rows returned");
-        }
+            if (day > 15) {
+                // latest completed quincena = 1..15 del mes actual
+                const laterStart = ymd(new Date(year, month, 1));
+                const laterEnd = ymd(new Date(year, month, 15));
 
-        const init = (d: string): AnalyticsData => ({
-            page: "ALL",
-            totalViews: 0,
-            totalUsers: 0,
-            totalNewUsers: 0,
-            usaViews: 0,
-            usaUsers: 0,
-            usaUserPercent: 0,
-            date: d
-        });
+                // previous = 16..last del mes anterior
+                const prevDate = new Date(year, month - 1, 1);
+                const prevYear = prevDate.getFullYear();
+                const prevMonth = prevDate.getMonth();
+                const prevLast = lastDayOfMonth(prevYear, prevMonth);
+                const earlierStart = ymd(new Date(prevYear, prevMonth, 16));
+                const earlierEnd = ymd(new Date(prevYear, prevMonth, prevLast));
 
-        const map: Record<string, AnalyticsData> = { [dateA]: init(dateA), [dateB]: init(dateB) };
+                return {
+                    earlier: { start: earlierStart, end: earlierEnd },
+                    later: { start: laterStart, end: laterEnd }
+                };
+            } else {
+                // day <= 15
+                // latest completed quincena = 16..last del mes anterior
+                const prevDate = new Date(year, month - 1, 1);
+                const prevYear = prevDate.getFullYear();
+                const prevMonth = prevDate.getMonth();
+                const prevLast = lastDayOfMonth(prevYear, prevMonth);
 
-        rows.forEach(row => {
-            const dims = row.dimensionValues || [];
-            const mets = row.metricValues || [];
+                const laterStart = ymd(new Date(prevYear, prevMonth, 16));
+                const laterEnd = ymd(new Date(prevYear, prevMonth, prevLast));
 
-            const rawDate = dims[0]?.value ?? "";
-            const date = normalizeGa4Date(String(rawDate));
+                // previous = 1..15 del mes anterior
+                const earlierStart = ymd(new Date(prevYear, prevMonth, 1));
+                const earlierEnd = ymd(new Date(prevYear, prevMonth, 15));
 
-            const country = dims[1]?.value ?? "";
-            const views = Number(mets[0]?.value ?? 0);
-            const activeUsers = Number(mets[1]?.value ?? 0);
-            const newUsers = Number(mets[2]?.value ?? 0);
-
-            if (!map[date]) map[date] = init(date);
-
-            map[date].totalViews += views;
-            map[date].totalUsers += activeUsers;
-            map[date].totalNewUsers += newUsers;
-
-            if (country === "United States") {
-                map[date].usaViews += views;
-                map[date].usaUsers += activeUsers;
+                return {
+                    earlier: { start: earlierStart, end: earlierEnd },
+                    later: { start: laterStart, end: laterEnd }
+                };
             }
-        });
+        };
 
-        [dateA, dateB].forEach(d => {
-            const obj = map[d];
-            obj.usaUserPercent = obj.totalUsers ? Number(((obj.usaUsers / obj.totalUsers) * 100).toFixed(2)) : 0;
-        });
+        const ranges = computeQuincenaRanges(now);
+        const previousStart = ranges.earlier.start;
+        const previousEnd = ranges.earlier.end;
+        const currentStart = ranges.later.start;
+        const currentEnd = ranges.later.end;
 
-        const dataA = map[dateA];
-        const dataB = map[dateB];
+        // helper para obtener datos agregados de GA4 en un rango
+        const fetchAggregatedRange = async (startDate: string, endDate: string) => {
+            const resp = await analytics.properties.runReport({
+                property: `properties/${propertyId}`,
+                requestBody: {
+                    dateRanges: [{ startDate, endDate }],
+                    dimensions: [{ name: "country" }],
+                    metrics: [
+                        { name: "screenPageViews" },
+                        { name: "activeUsers" },
+                        { name: "newUsers" }
+                    ],
+                    limit: 10000
+                } as any
+            });
 
-        const html = generateAnalyticsReportHtml(dataA, dataB);
+            const rows = resp.data.rows || [];
+            const totals = {
+                page: "ALL",
+                totalViews: 0,
+                totalUsers: 0,
+                totalNewUsers: 0,
+                usaViews: 0,
+                usaUsers: 0,
+                usaUserPercent: 0,
+                date: `${startDate}-${endDate}`
+            } as AnalyticsData;
 
-        // Envío secuencial: 1 correo cada 5 segundos
+            rows.forEach((row: any) => {
+                const dims = row.dimensionValues || [];
+                const mets = row.metricValues || [];
+
+                const country = dims[0]?.value ?? "";
+                const views = Number(mets[0]?.value ?? 0);
+                const activeUsers = Number(mets[1]?.value ?? 0);
+                const newUsers = Number(mets[2]?.value ?? 0);
+
+                totals.totalViews += views;
+                totals.totalUsers += activeUsers;
+                totals.totalNewUsers += newUsers;
+
+                if (country === "United States") {
+                    totals.usaViews += views;
+                    totals.usaUsers += activeUsers;
+                }
+            });
+
+            totals.usaUserPercent = totals.totalUsers ? Number(((totals.usaUsers / totals.totalUsers) * 100).toFixed(2)) : 0;
+            return totals;
+        };
+
+        const earlier = await fetchAggregatedRange(previousStart, previousEnd);
+        const later = await fetchAggregatedRange(currentStart, currentEnd);
+
+        const html = generateAnalyticsReportHtml(earlier, later);
+
+        // Envío secuencial: 1 correo cada 5 segundos (ajustalo si querés)
         const emailService = new EmailService();
         const results: { email: string, ok: boolean, error?: string }[] = [];
 
@@ -143,7 +193,7 @@ export async function GET(req: NextRequest) {
             const email = emails[i];
             const mailPayload: MailPayload = {
                 to: email,
-                subject: `Reporte comparativo Analytics ${dataA.date} → ${dataB.date}`,
+                subject: `Reporte comparativo Analytics ${formatRangeLabel(earlier.date!, later.date!)}`,
                 html
             };
 
@@ -156,7 +206,6 @@ export async function GET(req: NextRequest) {
                 results.push({ email, ok: false, error: sendErr?.message || String(sendErr) });
             }
 
-            // esperar 5s antes del siguiente (salta el sleep después del último)
             if (i < emails.length - 1) {
                 await sleep(5000);
             }
@@ -165,9 +214,8 @@ export async function GET(req: NextRequest) {
         return new Response(JSON.stringify({
             success: true,
             sentTo: emails,
-            dates: { earlier: dateA, later: dateB },
-            analytics: { [dateA]: dataA, [dateB]: dataB },
-            rowsCount: rows.length,
+            ranges: { earlier: { start: previousStart, end: previousEnd }, later: { start: currentStart, end: currentEnd } },
+            analytics: { earlier, later },
             sendResults: results
         }), {
             status: 200,
@@ -182,3 +230,4 @@ export async function GET(req: NextRequest) {
         });
     }
 }
+
