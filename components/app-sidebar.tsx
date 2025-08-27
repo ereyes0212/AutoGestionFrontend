@@ -105,7 +105,7 @@ const items = [
     permiso: "ver_voucher_pago",
   },
   {
-    title: "notas",
+    title: "Notas",
     url: "/redaccion",
     icon: LucideFilePen,
     permiso: "ver_notas",
