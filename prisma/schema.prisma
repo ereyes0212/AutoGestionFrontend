@@ -242,8 +242,91 @@ model Usuarios {
   Empleados           Empleados            @relation(fields: [empleado_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Usuarios_Empleados_empleado_id")
   rol                 Rol                  @relation(fields: [rol_id], references: [id])
   PasswordResetToken  PasswordResetToken[]
+  Mensaje             Mensaje[]
+  Participante        Participante[]
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
+}
+
+// Conversación principal: GROUP (grupal) o PRIVATE (entre 2 usuarios)
+model Conversacion {
+  id            String           @id @default(uuid()) @db.VarChar(36)
+  nombre        String? // nombre del grupo (solo aplica para GROUP)
+  tipo          TipoConversacion @default(GROUP)
+  creadorId     String?          @db.VarChar(36) // quien creó la conversación (opcional para PRIVATE)
+  participantes Participante[]
+  mensajes      Mensaje[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([tipo])
+  @@index([creadorId])
+}
+
+model Participante {
+  id             String       @id @default(uuid()) @db.VarChar(36)
+  conversacionId String       @db.VarChar(36)
+  usuarioId      String       @db.VarChar(36) // referencia a Usuarios.id
+  conversacion   Conversacion @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+  usuario        Usuarios     @relation(fields: [usuarioId], references: [id])
+  lastReadAt     DateTime?
+  rol            String? // opcional: "admin", "member", etc.
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversacionId, usuarioId])
+  @@index([usuarioId])
+}
+
+model Mensaje {
+  id             String          @id @default(uuid()) @db.VarChar(36)
+  conversacionId String          @db.VarChar(36)
+  autorId        String          @db.VarChar(36) // referencia a Usuarios.id
+  contenido      String          @db.LongText
+  editedAt       DateTime?
+  deletedAt      DateTime?
+  attachments    Attachment[]
+  estados        MensajeEstado[]
+  createdAt      DateTime        @default(now())
+
+  conversacion Conversacion @relation(fields: [conversacionId], references: [id], onDelete: Cascade)
+  autor        Usuarios     @relation(fields: [autorId], references: [id])
+
+  @@index([conversacionId, createdAt])
+  @@index([autorId])
+}
+
+model MensajeEstado {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  mensajeId   String    @db.VarChar(36)
+  usuarioId   String    @db.VarChar(36) // participante que tiene este estado
+  entregado   Boolean   @default(false)
+  leido       Boolean   @default(false)
+  entregadoAt DateTime?
+  leidoAt     DateTime?
+
+  mensaje Mensaje @relation(fields: [mensajeId], references: [id], onDelete: Cascade)
+
+  @@unique([mensajeId, usuarioId])
+  @@index([usuarioId])
+}
+
+model Attachment {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  mensajeId String   @db.VarChar(36)
+  url       String
+  tipo      String? // image, video, file...
+  nombre    String?
+  tamaño   Int?
+  createdAt DateTime @default(now())
+
+  mensaje Mensaje @relation(fields: [mensajeId], references: [id], onDelete: Cascade)
+
+  @@index([mensajeId])
+}
+
+enum TipoConversacion {
+  GROUP
+  PRIVATE
 }
 
 enum AjusteCategoria {

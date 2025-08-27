@@ -1,10 +1,10 @@
-import { ListCheck } from "lucide-react";
-import {  getSessionPermisos } from "@/auth";
-import { getPermisos } from "./actions";
-import { DataTable } from "./components/data-table";
-import { columns } from "./components/columns";
+import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
+import { ListCheck } from "lucide-react";
+import { getPermisos } from "./actions";
+import { columns } from "./components/columns";
+import { DataTable } from "./components/data-table";
 import PermissionListMobile from "./components/permisos-list-mobile";
 
 export default async function EstadoServicio() {

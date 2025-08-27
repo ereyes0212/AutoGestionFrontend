@@ -15,7 +15,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, Package, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, MessageCircleMore, Package, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
 import Link from "next/link";
 import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
@@ -58,6 +58,7 @@ const mantenimientoItems = [
     icon: Settings,
     permiso: "ver_usuarios",
   },
+
 ];
 
 const DiseñoGraficoItem = [
@@ -109,7 +110,13 @@ const items = [
     url: "/redaccion",
     icon: LucideFilePen,
     permiso: "ver_notas",
-  }
+  },
+  {
+    title: "Mensajes",
+    url: "/mensajes",
+    icon: MessageCircleMore,
+    permiso: "ver_mensajes",
+  },
 ];
 
 export async function AppSidebar() {
