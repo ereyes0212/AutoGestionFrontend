@@ -200,7 +200,7 @@ export function NotaFormulario({
                   <FormControl>
                     <Input
                       disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
-                      placeholder="Ingresa una descripción (opcional)" {...field} />
+                      placeholder="Ingresa una descripción" {...field} />
                   </FormControl>
                   <FormDescription>Descripción asociada al título.</FormDescription>
                   <FormMessage />
