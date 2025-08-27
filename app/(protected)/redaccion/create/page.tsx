@@ -42,6 +42,7 @@ export default async function Create() {
         initialData={initialData}
         currentUserEmpleadoId={session?.IdEmpleado || ""} // Pasamos el IdEmpleado del usuario actual
       />
+
     </div>
   );
 }

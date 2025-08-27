@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react";
 import { getNotas } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
-// import PuestoListMobile from "./components/puesto-list-mobile";
+import NotaListMobile from "./components/puesto-list-mobile";
 
 export default async function Puestos() {
 
@@ -29,7 +29,7 @@ export default async function Puestos() {
                 <DataTable columns={columns} data={data} />
             </div>
             <div className="block md:hidden">
-                {/* <PuestoListMobile puesto={data} /> */}
+                <NotaListMobile notas={data} />
             </div>
         </div>
     );
