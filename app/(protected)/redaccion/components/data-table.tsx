@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,14 +70,25 @@ export function DataTable<TData extends Record<string, any>, TValue>({
     },
   });
 
+  // Mapa de nombres amigables para columnas específicas
+  const displayNameMap: Record<string, string> = {
+    empleadoCreador: "Creador",
+    empleadoAsignado: "Asignado",
+    empleadoAprobador: "Aprobador",
+    // agrega aquí más mapeos si querés
+  };
+
   const columnOptions = React.useMemo(() => {
     return columns
       .map((col) => {
         const accessor = (col as any).accessorKey ?? (col as any).id ?? "";
+        // Si existe un displayName en el mapa lo usamos, si no intentamos usar header (si es string)
+        const mapped = displayNameMap[String(accessor)];
         const headerLabel =
-          typeof col.header === "string"
+          mapped ??
+          (typeof col.header === "string"
             ? col.header
-            : String((col as any).accessorKey ?? (col as any).id ?? accessor);
+            : String((col as any).accessorKey ?? (col as any).id ?? accessor));
         return { key: String(accessor), label: headerLabel };
       })
       .filter((c) => c.key && !excludeColumnKeys.includes(c.key));
@@ -99,19 +111,15 @@ export function DataTable<TData extends Record<string, any>, TValue>({
 
   // RESET handler: limpia filtros, global, selectedColumn, sorting y pone la página 0
   const resetAll = React.useCallback(() => {
-    // limpiar estados locales
     setGlobalFilter("");
     setSelectedColumn(undefined);
     setColumnFilters([]);
     setSorting([]);
 
-    // limpiar filtros en cada columna de la tabla
     table.getAllColumns().forEach((col) => {
-      // algunos tipos pueden no tener setFilterValue, por eso la comprobación
       (col as any).setFilterValue?.(undefined);
     });
 
-    // resetear paginación a la primera página (si existe la función)
     if ((table as any).setPageIndex) {
       try {
         (table as any).setPageIndex(0);
@@ -137,7 +145,6 @@ export function DataTable<TData extends Record<string, any>, TValue>({
               <Plus />
             </Button>
           </Link>
-          {/* Botón Reset */}
           <Button variant="outline" onClick={resetAll}>
             Reset
           </Button>

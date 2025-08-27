@@ -101,6 +101,16 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                                                 Creado por: {nota.empleadoCreador}
                                             </p>
                                         )}
+                                        {nota.empleadoAsignado && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Asignado por: {nota.empleadoAsignado}
+                                            </p>
+                                        )}
+                                        {nota.empleadoAprobador && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Aprobado por: {nota.empleadoAprobador}
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Botón editar */}
