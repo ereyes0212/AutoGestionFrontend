@@ -1,7 +1,7 @@
 export function generatePostsAnalyticsHtml(data: {
     date: string
-    leastViewed: Array<{ title: string; link: string; views: number }>
-    mostViewed: Array<{ title: string; link: string; views: number }>
+    leastViewed: Array<{ title: string; link: string; views: number, url?: string }>
+    mostViewed: Array<{ title: string; link: string; views: number, url?: string }>
 }) {
     const fmt = (n: number) => new Intl.NumberFormat("en-US").format(n)
 
@@ -52,7 +52,7 @@ export function generatePostsAnalyticsHtml(data: {
                                     <tr style="border-bottom: 1px solid #f3f4f6;">
                                         <td style="padding: 12px; font-weight: bold; color: #6b7280; font-size: 14px;">${index + 1}</td>
                                         <td style="padding: 12px;">
-                                            <a href="${post.link}" style="color: #1f2937; text-decoration: none; font-size: 14px; line-height: 1.4;" target="_blank">
+                                            <a href="${post.url}" style="color: #1f2937; text-decoration: none; font-size: 14px; line-height: 1.4;" target="_blank">
                                                 ${post.title}
                                             </a>
                                         </td>
@@ -91,7 +91,7 @@ export function generatePostsAnalyticsHtml(data: {
                                     <tr style="border-bottom: 1px solid #f3f4f6;">
                                         <td style="padding: 12px; font-weight: bold; color: #6b7280; font-size: 14px;">${index + 1}</td>
                                         <td style="padding: 12px;">
-                                            <a href="${post.link}" style="color: #1f2937; text-decoration: none; font-size: 14px; line-height: 1.4;" target="_blank">
+                                            <a href="${post.url}" style="color: #1f2937; text-decoration: none; font-size: 14px; line-height: 1.4;" target="_blank">
                                                 ${post.title}
                                             </a>
                                         </td>

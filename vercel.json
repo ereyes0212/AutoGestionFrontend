@@ -1,8 +1,12 @@
 {
     "crons": [
         {
-            "path": "/api/a4?emails=andres.rosenthal@miprestadito.com,Carlos@tiempo.hn,juan@jymagencia.com,German.Quintanilla@tiempo.hn,rosa.galindo@tiempo.hn,erick.reyes@tiempo.hn",
+            "path": "/api/a4?emails=andres.rosenthal@miprestadito.com,Carlos@tiempo.hn,juan@jymagencia.com,German.Quintanilla@tiempo.hn,natan.marquez@tiempo.hn,rosa.galindo@tiempo.hn,erick.reyes@tiempo.hn",
             "schedule": "0 15 15,30 * *"
+        },
+        {
+            "path": "/api/reportview?emails=German.Quintanilla@tiempo.hn,natan.marquez@tiempo.hn,erick.reyes@tiempo.hn",
+            "schedule": "0 21 * * 0"
         }
     ]
 }

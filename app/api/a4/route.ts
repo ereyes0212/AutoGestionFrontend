@@ -48,20 +48,6 @@ function sleep(ms: number) {
 
 export async function GET(req: NextRequest) {
     try {
-
-        const now = new Date();
-
-        // // Si querés forzar TZ Tegucigalpa, descomenta la línea siguiente:
-        // // const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Tegucigalpa" }));
-        // const day = now.getDate();
-        // if (day !== 15 && day !== 30) {
-        //     console.log(`No es día programado (hoy ${now.toISOString().slice(0, 10)}). Salimos.`);
-        //     return new Response(JSON.stringify({ ok: false, reason: "not scheduled day", today: now.toISOString().slice(0, 10) }), {
-        //         status: 200,
-        //         headers: { "Content-Type": "application/json" }
-        //     });
-        // }
-
         if (!PROPERTY_ID) throw new Error("GA4_PROPERTY_ID no definido");
         const propertyId = PROPERTY_ID as string;
 
@@ -72,58 +58,27 @@ export async function GET(req: NextRequest) {
 
         const analytics = await getAnalyticsClient();
 
-        // helpers (expresiones)
-        const lastDayOfMonth = (year: number, monthZeroBased: number) =>
-            new Date(year, monthZeroBased + 1, 0).getDate();
-
         const formatRangeLabel = (start: string, end: string) => `${start} → ${end}`;
 
-        // Calcula la "última quincena completa" (later) y la quincena anterior (earlier)
-        const computeQuincenaRanges = (now: Date) => {
-            const day = now.getDate();
-            const year = now.getFullYear();
-            const month = now.getMonth(); // 0-based
+        // Calcula los rangos: últimos 15 días completos (hasta ayer) y los 15 días anteriores inmediatamente antes
+        const compute15DayRanges = (now: Date) => {
+            // end = ayer (completo)
+            const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            // laterStart = end - 14 días (para cubrir 15 días inclusive)
+            const laterStartDate = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 14);
+            // earlierEnd = day before laterStart
+            const earlierEndDate = new Date(laterStartDate.getFullYear(), laterStartDate.getMonth(), laterStartDate.getDate() - 1);
+            // earlierStart = earlierEnd - 14 días
+            const earlierStartDate = new Date(earlierEndDate.getFullYear(), earlierEndDate.getMonth(), earlierEndDate.getDate() - 14);
 
-            if (day > 15) {
-                // latest completed quincena = 1..15 del mes actual
-                const laterStart = ymd(new Date(year, month, 1));
-                const laterEnd = ymd(new Date(year, month, 15));
-
-                // previous = 16..last del mes anterior
-                const prevDate = new Date(year, month - 1, 1);
-                const prevYear = prevDate.getFullYear();
-                const prevMonth = prevDate.getMonth();
-                const prevLast = lastDayOfMonth(prevYear, prevMonth);
-                const earlierStart = ymd(new Date(prevYear, prevMonth, 16));
-                const earlierEnd = ymd(new Date(prevYear, prevMonth, prevLast));
-
-                return {
-                    earlier: { start: earlierStart, end: earlierEnd },
-                    later: { start: laterStart, end: laterEnd }
-                };
-            } else {
-                // day <= 15
-                // latest completed quincena = 16..last del mes anterior
-                const prevDate = new Date(year, month - 1, 1);
-                const prevYear = prevDate.getFullYear();
-                const prevMonth = prevDate.getMonth();
-                const prevLast = lastDayOfMonth(prevYear, prevMonth);
-
-                const laterStart = ymd(new Date(prevYear, prevMonth, 16));
-                const laterEnd = ymd(new Date(prevYear, prevMonth, prevLast));
-
-                // previous = 1..15 del mes anterior
-                const earlierStart = ymd(new Date(prevYear, prevMonth, 1));
-                const earlierEnd = ymd(new Date(prevYear, prevMonth, 15));
-
-                return {
-                    earlier: { start: earlierStart, end: earlierEnd },
-                    later: { start: laterStart, end: laterEnd }
-                };
-            }
+            return {
+                earlier: { start: ymd(earlierStartDate), end: ymd(earlierEndDate) },
+                later: { start: ymd(laterStartDate), end: ymd(end) }
+            };
         };
 
-        const ranges = computeQuincenaRanges(now);
+        const now = new Date();
+        const ranges = compute15DayRanges(now);
         const previousStart = ranges.earlier.start;
         const previousEnd = ranges.earlier.end;
         const currentStart = ranges.later.start;
@@ -185,7 +140,7 @@ export async function GET(req: NextRequest) {
 
         const html = generateAnalyticsReportHtml(earlier, later);
 
-        // Envío secuencial: 1 correo cada 5 segundos (ajustalo si querés)
+        // Envío secuencial: 1 correo cada 5 segundos
         const emailService = new EmailService();
         const results: { email: string, ok: boolean, error?: string }[] = [];
 
@@ -230,4 +185,3 @@ export async function GET(req: NextRequest) {
         });
     }
 }
-
