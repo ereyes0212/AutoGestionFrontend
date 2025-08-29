@@ -113,14 +113,86 @@ export async function finalizarNota(id: string) {
         data: { estado: "FINALIZADA" },
     });
 }
-
 // Obtener todas las notas
-export async function getNotas(): Promise<Nota[]> {
+// Acepta string (ej. "2025-08-29" o ISO con time) o Date
+export async function getNotas(desde?: string | Date, hasta?: string | Date): Promise<Nota[]> {
     try {
+        const where: any = {};
+        console.log("getNotas - desde:", desde, "hasta:", hasta);
+
+        const parseStartOfDay = (v: string | Date) => {
+            if (v instanceof Date) {
+                const d = new Date(v);
+                d.setHours(0, 0, 0, 0);
+                return d;
+            }
+            if (typeof v === "string") {
+                // si viene en formato YYYY-MM-DD (sin time) lo parseamos como fecha local
+                const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (m) {
+                    const y = Number(m[1]);
+                    const mo = Number(m[2]) - 1;
+                    const day = Number(m[3]);
+                    return new Date(y, mo, day, 0, 0, 0, 0); // local midnight
+                } else {
+                    // si viene con time (ISO), lo usamos y normalizamos al inicio del día local
+                    const d = new Date(v);
+                    if (isNaN(d.getTime())) throw new Error('Fecha inválida: ' + v);
+                    d.setHours(0, 0, 0, 0);
+                    return d;
+                }
+            }
+            throw new Error("Tipo de fecha no soportado");
+        };
+
+        const parseEndOfDay = (v: string | Date) => {
+            if (v instanceof Date) {
+                const d = new Date(v);
+                d.setHours(23, 59, 59, 999);
+                return d;
+            }
+            if (typeof v === "string") {
+                const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (m) {
+                    const y = Number(m[1]);
+                    const mo = Number(m[2]) - 1;
+                    const day = Number(m[3]);
+                    return new Date(y, mo, day, 23, 59, 59, 999); // local end of day
+                } else {
+                    const d = new Date(v);
+                    if (isNaN(d.getTime())) throw new Error('Fecha inválida: ' + v);
+                    d.setHours(23, 59, 59, 999);
+                    return d;
+                }
+            }
+            throw new Error("Tipo de fecha no soportado");
+        };
+
+        // Si no vienen ni 'desde' ni 'hasta', por defecto filtramos SOLO el día de hoy
+        if (!desde && !hasta) {
+            const hoyInicio = new Date();
+            hoyInicio.setHours(0, 0, 0, 0);
+            const hoyFin = new Date();
+            hoyFin.setHours(23, 59, 59, 999);
+            where.createAt = { gte: hoyInicio, lte: hoyFin };
+        } else {
+            if (desde) {
+                const d = parseStartOfDay(desde);
+                where.createAt = { ...(where.createAt ?? {}), gte: d };
+            }
+
+            if (hasta) {
+                const h = parseEndOfDay(hasta);
+                where.createAt = { ...(where.createAt ?? {}), lte: h };
+            }
+        }
+
         const notas = await prisma.nota.findMany({
+            where,
             orderBy: { createAt: "desc" },
             include: { creador: true, asignado: true, aprobador: true },
         });
+        console.log("🚀 ~ getNotas ~ notas:", notas);
 
         return notas.map((n) => ({
             ...n,
@@ -133,6 +205,8 @@ export async function getNotas(): Promise<Nota[]> {
         throw new Error("No se pudieron obtener las notas");
     }
 }
+
+
 
 // Obtener nota por ID
 export async function getNotaById(id: string): Promise<Nota | null> {
