@@ -35,7 +35,6 @@ export async function createNota({
 
 // Redactor toma nota
 export async function tomarNota(id: string) {
-    console.log("entro al tomar nota :", id);
     const session = await getSession();
     const nota = await prisma.nota.findUnique({ where: { id } });
 
@@ -118,7 +117,6 @@ export async function finalizarNota(id: string) {
 export async function getNotas(desde?: string | Date, hasta?: string | Date): Promise<Nota[]> {
     try {
         const where: any = {};
-        console.log("getNotas - desde:", desde, "hasta:", hasta);
 
         const parseStartOfDay = (v: string | Date) => {
             if (v instanceof Date) {
@@ -192,7 +190,6 @@ export async function getNotas(desde?: string | Date, hasta?: string | Date): Pr
             orderBy: { createAt: "desc" },
             include: { creador: true, asignado: true, aprobador: true },
         });
-        console.log("🚀 ~ getNotas ~ notas:", notas);
 
         return notas.map((n) => ({
             ...n,

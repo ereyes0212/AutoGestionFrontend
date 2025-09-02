@@ -21,6 +21,7 @@ import { Loader2, Plus, Trash } from "lucide-react";
 import { z } from "zod";
 
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@radix-ui/react-select";
 import { aprobarNota, createNota, finalizarNota, tomarNota, updateNota } from "../actions";
 import { NotaSchema } from "../schema";
@@ -198,7 +199,7 @@ export function NotaFormulario({
                 <FormItem className="w-full mt-2">
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Input
+                    <Textarea
                       disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
                       placeholder="Ingresa una descripción" {...field} />
                   </FormControl>
@@ -238,7 +239,7 @@ export function NotaFormulario({
 
                 {/* descripción (debajo, full width) */}
                 <div>
-                  <Input
+                  <Textarea
                     value={et.descripcion}
                     onChange={(e) => handleChangeExtraDescription(idx, e.target.value)}
                     placeholder={`Descripción para título adicional #${idx + 1}`}

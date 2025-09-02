@@ -35,7 +35,7 @@ export const columns: ColumnDef<Nota>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-center"
       >
-        Empleado Creador
+        Creador
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -48,7 +48,7 @@ export const columns: ColumnDef<Nota>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-center"
       >
-        Empleado Asignado
+        Asignado
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
@@ -61,7 +61,20 @@ export const columns: ColumnDef<Nota>[] = [
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-center"
       >
-        Empleado aprobador
+        Aprobador
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+  },
+  {
+    accessorKey: "descripcion",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-center"
+      >
+        Descripción
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
