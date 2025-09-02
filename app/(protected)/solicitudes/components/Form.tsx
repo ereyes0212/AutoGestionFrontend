@@ -124,7 +124,7 @@ export function EmpleadoFormulario({
             name="fechaInicio"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Fecha de nacimiento</FormLabel>
+                <FormLabel>Fecha de inicio</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -168,7 +168,7 @@ export function EmpleadoFormulario({
             name="fechaFin"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Fecha de nacimiento</FormLabel>
+                <FormLabel>Fecha de regreso</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
