@@ -182,7 +182,10 @@ export function NotaFormulario({
                     <Input
                       placeholder="Ingresa el título de la nota"
                       {...field}
-                      disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
+                      disabled={
+                        !canChangeEstado &&
+                        (estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA")
+                      }
                     />
                   </FormControl>
                   <FormDescription>Por favor ingresa el título.</FormDescription>
@@ -200,7 +203,10 @@ export function NotaFormulario({
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
                     <Textarea
-                      disabled={estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA"}
+                      disabled={
+                        !canChangeEstado &&
+                        (estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA")
+                      }
                       placeholder="Ingresa una descripción" {...field} />
                   </FormControl>
                   <FormDescription>Descripción asociada al título.</FormDescription>

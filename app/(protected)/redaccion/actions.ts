@@ -49,6 +49,9 @@ export async function tomarNota(id: string) {
         },
     });
 }
+
+
+
 export async function updateNota(
     id: string,
     data: { titulo?: string; descripcion?: string | null }
@@ -208,12 +211,27 @@ export async function getNotas(desde?: string | Date, hasta?: string | Date): Pr
 // Obtener nota por ID
 export async function getNotaById(id: string): Promise<Nota | null> {
     try {
+        const sesion = await getSession();
+        const permisos = await getSessionPermisos();
+
         const nota = await prisma.nota.findUnique({
             where: { id },
             include: { creador: true, asignado: true, aprobador: true },
         });
 
         if (!nota) return null;
+
+        const esJefe = permisos!.includes("cambiar_estado_notas");
+        const esCreador = sesion?.IdEmpleado === nota.creadorEmpleadoId;
+        const esAsignado = sesion?.IdEmpleado === nota.asignadoEmpleadoId;
+
+        // 🔒 Validaciones
+        if (nota.asignadoEmpleadoId !== null) {
+            if (!esCreador && !esAsignado && !esJefe) {
+                return null; // No autorizado
+            }
+        }
+        // Si asignadoEmpleadoId es null → cualquiera puede acceder
 
         return {
             ...nota,
@@ -226,6 +244,7 @@ export async function getNotaById(id: string): Promise<Nota | null> {
         throw new Error("No se pudo obtener la nota");
     }
 }
+
 
 // Eliminar una nota
 export async function deleteNota(id: string): Promise<boolean> {

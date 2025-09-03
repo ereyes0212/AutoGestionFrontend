@@ -29,6 +29,7 @@ export default async function Create() {
     aprobadorEmpleadoId: null,
   };
 
+
   return (
     <div>
       <HeaderComponent
