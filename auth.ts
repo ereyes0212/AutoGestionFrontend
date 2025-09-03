@@ -23,7 +23,6 @@ export interface UsuarioSesion extends JWTPayload {
     DebeCambiar: boolean;
     Puesto: string;
     PuestoId: string;
-    // exp, iss, aud ya vienen de JWTPayload
 }
 
 // 2) Función para generar el JWT
@@ -31,32 +30,41 @@ export async function encrypt(payload: UsuarioSesion) {
     return await new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
-        .setExpirationTime("1 h from now")
+        .setExpirationTime("6h") // <-- expiración de 6 horas
+        // .setExpirationTime("10s") // <-- expiración de 10 segundos (para pruebas)
         .sign(key);
 }
 
 // 3) Función para verificar y extraer el payload
-export const decrypt = async (token: string): Promise<UsuarioSesion> => {
-    const { payload } = await jwtVerify<JWTPayload>(token, key, {
-        algorithms: ["HS256"],
-    });
+export const decrypt = async (token: string): Promise<UsuarioSesion | null> => {
+    try {
+        const { payload } = await jwtVerify<JWTPayload>(token, key, {
+            algorithms: ["HS256"],
+        });
 
-    const session: UsuarioSesion = {
-        IdUser: payload.IdUser as string,
-        User: payload.User as string,
-        Rol: payload.Rol as string,
-        IdRol: payload.IdRol as string,
-        IdEmpleado: payload.IdEmpleado as string,
-        Permiso: (payload.Permiso as string[]) || [],
-        DebeCambiar: payload.DebeCambiar === true || payload.DebeCambiar === "True",
-        Puesto: payload.Puesto as string,
-        PuestoId: payload.PuestoId as string,
-        exp: payload.exp as number,
-        iss: payload.iss as string,
-        aud: payload.aud as string,
-    };
+        const session: UsuarioSesion = {
+            IdUser: payload.IdUser as string,
+            User: payload.User as string,
+            Rol: payload.Rol as string,
+            IdRol: payload.IdRol as string,
+            IdEmpleado: payload.IdEmpleado as string,
+            Permiso: (payload.Permiso as string[]) || [],
+            DebeCambiar: payload.DebeCambiar === true || payload.DebeCambiar === "True",
+            Puesto: payload.Puesto as string,
+            PuestoId: payload.PuestoId as string,
+            iss: payload.iss as string,
+            aud: payload.aud as string,
+        };
 
-    return session;
+        return session;
+    } catch (err: any) {
+        if (err.name === "JWTExpired") {
+            console.log("Token expirado");
+            return null;
+        }
+        console.error("Error al decodificar token:", err);
+        return null;
+    }
 };
 
 export interface LoginResult {
@@ -88,11 +96,11 @@ export const login = async (
         return { error: "Usuario o contraseña inválidos" };
     }
 
-    const sessionToken = tokenAD;
-    const sessionData = await decrypt(sessionToken);
-    const expires = new Date(sessionData.exp! * 1000);
+    // Guardamos cookie por 6 horas
+    const expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
+    // const expires = new Date(Date.now() + 10 * 1000);
 
-    cookies().set("session", sessionToken, { expires, httpOnly: true });
+    cookies().set("session", tokenAD, { expires, httpOnly: true, path: "/" });
 
     return { success: "Login OK", redirect };
 };
@@ -115,10 +123,10 @@ export const resetPassword = async (
         return { error: "Error al cambiar la contraseña" };
     }
 
-    const sessionData = await decrypt(tokenAD);
-    const expires = new Date(sessionData.exp! * 1000);
-
-    cookies().set("session", tokenAD, { expires, httpOnly: true });
+    // Guardamos cookie por 6 horas
+    const expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
+    // const expires = new Date(Date.now() + 10 * 1000);
+    cookies().set("session", tokenAD, { expires, httpOnly: true, path: "/" });
 
     return { success: "Contraseña cambiada con éxito" };
 };
@@ -144,66 +152,38 @@ export const signOut = async () => {
 // ------------------------------------------------------------------
 // AUTH VIA DB (Prisma)
 // ------------------------------------------------------------------
-
-// 4) Definimos nuestro include para traer rol + permisos
 const usuarioWithRolArgs = Prisma.validator<Prisma.UsuariosDefaultArgs>()({
     include: {
         rol: {
             include: {
-                permisos: {
-                    include: { permiso: true },
-                },
+                permisos: { include: { permiso: true } },
             },
         },
         Empleados: {
-            include: {
-                Puesto: true, // Incluimos el puesto del empleado
-            },
+            include: { Puesto: true },
         },
-
     },
 });
 
-// 5) Tipo resultante que incluye las relaciones
 type UsuarioConRol = Prisma.UsuariosGetPayload<typeof usuarioWithRolArgs>;
-
-/**
- * Autenticación contra la BD, genera JWT con cargo y permisos.
- */
 
 export async function getADAuthentication(
     username: string,
     password: string
 ): Promise<string | null> {
     try {
-        // 1️⃣ Intentamos buscar al usuario con su rol y empleado (incluye puesto)
         const user: UsuarioConRol | null = await prisma.usuarios.findFirst({
             where: { usuario: username },
             include: {
-                rol: {
-                    include: {
-                        permisos: {
-                            include: { permiso: true },
-                        },
-                    },
-                },
-                Empleados: {
-                    include: {
-                        Puesto: true,
-                    },
-                },
+                rol: { include: { permisos: { include: { permiso: true } } } },
+                Empleados: { include: { Puesto: true } },
             },
         });
 
-        // 2️⃣ Si no existe o la contraseña no coincide, devolvemos null
-        if (!user || !(await bcrypt.compare(password, user.contrasena))) {
-            return null;
-        }
+        if (!user || !(await bcrypt.compare(password, user.contrasena))) return null;
 
-        // 3️⃣ Extraemos los nombres de permisos
-        const permisos = user.rol.permisos.map((rp) => rp.permiso.nombre);
+        const permisos = user.rol.permisos.map(rp => rp.permiso.nombre);
 
-        // 4️⃣ Construimos el payload para el JWT
         const payload: UsuarioSesion = {
             IdUser: user.id,
             User: user.usuario,
@@ -214,77 +194,48 @@ export async function getADAuthentication(
             DebeCambiar: user.DebeCambiarPassword!,
             Puesto: user.Empleados?.Puesto?.Nombre ?? "",
             PuestoId: user.Empleados?.puesto_id ?? "",
-            exp: Math.floor(Date.now() / 1000) + 3600,
             iss: "your-issuer",
             aud: "your-audience",
         };
 
-        // 5️⃣ Encriptamos y devolvemos el token
         return encrypt(payload);
     } catch (err: unknown) {
-        // Si hay un error de conexión a la BD (o cualquier otro), lo registramos
         console.error("Error en getADAuthentication:", err);
-        // Devolvemos null para indicar que no fue posible autenticar
         return null;
     }
 }
 
-
-
 // ------------------------------------------------------------------
 // Cambio de contraseña con Prisma
 // ------------------------------------------------------------------
-
 export async function changePassword(
     username: string,
     newPassword: string
 ): Promise<string | null> {
     try {
-        // 1️⃣ Buscar al usuario por su username
         const existing = await prisma.usuarios.findFirst({
             where: { usuario: username },
             include: {
-                rol: {
-                    include: {
-                        permisos: { include: { permiso: true } },
-                    },
-                },
-                Empleados: {
-                    include: { Puesto: true },
-                },
+                rol: { include: { permisos: { include: { permiso: true } } } },
+                Empleados: { include: { Puesto: true } },
             },
         });
 
-        if (!existing) {
-            return null;
-        }
+        if (!existing) return null;
 
-        // 2️⃣ Hashear la nueva contraseña
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // 3️⃣ Actualizar la contraseña y el flag DebeCambiarPassword
         const updated = await prisma.usuarios.update({
             where: { id: existing.id },
-            data: {
-                contrasena: hashedPassword,
-                DebeCambiarPassword: false,
-            },
+            data: { contrasena: hashedPassword, DebeCambiarPassword: false },
             include: {
-                rol: {
-                    include: {
-                        permisos: { include: { permiso: true } },
-                    },
-                },
-                Empleados: {
-                    include: { Puesto: true },
-                },
+                rol: { include: { permisos: { include: { permiso: true } } } },
+                Empleados: { include: { Puesto: true } },
             },
         });
 
-        // 4️⃣ Volver a extraer permisos a partir del rol actualizado (aunque no cambien)
-        const permisos = updated.rol.permisos.map((rp) => rp.permiso.nombre);
+        const permisos = updated.rol.permisos.map(rp => rp.permiso.nombre);
 
-        // 5️⃣ Construir el payload con los mismos datos que getADAuthentication
         const payload: UsuarioSesion = {
             IdUser: updated.id,
             User: updated.usuario,
@@ -295,12 +246,10 @@ export async function changePassword(
             DebeCambiar: updated.DebeCambiarPassword!,
             Puesto: updated.Empleados?.Puesto?.Nombre ?? "",
             PuestoId: updated.Empleados?.puesto_id ?? "",
-            exp: Math.floor(Date.now() / 1000) + 3600,
             iss: "your-issuer",
             aud: "your-audience",
         };
 
-        // 6️⃣ Encriptar y devolver el nuevo token
         return encrypt(payload);
     } catch (err: unknown) {
         console.error("Error en changePassword:", err);
@@ -308,11 +257,8 @@ export async function changePassword(
     }
 }
 
-
 export const getSessionUsuario = async (): Promise<UsuarioSesion | null> => {
     const session = cookies().get("session")?.value;
-    if (!session) {
-        return null;
-    }
+    if (!session) return null;
     return await decrypt(session);
 };
