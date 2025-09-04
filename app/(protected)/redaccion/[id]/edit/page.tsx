@@ -23,7 +23,7 @@ export default async function Edit({ params }: EditPageProps) {
 
     const nota = await getNotaById(id);
 
-    if (!nota) return <div>Nota no encontrada o no estas asignado a esa nota</div>;
+    if (!nota) return <div>Nota no encontrada</div>;
 
     return (
         <div>
