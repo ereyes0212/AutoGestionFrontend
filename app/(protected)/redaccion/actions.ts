@@ -117,7 +117,11 @@ export async function updateNota(
 }
 
 // Aprobar nota (jefe)
-export async function aprobarNota(id: string, estado: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'FINALIZADA', fellback: string | null) {
+export async function aprobarNota(
+    id: string,
+    estado: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'FINALIZADA',
+    fellback: string | null
+) {
     const permisos = await getSessionPermisos();
     const session = await getSession();
 
@@ -125,14 +129,52 @@ export async function aprobarNota(id: string, estado: 'APROBADA' | 'RECHAZADA' |
         throw new Error("No autorizado para aprobar notas");
     }
 
-    return prisma.nota.update({
+    // --- Actualizar nota
+    const notaActualizada = await prisma.nota.update({
         where: { id },
         data: {
-            estado: estado,
+            estado,
             aprobadorEmpleadoId: session?.IdEmpleado,
             fellback,
         },
+        include: {
+            asignado: true, // necesitamos su id para notificar
+        },
     });
+
+    const asignadoId = notaActualizada.asignadoEmpleadoId;
+    if (!asignadoId) return notaActualizada; // si no hay asignado, no hacemos nada
+
+    // --- Obtener subscripciones activas del asignado
+    const subs = await prisma.pushSubscription.findMany({
+        where: {
+            empleadoId: asignadoId,
+            revoked: false,
+        },
+    });
+
+    // --- Payload de la notificación
+    const payload = {
+        title: 'Estado de Nota Actualizado',
+        body: `${notaActualizada.titulo} ha cambiado a ${estado}`,
+        url: `/notas/${notaActualizada.id}`,
+        icon: '/icons/notification.png',
+    };
+
+    // --- Enviar notificación
+    for (const s of subs) {
+        try {
+            await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
+        } catch (err: any) {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+                await prisma.pushSubscription.delete({ where: { id: s.id } });
+            } else {
+                console.error("web-push error", err);
+            }
+        }
+    }
+
+    return notaActualizada;
 }
 
 // Finalizar nota (redactor asignado)
