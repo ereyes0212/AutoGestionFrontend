@@ -210,17 +210,15 @@ export async function getNotas(desde?: string | Date, hasta?: string | Date): Pr
                 return d;
             }
             if (typeof v === "string") {
-                // si viene en formato YYYY-MM-DD (sin time) lo parseamos como fecha local
                 const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
                 if (m) {
                     const y = Number(m[1]);
                     const mo = Number(m[2]) - 1;
                     const day = Number(m[3]);
-                    return new Date(y, mo, day, 0, 0, 0, 0); // local midnight
+                    return new Date(y, mo, day, 0, 0, 0, 0);
                 } else {
-                    // si viene con time (ISO), lo usamos y normalizamos al inicio del día local
                     const d = new Date(v);
-                    if (isNaN(d.getTime())) throw new Error('Fecha inválida: ' + v);
+                    if (isNaN(d.getTime())) throw new Error("Fecha inválida: " + v);
                     d.setHours(0, 0, 0, 0);
                     return d;
                 }
@@ -240,10 +238,10 @@ export async function getNotas(desde?: string | Date, hasta?: string | Date): Pr
                     const y = Number(m[1]);
                     const mo = Number(m[2]) - 1;
                     const day = Number(m[3]);
-                    return new Date(y, mo, day, 23, 59, 59, 999); // local end of day
+                    return new Date(y, mo, day, 23, 59, 59, 999);
                 } else {
                     const d = new Date(v);
-                    if (isNaN(d.getTime())) throw new Error('Fecha inválida: ' + v);
+                    if (isNaN(d.getTime())) throw new Error("Fecha inválida: " + v);
                     d.setHours(23, 59, 59, 999);
                     return d;
                 }
@@ -251,13 +249,26 @@ export async function getNotas(desde?: string | Date, hasta?: string | Date): Pr
             throw new Error("Tipo de fecha no soportado");
         };
 
-        // Si no vienen ni 'desde' ni 'hasta', por defecto filtramos SOLO el día de hoy
+        // ===== Ajuste sencillo para servidor adelantado +6h: sólo para el caso "hoy"
+        const SHIFT_MS = 6 * 60 * 60 * 1000; // 6 horas en ms
+
         if (!desde && !hasta) {
-            const hoyInicio = new Date();
-            hoyInicio.setHours(0, 0, 0, 0);
-            const hoyFin = new Date();
-            hoyFin.setHours(23, 59, 59, 999);
-            where.createAt = { gte: hoyInicio, lte: hoyFin };
+            // 1) Tomamos "ahora" en servidor, lo desplazamos -6h para obtener la hora local real
+            const now = new Date();
+            const shifted = new Date(now.getTime() - SHIFT_MS);
+
+            // 2) Calculamos inicio y fin del día en esa hora local (shifted)
+            const startShifted = new Date(shifted);
+            startShifted.setHours(0, 0, 0, 0);
+
+            const endShifted = new Date(shifted);
+            endShifted.setHours(23, 59, 59, 999);
+
+            // 3) Convertimos esos límites de vuelta al timeline del servidor sumando +6h
+            const startForQuery = new Date(startShifted.getTime() + SHIFT_MS);
+            const endForQuery = new Date(endShifted.getTime() + SHIFT_MS);
+
+            where.createAt = { gte: startForQuery, lte: endForQuery };
         } else {
             if (desde) {
                 const d = parseStartOfDay(desde);
