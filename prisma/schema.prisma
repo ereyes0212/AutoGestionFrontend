@@ -75,9 +75,10 @@ model Empleados {
   Usuarios                    Usuarios?
   VoucherPagos                VoucherPagos[]
 
-  NotasCreadas   Nota[] @relation("NotasCreadas")
-  NotasAsignadas Nota[] @relation("NotasAsignadas")
-  NotasAprobadas Nota[] @relation("NotasAprobador")
+  NotasCreadas     Nota[]             @relation("NotasCreadas")
+  NotasAsignadas   Nota[]             @relation("NotasAsignadas")
+  NotasAprobadas   Nota[]             @relation("NotasAprobador")
+  PushSubscription PushSubscription[]
 
   @@index([jefe_id])
   @@index([puesto_id])
@@ -454,4 +455,19 @@ model Nota {
   @@index([asignadoEmpleadoId])
   @@index([aprobadorEmpleadoId])
   @@index([estado])
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  empleadoId   String? // opcional si no la relacionas siempre
+  endpoint     String   @unique @db.VarChar(500)
+  subscription Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  revoked      Boolean  @default(false)
+
+  // Relación opcional con Empleado (ajusta el nombre del modelo si en tu esquema se llama distinto)
+  empleado Empleados? @relation(fields: [empleadoId], references: [id])
+
+  @@index([empleadoId])
 }

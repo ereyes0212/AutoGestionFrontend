@@ -3,32 +3,68 @@
 
 import { getSession, getSessionPermisos } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import webpush from '@/lib/webpush';
 import { Nota } from "./types";
-
 // Crear una nueva nota
-export async function createNota({
-    creadorEmpleadoId,
-    titulo,
-    descripcion
-}: {
+export async function createNota({ creadorEmpleadoId, titulo, descripcion }: {
     creadorEmpleadoId: string;
     titulo: string;
     descripcion: string;
 }) {
-    const permisos = await getSessionPermisos();
-
-    const esJefe = permisos!.includes("cambiar_estado_notas");
-
     const nuevaNota = await prisma.nota.create({
         data: {
             titulo,
-            estado: "PENDIENTE",
+            estado: 'PENDIENTE',
             creadorEmpleadoId,
             descripcion,
-            asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
-            aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
-        },
+            asignadoEmpleadoId: null,
+            aprobadorEmpleadoId: null,
+        }
     });
+
+    // buscar jefes (tu query adaptada)
+    const jefes = await prisma.empleados.findMany({
+        where: {
+            Usuarios: {
+                rol: {
+                    permisos: {
+                        some: {
+                            permiso: {
+                                nombre: 'cambiar_estado_notas'
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        select: { id: true }
+    });
+
+    const jefeIds = jefes.map(j => j.id);
+
+    const subs = await prisma.pushSubscription.findMany({
+        where: { empleadoId: { in: jefeIds }, revoked: false }
+    });
+
+    const payload = {
+        title: 'Nueva Nota',
+        body: `${nuevaNota.titulo} — ${nuevaNota.descripcion?.slice(0, 100) || ''}`,
+        url: `/redaccion/${nuevaNota.id}/edit`,
+        icon: '/icons/notification.png'
+    };
+
+    // enviar (manejar errores 410/404)
+    for (const s of subs) {
+        try {
+            await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
+        } catch (err: any) {
+            if (err.statusCode === 410 || err.statusCode === 404) {
+                await prisma.pushSubscription.delete({ where: { id: s.id } });
+            } else {
+                console.error('web-push error', err);
+            }
+        }
+    }
 
     return nuevaNota;
 }
