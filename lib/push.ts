@@ -11,8 +11,6 @@ export function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function subscribeToPush(empleadoId: string) {
-    console.log("Iniciando suscripción push...");
-    console.log("Empleado ID:", empleadoId);
     // Registrar el service worker
     const registration = await navigator.serviceWorker.register("/sw.js");
 

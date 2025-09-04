@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 // POST /api/save-subscription
 export async function POST(req: Request) {
     try {
-        console.log("HOLAAAA")
         const body = await req.json();
         const { empleadoId, subscription } = body as { empleadoId?: string; subscription?: any };
 

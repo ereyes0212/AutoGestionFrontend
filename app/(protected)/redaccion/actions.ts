@@ -11,15 +11,18 @@ export async function createNota({ creadorEmpleadoId, titulo, descripcion }: {
     titulo: string;
     descripcion: string;
 }) {
+    const permisos = await getSessionPermisos();
+
+    const esJefe = permisos!.includes("cambiar_estado_notas");
     const nuevaNota = await prisma.nota.create({
         data: {
             titulo,
-            estado: 'PENDIENTE',
+            estado: "PENDIENTE",
             creadorEmpleadoId,
             descripcion,
-            asignadoEmpleadoId: creadorEmpleadoId,
-            aprobadorEmpleadoId: null,
-        }
+            asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
+            aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
+        },
     });
 
     // buscar jefes (tu query adaptada)

@@ -9,7 +9,6 @@ export default function PushRegistrar({ empleadoId }: { empleadoId?: string }) {
         (async () => {
             try {
                 await subscribeToPush(empleadoId);
-                console.log("✅ Suscripción creada correctamente");
             } catch (err) {
                 console.error("❌ Error al registrar push", err);
             }
