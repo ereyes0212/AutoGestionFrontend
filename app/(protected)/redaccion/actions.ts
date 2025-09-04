@@ -47,8 +47,8 @@ export async function createNota({ creadorEmpleadoId, titulo, descripcion }: {
     });
 
     const payload = {
-        title: 'Nueva Nota',
-        body: `${nuevaNota.titulo} — ${nuevaNota.descripcion?.slice(0, 100) || ''}`,
+        title: 'Nueva Nota creada',
+        body: "Se creó una nueva nota: " + titulo,
         url: `/redaccion/${nuevaNota.id}/edit`,
         icon: '/icons/notification.png'
     };
