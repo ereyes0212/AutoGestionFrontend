@@ -17,7 +17,7 @@ export async function createNota({ creadorEmpleadoId, titulo, descripcion }: {
             estado: 'PENDIENTE',
             creadorEmpleadoId,
             descripcion,
-            asignadoEmpleadoId: null,
+            asignadoEmpleadoId: creadorEmpleadoId,
             aprobadorEmpleadoId: null,
         }
     });
@@ -138,9 +138,10 @@ export async function aprobarNota(
             fellback,
         },
         include: {
-            asignado: true, // necesitamos su id para notificar
+            asignado: true, // usar el nombre de la relación en tu modelo Nota
         },
     });
+    console.log("Nota actualizada:", notaActualizada);
 
     const asignadoId = notaActualizada.asignadoEmpleadoId;
     if (!asignadoId) return notaActualizada; // si no hay asignado, no hacemos nada
