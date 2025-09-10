@@ -197,6 +197,25 @@ export async function finalizarNota(id: string) {
         data: { estado: "FINALIZADA" },
     });
 }
+
+export async function getNotasFinalizadasHoy(): Promise<Nota[]> {
+    // calcula la fecha "hoy" en Honduras
+    const dtf = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Tegucigalpa",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
+    const parts = dtf.formatToParts(new Date());
+    const year = parts.find((p) => p.type === "year")!.value;
+    const month = parts.find((p) => p.type === "month")!.value;
+    const day = parts.find((p) => p.type === "day")!.value;
+    const fechaHoy = `${year}-${month}-${day}`;
+
+    const notas: Nota[] = await getNotas(fechaHoy, fechaHoy);
+    return notas.filter((n) => n.estado === "FINALIZADA");
+}
+
 // Obtener todas las notas
 // Acepta string (ej. "2025-08-29" o ISO con time) o Date
 export async function getNotas(desde?: string | Date, hasta?: string | Date): Promise<Nota[]> {

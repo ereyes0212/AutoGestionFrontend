@@ -10,6 +10,7 @@ import NotaListMobile from "./components/puesto-list-mobile";
 
 // importa el client component
 import NotasDatePickerClient from "./components/datepickerselect";
+import DownloadExcelButton from "./components/reportebutton";
 
 export default async function Puestos({ searchParams }: { searchParams?: Record<string, string> }) {
     const permisos = await getSessionPermisos();
@@ -29,8 +30,12 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
                 screenName="Propuestas notas"
             />
 
-            <div className="mb-4">
+            <div className="mb-4 flex items-center gap-2">
                 <NotasDatePickerClient desdeInit={desde} hastaInit={hasta} />
+
+                {(permisos?.includes("cambiar_estado_notas")) && (
+                    <DownloadExcelButton />
+                )}
             </div>
 
             <div className="hidden md:block">
