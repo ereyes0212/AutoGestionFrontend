@@ -79,6 +79,7 @@ model Empleados {
   NotasAsignadas   Nota[]             @relation("NotasAsignadas")
   NotasAprobadas   Nota[]             @relation("NotasAprobador")
   PushSubscription PushSubscription[]
+  TareaEmpleado    TareaEmpleado[]
 
   @@index([jefe_id])
   @@index([puesto_id])
@@ -470,4 +471,53 @@ model PushSubscription {
   empleado Empleados? @relation(fields: [empleadoId], references: [id])
 
   @@index([empleadoId])
+}
+
+enum EstadoTarea {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADA
+  CANCELADA
+}
+
+enum PrioridadTarea {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+model Tarea {
+  id          String         @id @default(uuid()) @db.VarChar(36)
+  titulo      String
+  fechaInicio DateTime
+  fechaFin    DateTime? // opcional
+  todoDia     Boolean        @default(false)
+  estado      EstadoTarea    @default(PENDIENTE)
+  prioridad   PrioridadTarea @default(MEDIA)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relación many-to-many explícita (usando TareaEmpleado)
+  asignaciones TareaEmpleado[]
+
+  @@index([fechaInicio])
+  @@map("tareas")
+}
+
+model TareaEmpleado {
+  tareaId    String @db.VarChar(36)
+  empleadoId String @db.VarChar(36)
+
+  // relación
+  tarea    Tarea     @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  empleado Empleados @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  asignadoEn DateTime @default(now()) // cuándo se asignó el empleado a la tarea
+  rol        String? // opcional: rol en la tarea (p.ej. "responsable", "colaborador")
+
+  @@id([tareaId, empleadoId]) // clave compuesta evita duplicados
+  @@index([empleadoId])
+  @@map("tareas_empleados")
 }

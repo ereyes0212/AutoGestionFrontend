@@ -1,7 +1,9 @@
+import { EventInput } from "@fullcalendar/core";
 import { clsx, type ClassValue } from "clsx";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
+import { EstadoTarea, Tarea } from "./generated/prisma";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -87,4 +89,58 @@ export const getEmployeeStatus = (
   return isActive ? { label: "Activo", variant: "default" } : { label: "Inactivo", variant: "secondary" }
 }
 
+export function mapTareasToEvents(tareas: Tarea[]): EventInput[] {
+  return tareas.map((t) => ({
+    id: t.id,
+    title: t.titulo,
+    start: t.fechaInicio,
+    end: t.fechaFin ?? undefined,
+    allDay: t.todoDia,
+    extendedProps: {
+      estado: t.estado,
+      prioridad: t.prioridad,
+    },
+  }));
+}
 
+
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+export const isBetweenInclusive = (date: Date, start: Date, end?: Date | null) => {
+  const t = startOfDay(date).getTime();
+  const s = startOfDay(start).getTime();
+  const e = end ? startOfDay(end).getTime() : s;
+  return t >= s && t <= e;
+};
+
+
+export function normalizeDate(value: Date | string) {
+  if (value instanceof Date) return value;
+  return value ? new Date(value) : null;
+}
+
+
+export function estadoToBadgeText(estado: EstadoTarea) {
+  switch (estado) {
+    case "PENDIENTE":
+      return "Pendiente";
+    case "EN_PROGRESO":
+      return "En progreso";
+    case "COMPLETADA":
+      return "Completada";
+    case "CANCELADA":
+      return "Cancelada";
+    default:
+      return estado;
+  }
+}
+
+
+export function formatTimeRange(start?: Date | null, end?: Date | null, todoDia?: boolean) {
+  if (todoDia) return "Todo el día";
+  if (!start) return "-";
+  const s = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (!end) return s;
+  const e = end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return `${s} - ${e}`;
+}

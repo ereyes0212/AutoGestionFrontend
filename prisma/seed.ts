@@ -85,6 +85,8 @@ async function main() {
     { nombre: "editar_notas", descripcion: "Permiso para editar las notas" },
     { nombre: "cambiar_estado_notas", descripcion: "Permiso para cambiar el estado de las notas" },
 
+    { nombre: "ver_tareas", descripcion: "Permiso para ver el modulo de tareas" },
+
     { nombre: "ver_mensajes", descripcion: "Permiso para ver el modulo de mensajes" },
     { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" }
   ];

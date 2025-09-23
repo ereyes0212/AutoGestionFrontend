@@ -117,6 +117,12 @@ const items = [
     icon: MessageCircleMore,
     permiso: "ver_mensajes",
   },
+  {
+    title: "Tareas",
+    url: "/tareas",
+    icon: FileCheck2,
+    permiso: "ver_tareas",
+  }
 ];
 
 export async function AppSidebar() {
