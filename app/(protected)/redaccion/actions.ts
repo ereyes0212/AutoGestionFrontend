@@ -491,6 +491,7 @@ export async function getNotasAgrupadasHoySimple(): Promise<{
     const notasRaw = await prisma.nota.findMany({
         where: {
             createAt: { gte: queryStart, lte: queryEnd },
+            estado: "FINALIZADA",
         },
         orderBy: { createAt: "asc" },
         select: {
