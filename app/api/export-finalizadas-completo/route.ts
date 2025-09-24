@@ -90,20 +90,9 @@ export async function GET() {
                 height: headerHeight,
                 color: rgb(0.85, 0.9, 1),
             });
-            currentPage.drawText("N°", {
-                x: 55,
-                y,
-                size: 12,
-                font: titleFont,
-                color: rgb(0.1, 0.2, 0.5),
-            });
-            currentPage.drawText("Título", {
-                x: 85,
-                y,
-                size: 12,
-                font: titleFont,
-                color: rgb(0.1, 0.2, 0.5),
-            });
+            currentPage.drawText("N°", { x: 55, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
+            currentPage.drawText("Título", { x: 85, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
+            currentPage.drawText("Hora", { x: width - 100, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
             y -= headerHeight;
 
             const rowPadding = 6;
@@ -111,12 +100,7 @@ export async function GET() {
             const rowSpacing = 8;
 
             notas.forEach((nota, index) => {
-                const titleLines = wrapText(
-                    cleanText(nota.titulo ?? "Sin título"),
-                    bodyFont,
-                    10,
-                    maxTitleWidth
-                );
+                const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título"), bodyFont, 10, maxTitleWidth);
                 const rowHeight = titleLines.length * 12 + rowPadding * 2;
 
                 if (y - rowHeight < 60) {
@@ -131,20 +115,9 @@ export async function GET() {
                         height: headerHeight,
                         color: rgb(0.85, 0.9, 1),
                     });
-                    currentPage.drawText("N°", {
-                        x: 55,
-                        y,
-                        size: 12,
-                        font: titleFont,
-                        color: rgb(0.1, 0.2, 0.5),
-                    });
-                    currentPage.drawText("Título", {
-                        x: 85,
-                        y,
-                        size: 12,
-                        font: titleFont,
-                        color: rgb(0.1, 0.2, 0.5),
-                    });
+                    currentPage.drawText("N°", { x: 55, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
+                    currentPage.drawText("Título", { x: 85, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
+                    currentPage.drawText("Hora", { x: width - 100, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
                     y -= headerHeight;
                 }
 
@@ -167,24 +140,19 @@ export async function GET() {
                 });
 
                 // Número
-                currentPage.drawText(String(index + 1), {
-                    x: 55,
-                    y: y - 8,
-                    size: 10,
-                    font: bodyFont,
-                    color: rgb(0.2, 0.2, 0.2),
-                });
+                currentPage.drawText(String(index + 1), { x: 55, y: y - 8, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
 
                 // Título con wrap
                 titleLines.forEach((line, i) => {
-                    currentPage.drawText(cleanText(line), {
-                        x: 85,
-                        y: y - 14 * i,
-                        size: 10,
-                        font: bodyFont,
-                        color: rgb(0.2, 0.2, 0.2),
-                    });
+                    currentPage.drawText(cleanText(line), { x: 85, y: y - 14 * i, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
                 });
+
+                // Hora
+                const horaStr = new Date(nota.createAtAdjusted).toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                });
+                currentPage.drawText(horaStr, { x: width - 100, y: y - 8, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
 
                 y -= rowHeight + rowSpacing;
             });
