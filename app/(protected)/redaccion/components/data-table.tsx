@@ -12,9 +12,11 @@ import {
   getSortedRowModel,
   SortingState,
   useReactTable,
+  VisibilityState,
 } from "@tanstack/react-table";
 import * as React from "react";
 
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -48,18 +50,23 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState<string>("");
 
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
       columnFilters,
+      columnVisibility,
       globalFilter,
     },
     globalFilterFn: (row) => {
@@ -140,6 +147,39 @@ export function DataTable<TData extends Record<string, any>, TValue>({
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="w-full md:max-w-sm"
         />
+        {/* Columns dropdown (mejorado) */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+
+          {/* align="start" para que abra junto al botón; sideOffset ajusta separación */}
+          <DropdownMenuContent side="bottom" align="start" sideOffset={6} className="w-56 p-1">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide() && !excludeColumnKeys.includes(column.id))
+              .map((column) => {
+                // etiqueta amigable (displayNameMap debe estar en el scope)
+                const label = (displayNameMap as Record<string, string>)[column.id] ?? column.id;
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(val) => {
+                      // val puede ser boolean | "mixed", usamos coerción a boolean
+                      column.toggleVisibility(Boolean(val));
+                    }}
+                  >
+                    {label}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="flex items-center gap-2">
           <Link href={`/redaccion/create`} className="w-full md:w-auto">
             <Button className="w-full md:w-auto flex items-center gap-2">

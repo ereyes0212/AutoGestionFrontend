@@ -11,6 +11,7 @@ import { getNotas } from "./actions";
 import NotasDatePickerClient from "./components/datepickerselect";
 import NotasRealtimeWrapper from "./components/notasWrapper";
 import DownloadExcelButton from "./components/reportebutton";
+import DownloadPDFButton from "./components/reportebuttonCompleto";
 
 export default async function Puestos({ searchParams }: { searchParams?: Record<string, string> }) {
     const permisos = await getSessionPermisos();
@@ -36,6 +37,10 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
                 {(permisos?.includes("cambiar_estado_notas")) && (
                     <DownloadExcelButton />
                 )}
+                {(permisos?.includes("cambiar_estado_notas")) && (
+                    <DownloadPDFButton />
+                )}
+
             </div>
             <div className="">
                 <NotasRealtimeWrapper initialNotas={data} desde={desde ?? null} hasta={hasta ?? null} />
