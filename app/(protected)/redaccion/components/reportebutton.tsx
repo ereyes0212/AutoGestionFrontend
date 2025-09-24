@@ -15,7 +15,7 @@ export default function DownloadExcelButton() {
             const href = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = href;
-            a.download = "notas-finalizadas-hoy.xlsx";
+            a.download = "notas-finalizadas.pdf";
             document.body.appendChild(a);
             a.click();
             a.remove();
