@@ -25,16 +25,30 @@ async function getBase64FromUrl(url: string): Promise<string> {
     });
 }
 
-export default function ClientPrintView({ solicitud, usuario }: { solicitud: SolicitudPermiso; usuario: string }) {
+type Firma = {
+    nombre: string;
+    cargo?: string;
+};
+
+export default function ClientPrintView({
+    solicitud,
+    usuario,
+    firmas,
+}: {
+    solicitud: SolicitudPermiso;
+    usuario: string;
+    firmas: Firma[];
+}) {
+    console.log("🚀 ~ ClientPrintView ~ firmas:", firmas)
     useEffect(() => {
         const generarPDF = async () => {
             const doc = new jsPDF({
                 orientation: "portrait",
                 unit: "pt",
-                format: "letter"
+                format: "letter",
             });
 
-            // Cargar la imagen y centrarla
+            // Logo de fondo
             const logoBase64 = await getBase64FromUrl("/logoTiempo.png");
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
@@ -52,7 +66,7 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
                     imgHeight,
                     undefined,
                     "NONE",
-                    0.08 // opacity
+                    0.08
                 );
             }
 
@@ -79,7 +93,7 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
             doc.setFont("helvetica", "bold");
             doc.text("SOLICITUD DE VACACIONES", pageWidth / 2, 120, { align: "center" });
 
-            // === MÓDULO 1: INFORMACIÓN PRINCIPAL ===
+            // === MÓDULO DATOS EMPLEADO ===
             doc.setFontSize(12);
             doc.setFont("helvetica", "normal");
             let yInfo = 150;
@@ -88,25 +102,70 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
             doc.setFont("helvetica", "bold");
             doc.text("Datos del empleado", left, yInfo - 8);
             doc.setFont("helvetica", "normal");
-            yInfo += 10;
-            doc.text(`Nombre del empleado:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${solicitud.nombreEmpleado}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Puesto:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${solicitud.puesto}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Fecha de solicitud:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${formatearFecha(solicitud.fechaSolicitud)}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Periodo:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${solicitud.periodo}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Días a gozar:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${solicitud.diasGozados || 0}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Días restantes:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${solicitud.diasRestantes || 0}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Fecha de goce de vacaciones:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${formatearFecha(solicitud.fechaInicio)}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Fecha de fin de goce:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${formatearFecha(solicitud.fechaFin)}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
-            doc.text(`Fecha de presentacion:`, left, yInfo); doc.setFont("helvetica", "bold"); doc.text(`${formatearFecha(solicitud.fechaPresentacion || "")}`, left + 180, yInfo); doc.setFont("helvetica", "normal"); yInfo += salto;
 
-            // Línea divisora después de fin de goce
+            yInfo += 10;
+            doc.text(`Nombre del empleado:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${solicitud.nombreEmpleado}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Puesto:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${solicitud.puesto}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Fecha de solicitud:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${formatearFecha(solicitud.fechaSolicitud)}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Periodo:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${solicitud.periodo}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Días a gozar:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${solicitud.diasGozados || 0}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Días restantes:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${solicitud.diasRestantes || 0}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Fecha de goce de vacaciones:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${formatearFecha(solicitud.fechaInicio)}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Fecha de fin de goce:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${formatearFecha(solicitud.fechaFin)}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            doc.text(`Fecha de presentacion:`, left, yInfo);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${formatearFecha(solicitud.fechaPresentacion || "")}`, left + 180, yInfo);
+            doc.setFont("helvetica", "normal");
+            yInfo += salto;
+
+            // Línea divisoria
             yInfo += salto + 10;
             doc.setDrawColor(180, 180, 180);
             doc.setLineWidth(0.7);
             doc.line(left, yInfo, left + 420, yInfo);
 
-            // === MÓDULO 2: ESTADO DE LA SOLICITUD ===
-            const yEstado = yInfo + 40; // Bajamos un poco el bloque de estado
+            // === ESTADO DE LA SOLICITUD ===
+            const yEstado = yInfo + 40;
             doc.setFont("helvetica", "normal");
             doc.setFontSize(12);
             doc.setDrawColor(0, 0, 0);
@@ -119,7 +178,7 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
             if (solicitud.aprobado === false) doc.text("X", left + 254, yEstado + 2);
             doc.text("No Aprobadas", left + 270, yEstado + 2);
 
-            // === SECCIÓN MOTIVO SOLO SI NO FUE APROBADA ===
+            // Motivo si no fue aprobada
             let yMotivo = yEstado + 50;
             if (solicitud.aprobado === false) {
                 doc.setFont("helvetica", "bold");
@@ -128,10 +187,9 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(12);
 
-                // Buscar el primer comentario de las aprobaciones que tenga texto
                 const motivo = (solicitud.aprobaciones || [])
-                    .map(a => a.comentario)
-                    .find(c => c && c.trim() !== "");
+                    .map((a) => a.comentario)
+                    .find((c) => c && c.trim() !== "");
 
                 if (motivo) {
                     doc.text(motivo, pageWidth / 2, yMotivo + 22, { align: "center", maxWidth: 480 });
@@ -141,35 +199,39 @@ export default function ClientPrintView({ solicitud, usuario }: { solicitud: Sol
                 yMotivo += 40;
             }
 
-            // === FIRMAS CENTRADAS Y SEPARADAS ===
-            let yFirmas = (solicitud.aprobado === false ? yMotivo : yEstado + 50) + 40;
-            const firmasWidth = 400;
-            const firmasLeft = (pageWidth - firmasWidth) / 2;
+            // === FIRMAS DINÁMICAS (2 en 2) ===
+            const yFirmas = (solicitud.aprobado === false ? yMotivo : yEstado + 50) + 40;
+            const colWidth = 200;
+            const gap = 80;
+            const startX = (pageWidth - (colWidth * 2 + gap)) / 2;
 
-            doc.setLineWidth(1);
-            doc.setDrawColor(0, 0, 0);
-            // Primera fila de firmas (más separadas)
-            doc.line(firmasLeft, yFirmas, firmasLeft + 160, yFirmas); // Firma empleado
-            doc.line(firmasLeft + 240, yFirmas, firmasLeft + 400, yFirmas); // Firma jefe inmediato
-            doc.text("Firma del empleado", firmasLeft + 20, yFirmas + 18);
-            doc.text("Firma del jefe inmediato", firmasLeft + 260, yFirmas + 18);
+            firmas.forEach((firma, index) => {
+                const col = index % 2;
+                const row = Math.floor(index / 2);
+                const x1 = startX + col * (colWidth + gap);
+                const y1 = yFirmas + row * 80;
 
-            // Segunda fila de firmas (más separadas)
-            yFirmas += 60;
-            doc.line(firmasLeft, yFirmas, firmasLeft + 160, yFirmas); // Firma gerente
-            doc.line(firmasLeft + 240, yFirmas, firmasLeft + 400, yFirmas); // Firma abogada
-            doc.text("Lic. Andrés E. Rosenthal Enamorado", firmasLeft + 5, yFirmas + 18);
-            doc.setFontSize(10);
-            doc.text("Gerente Administrativo", firmasLeft + 45, yFirmas + 32);
-            doc.setFontSize(12);
-            doc.text("Abog. Martha Julia Rápalo", firmasLeft + 245, yFirmas + 18);
+                // Línea de firma
+                doc.line(x1, y1, x1 + colWidth, y1);
 
-            // Guardar el PDF
+                // Texto de nombre
+                doc.setFontSize(12);
+                doc.text(firma.nombre, x1 + 10, y1 + 18);
+
+                // Cargo (si existe)
+                if (firma.cargo) {
+                    doc.setFontSize(10);
+                    doc.text(firma.cargo, x1 + 10, y1 + 32);
+                }
+                doc.setFontSize(12);
+            });
+
+            // Guardar PDF
             doc.save(`solicitud_vacaciones_${solicitud.nombreEmpleado}.pdf`);
         };
 
         if (solicitud) generarPDF();
-    }, [solicitud, usuario]);
+    }, [solicitud, usuario, firmas]);
 
     return (
         <div className="flex items-center justify-center min-h-screen">

@@ -4,22 +4,22 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { getNotas } from "./actions";
-import { columns } from "./components/columns";
-import { DataTable } from "./components/data-table";
-import NotaListMobile from "./components/puesto-list-mobile";
+// no importes DataTable / NotaListMobile directamente aquí: lo hace el wrapper client
+// importa el client wrapper que escucha SSE y mantiene el estado en el cliente
 
-// importa el client component
+// importa el client component de datepicker y el botón
 import NotasDatePickerClient from "./components/datepickerselect";
+import NotasRealtimeWrapper from "./components/notasWrapper";
 import DownloadExcelButton from "./components/reportebutton";
 
 export default async function Puestos({ searchParams }: { searchParams?: Record<string, string> }) {
     const permisos = await getSessionPermisos();
     if (!permisos?.includes("ver_notas")) return <NoAcceso />;
 
-    // lee searchParams (desde/hasta en formato YYYY-MM-DD) y pásalo a getNotas
     const desde = searchParams?.desde;
     const hasta = searchParams?.hasta;
 
+    // obtiene las notas iniciales en el server (lo que ya tenías)
     const data = await getNotas(desde, hasta);
 
     return (
@@ -37,13 +37,11 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
                     <DownloadExcelButton />
                 )}
             </div>
+            <div className="">
+                <NotasRealtimeWrapper initialNotas={data} desde={desde ?? null} hasta={hasta ?? null} />
+            </div>
+            {/* Aquí montamos el wrapper cliente que mantiene el estado y escucha SSE */}
 
-            <div className="hidden md:block">
-                <DataTable columns={columns} data={data} />
-            </div>
-            <div className="block md:hidden">
-                <NotaListMobile notas={data} />
-            </div>
         </div>
     );
 }

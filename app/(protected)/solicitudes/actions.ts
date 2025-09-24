@@ -117,6 +117,7 @@ export async function getSolicitudesAprobaciones(): Promise<SolicitudAprobacion[
   });
 
   return records.map(r => {
+
     const parent = r.SolicitudVacacion;
     const fechaSolicitudStr = parent.FechaSolicitud.toISOString();
     const fechaInicioStr = parent.FechaInicio.toISOString();
@@ -134,10 +135,10 @@ export async function getSolicitudesAprobaciones(): Promise<SolicitudAprobacion[
       comentario: null,
       fechaAprobacion: "",
       empleadoId: r.EmpleadoAprobadorId ?? "",
-      nombreEmpleado: r.Empleados
-        ? `${r.Empleados.nombre} ${r.Empleados.apellido}`
+      nombreEmpleado: r.SolicitudVacacion.Empleados.nombre
+        ? `${r.SolicitudVacacion.Empleados.nombre} ${r.SolicitudVacacion.Empleados.apellido}`
         : "",
-      puestoId: r.ConfiguracionAprobacion.puesto_id ?? "",
+      puestoId: r.SolicitudVacacion.Puesto.Nombre ?? "",
       puesto: r.ConfiguracionAprobacion.Puesto?.Nombre ?? "",
       fechaSolicitud: fechaSolicitudStr,
       fechaInicio: fechaInicioStr,

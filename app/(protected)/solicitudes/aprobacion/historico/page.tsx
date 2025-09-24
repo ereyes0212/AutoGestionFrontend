@@ -1,9 +1,10 @@
-import { File, Inbox } from "lucide-react";
+import { getEmpleados } from "@/app/(protected)/empleados/actions";
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
-import SolicitudAprobaciones from "../../components/aprobaciones";
+import { File, Inbox } from "lucide-react";
 import { getSolicitudesAprobacionesHistorico } from "../../actions";
+import SolicitudAprobaciones from "../../components/aprobaciones";
 
 export default async function Empleados() {
     const permisos = await getSessionPermisos();
@@ -13,7 +14,7 @@ export default async function Empleados() {
     }
 
     const aprobacionesPendientes = await getSolicitudesAprobacionesHistorico();
-
+    const empleados = await getEmpleados();
     return (
         <div className="container mx-auto py-2 relative">
             <HeaderComponent
@@ -23,7 +24,7 @@ export default async function Empleados() {
             />
 
             {aprobacionesPendientes.length > 0 ? (
-                <SolicitudAprobaciones solicitudes={aprobacionesPendientes} />
+                <SolicitudAprobaciones solicitudes={aprobacionesPendientes} empleados={empleados} />
             ) : (
                 <div className="flex flex-col items-center justify-center mt-10">
                     <Inbox className="w-16 h-16 text-gray-400" />

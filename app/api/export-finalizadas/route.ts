@@ -6,7 +6,6 @@ import * as XLSX from "xlsx";
 export async function GET() {
     try {
         const finalizadas = await getNotasFinalizadasHoy();
-
         // Convertimos los datos a un formato plano
         const rows = finalizadas.map((n) => ({
 
