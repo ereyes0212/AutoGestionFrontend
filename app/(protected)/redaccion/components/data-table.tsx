@@ -110,13 +110,23 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   const uniqueValuesForSelectedColumn = React.useMemo(() => {
     if (!selectedColumn) return [] as string[];
     const setVals = new Set<string>();
+
     for (const row of data) {
-      const raw = row[selectedColumn];
-      if (raw === null || raw === undefined) continue;
-      setVals.add(String(raw));
+      if (selectedColumn === "empleados") {
+        const { empleadoCreador, empleadoAsignado, empleadoAprobador } = row;
+        [empleadoCreador, empleadoAsignado, empleadoAprobador].forEach((val) => {
+          if (val != null) setVals.add(String(val));
+        });
+      } else {
+        const raw = row[selectedColumn];
+        if (raw != null) setVals.add(String(raw));
+      }
     }
-    return Array.from(setVals).sort((a, b) => a.localeCompare(b));
+
+    return Array.from(setVals).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+
   }, [data, selectedColumn]);
+
 
   // RESET handler: limpia filtros, global, selectedColumn, sorting y pone la página 0
   const resetAll = React.useCallback(() => {

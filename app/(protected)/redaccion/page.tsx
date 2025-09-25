@@ -43,7 +43,7 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
 
             </div>
             <div className="">
-                <NotasRealtimeWrapper initialNotas={data} desde={desde ?? null} hasta={hasta ?? null} />
+                <NotasRealtimeWrapper initialNotas={data} />
             </div>
             {/* Aquí montamos el wrapper cliente que mantiene el estado y escucha SSE */}
 

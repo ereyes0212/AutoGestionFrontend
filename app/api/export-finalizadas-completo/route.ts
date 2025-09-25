@@ -21,7 +21,9 @@ export async function GET() {
         let y = height - 60;
 
         // Título principal
-        const fechaStr = new Date().toLocaleDateString("es-ES", {
+        const fechaStr: string = new Date(
+            Date.now() - 6 * 60 * 60 * 1000
+        ).toLocaleDateString("es-ES", {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -149,7 +151,9 @@ export async function GET() {
                 });
 
                 // Hora
-                const horaStr = new Date(nota.createAtAdjusted).toLocaleTimeString("es-ES", {
+                const horaStr: string = new Date(
+                    new Date(nota.createAtAdjusted).getTime() - 6 * 60 * 60 * 1000
+                ).toLocaleTimeString("es-ES", {
                     hour: "2-digit",
                     minute: "2-digit",
                 });

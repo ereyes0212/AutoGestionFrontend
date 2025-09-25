@@ -37,7 +37,7 @@ export default function NotasDatePickerClient({
     const router = useRouter();
     const pathname = usePathname();
     const sp = useSearchParams();
-
+    console.log("🚀 ~ NotasDatePickerClient ~ sp:", sp?.toString())
     // helper para parsear YYYY-MM-DD (lo tratamos como fecha local)
     const parse = (s?: string) => {
         if (!s) return undefined;
@@ -68,6 +68,7 @@ export default function NotasDatePickerClient({
         if (range.to) params.set("hasta", formatISODate(range.to));
         const url = params.toString() ? `${pathname}?${params.toString()}` : pathname;
         router.push(url);
+        router.refresh(); // forzamos refresh para que el server component recargue datos
     };
 
     const resetToToday = () => {

@@ -1,25 +1,42 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { getNotas } from "../actions"; // <-- tu server action
 import { Nota } from "../types";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 import NotaListMobile from "./puesto-list-mobile";
 
-export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: { initialNotas: Nota[]; desde?: string | null; hasta?: string | null; }) {
+export default function NotasRealtimeWrapper({ initialNotas }: { initialNotas: Nota[] }) {
+    const searchParams = useSearchParams();
+    const desde = searchParams.get("desde");
+    const hasta = searchParams.get("hasta");
+
     const [notas, setNotas] = useState<Nota[]>(initialNotas ?? []);
     const esRef = useRef<EventSource | null>(null);
     const reconnectRef = useRef(0);
-
-    // Referencia al audio
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    // 🔄 recarga cuando cambian los params
     useEffect(() => {
-        // Creamos el audio (puede ser cualquier .mp3/.wav en public/)
+        (async () => {
+            try {
+                const data = await getNotas(desde!, hasta!); // llamamos server action directamente
+                setNotas(data);
+            } catch (err) {
+                console.error("Error cargando notas", err);
+            }
+        })();
+    }, [desde, hasta]);
+
+    // SSE
+    useEffect(() => {
         audioRef.current = new Audio("/sounds/notification.mp3");
 
         const connect = () => {
             if (esRef.current) esRef.current.close();
+
             const es = new EventSource("/api/notes/stream");
             esRef.current = es;
 
@@ -33,17 +50,24 @@ export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: { i
                     const payload = JSON.parse(e.data);
                     const nota: Nota = payload.nota ?? payload;
 
-                    setNotas(prev => {
-                        if (prev.some(n => String(n.id) === String(nota.id))) {
-                            return prev.map(p => String(p.id) === String(nota.id) ? { ...p, ...nota } : p);
-                        }
-                        return [nota, ...prev];
-                    });
+                    const createdAt = new Date(nota.createAt!);
+                    const from = desde ? new Date(desde) : null;
+                    const to = hasta ? new Date(hasta) : null;
 
-                    // ✅ Reproducir tono si es evento nuevo
-                    if (audioRef.current) {
-                        audioRef.current.currentTime = 0;
-                        audioRef.current.play().catch(() => { });
+                    if ((!from || createdAt >= from) && (!to || createdAt <= to)) {
+                        setNotas((prev) => {
+                            if (prev.some((n) => String(n.id) === String(nota.id))) {
+                                return prev.map((p) =>
+                                    String(p.id) === String(nota.id) ? { ...p, ...nota } : p
+                                );
+                            }
+                            return [nota, ...prev];
+                        });
+
+                        if (audioRef.current) {
+                            audioRef.current.currentTime = 0;
+                            audioRef.current.play().catch(() => { });
+                        }
                     }
                 } catch (err) {
                     console.error("[SSE] parse error", err);
@@ -63,13 +87,14 @@ export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: { i
         };
 
         connect();
+
         return () => {
             if (esRef.current) {
                 esRef.current.close();
                 esRef.current = null;
             }
         };
-    }, []);
+    }, [desde, hasta]);
 
     return (
         <>

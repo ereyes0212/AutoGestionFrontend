@@ -1,15 +1,24 @@
-// app/(public)/page.js  — sigue siendo Server Component
+// app/(public)/page.js  — Server Component
+import { getSession } from "@/auth";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Suspense } from 'react'
-import Login from "./components/formLogin"
+} from "@/components/ui/card";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import Login from "./components/formLogin";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await getSession();
+
+  // redirección server-side si ya hay sesión
+  if (session) {
+    redirect("/profile");
+  }
+
   return (
     <Card className="w-full max-w-md mx-auto bg-gray-800 text-white border-gray-700 shadow-lg">
       <CardHeader className="space-y-1">
@@ -24,5 +33,5 @@ export default function LoginPage() {
         </Suspense>
       </CardContent>
     </Card>
-  )
+  );
 }
