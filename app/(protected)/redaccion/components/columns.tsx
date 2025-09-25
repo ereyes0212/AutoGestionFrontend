@@ -2,13 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -19,12 +12,10 @@ import {
   Award,
   CheckCircle,
   Clock,
-  MoreHorizontal,
-  XCircle,
+  XCircle
 } from "lucide-react";
-import Link from "next/link";
 import { Nota } from "../types";
-
+import { ActionsCell } from "./actionCell";
 export const columns: ColumnDef<Nota>[] = [
   {
     accessorKey: "titulo",
@@ -197,25 +188,7 @@ export const columns: ColumnDef<Nota>[] = [
   {
     id: "actions",
     header: "Acciones",
-    cell: ({ row }) => {
-      const redaccion = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir Menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <Link href={`/redaccion/${redaccion.id}/edit`}>
-              <DropdownMenuItem>Editar</DropdownMenuItem>
-            </Link>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => <ActionsCell nota={row.original} />,
   },
+
 ];
