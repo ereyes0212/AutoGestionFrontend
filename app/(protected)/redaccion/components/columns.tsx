@@ -8,20 +8,32 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Award, CheckCircle, Clock, MoreHorizontal, XCircle } from "lucide-react";
+import {
+  ArrowUpDown,
+  Award,
+  CheckCircle,
+  Clock,
+  MoreHorizontal,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { Nota } from "../types";
 
 export const columns: ColumnDef<Nota>[] = [
-
   {
     accessorKey: "titulo",
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() =>
+          column.toggleSorting(column.getIsSorted() === "asc")
+        }
         className="text-center"
       >
         Titulo
@@ -30,20 +42,23 @@ export const columns: ColumnDef<Nota>[] = [
     ),
     cell: ({ row }) => {
       const text = row.original.titulo;
-      const maxLength = 25; // cantidad de caracteres visibles en la celda
-      const display = text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+      const maxLength = 25;
+      const display =
+        text.length > maxLength
+          ? text.slice(0, maxLength) + "..."
+          : text;
 
       return (
-        <Popover>
-          <PopoverTrigger asChild>
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
             <span className="cursor-pointer">{display}</span>
-          </PopoverTrigger>
+          </HoverCardTrigger>
           {text.length > maxLength && (
-            <PopoverContent className="max-w-xs">
+            <HoverCardContent className="max-w-xs">
               <p className="whitespace-pre-wrap">{text}</p>
-            </PopoverContent>
+            </HoverCardContent>
           )}
-        </Popover>
+        </HoverCard>
       );
     },
   },
@@ -51,30 +66,35 @@ export const columns: ColumnDef<Nota>[] = [
     id: "empleados",
     header: "Empleados",
     cell: ({ row }: { row: any }) => {
-      const { empleadoCreador, empleadoAsignado, empleadoAprobador } = row.original;
+      const { empleadoCreador, empleadoAsignado, empleadoAprobador } =
+        row.original;
       const fullDisplay = `Creador: ${empleadoCreador} / Asignado: ${empleadoAsignado} / Aprobador: ${empleadoAprobador}`;
       const maxLength = 30;
-      const display = fullDisplay.length > maxLength ? fullDisplay.slice(0, maxLength) + "..." : fullDisplay;
+      const display =
+        fullDisplay.length > maxLength
+          ? fullDisplay.slice(0, maxLength) + "..."
+          : fullDisplay;
 
       return (
-        <Popover>
-          <PopoverTrigger asChild>
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
             <span className="cursor-pointer">{display}</span>
-          </PopoverTrigger>
+          </HoverCardTrigger>
           {fullDisplay.length > maxLength && (
-            <PopoverContent className="max-w-xs">
+            <HoverCardContent className="max-w-xs">
               <p className="whitespace-pre-wrap">
                 <strong>Creador:</strong> {empleadoCreador} <br />
                 <strong>Asignado:</strong> {empleadoAsignado} <br />
                 <strong>Aprobador:</strong> {empleadoAprobador}
               </p>
-            </PopoverContent>
+            </HoverCardContent>
           )}
-        </Popover>
+        </HoverCard>
       );
     },
     filterFn: (row: any, id: string, filterValue: string) => {
-      const { empleadoCreador, empleadoAsignado, empleadoAprobador } = row.original;
+      const { empleadoCreador, empleadoAsignado, empleadoAprobador } =
+        row.original;
       const val = filterValue.toLowerCase();
       return (
         (empleadoCreador?.toLowerCase().includes(val) ?? false) ||
@@ -83,14 +103,14 @@ export const columns: ColumnDef<Nota>[] = [
       );
     },
   },
-
-
   {
     accessorKey: "descripcion",
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() =>
+          column.toggleSorting(column.getIsSorted() === "asc")
+        }
         className="text-center"
       >
         Descripción
@@ -99,30 +119,34 @@ export const columns: ColumnDef<Nota>[] = [
     ),
     cell: ({ row }) => {
       const text = row.original.descripcion;
-      const maxLength = 30; // cantidad de caracteres visibles en la celda
-      const display = text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+      const maxLength = 30;
+      const display =
+        text.length > maxLength
+          ? text.slice(0, maxLength) + "..."
+          : text;
 
       return (
-        <Popover>
-          <PopoverTrigger asChild>
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
             <span className="cursor-pointer">{display}</span>
-          </PopoverTrigger>
+          </HoverCardTrigger>
           {text.length > maxLength && (
-            <PopoverContent className="max-w-80">
+            <HoverCardContent className="max-w-80">
               <p className="whitespace-pre-wrap">{text}</p>
-            </PopoverContent>
+            </HoverCardContent>
           )}
-        </Popover>
+        </HoverCard>
       );
     },
   },
-  // columna estado con icono y color
   {
     accessorKey: "estado",
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() =>
+          column.toggleSorting(column.getIsSorted() === "asc")
+        }
         className="text-left"
       >
         Estado
@@ -137,10 +161,26 @@ export const columns: ColumnDef<Nota>[] = [
         | "RECHAZADA";
 
       const map = {
-        PENDIENTE: { Icon: Clock, color: "text-yellow-500", label: "PENDIENTE" },
-        APROBADA: { Icon: CheckCircle, color: "text-green-600", label: "APROBADA" },
-        FINALIZADA: { Icon: Award, color: "text-blue-600", label: "FINALIZADA" },
-        RECHAZADA: { Icon: XCircle, color: "text-red-600", label: "RECHAZADA" },
+        PENDIENTE: {
+          Icon: Clock,
+          color: "text-yellow-500",
+          label: "PENDIENTE",
+        },
+        APROBADA: {
+          Icon: CheckCircle,
+          color: "text-green-600",
+          label: "APROBADA",
+        },
+        FINALIZADA: {
+          Icon: Award,
+          color: "text-blue-600",
+          label: "FINALIZADA",
+        },
+        RECHAZADA: {
+          Icon: XCircle,
+          color: "text-red-600",
+          label: "RECHAZADA",
+        },
       } as const;
 
       const info = map[estado] ?? map.PENDIENTE;
@@ -154,7 +194,6 @@ export const columns: ColumnDef<Nota>[] = [
       );
     },
   },
-  // acciones
   {
     id: "actions",
     header: "Acciones",
