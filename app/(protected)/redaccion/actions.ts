@@ -257,29 +257,38 @@ export async function aprobarNota(
 
 
 
-export async function finalizarNota(id: string) {
-    // valida parámetros
-    if (!id) throw new Error("Falta el id de la nota");
+export type ActionResult =
+    | { ok: true; result: Nota }
+    | { ok: false; error: string; code?: string; status?: number };
 
-    const session = await getSession();
-    if (!session) throw new Error("No autenticado");
+export async function finalizarNota(id: string): Promise<ActionResult> {
+    try {
+        if (!id) return { ok: false, error: "Falta id de nota", code: "MISSING_ID", status: 400 };
 
-    const nota = await prisma.nota.findUnique({ where: { id } });
+        const session = await getSession();
+        if (!session) return { ok: false, error: "No autenticado", code: "NO_SESSION", status: 401 };
 
-    if (!nota) throw new Error("Nota no encontrada");
-    if (nota.estado !== "APROBADA") throw new Error("La nota aún no está aprobada");
-    if (nota.asignadoEmpleadoId !== session?.IdEmpleado) {
-        throw new Error("No puedes finalizar una nota que no está asignada a ti");
+        const nota = await prisma.nota.findUnique({ where: { id } });
+        if (!nota) return { ok: false, error: "Nota no encontrada", code: "NOT_FOUND", status: 404 };
+
+        if (nota.estado !== "APROBADA")
+            return { ok: false, error: "La nota aún no está aprobada", code: "NOT_APPROVED", status: 409 };
+
+        if (nota.asignadoEmpleadoId !== session.IdEmpleado)
+            return { ok: false, error: "No puedes finalizar una nota que no está asignada a ti", code: "NOT_OWNER", status: 403 };
+
+        const updated = await prisma.nota.update({
+            where: { id },
+            data: { estado: "FINALIZADA" },
+        });
+
+        return { ok: true, result: updated };
+    } catch (err) {
+        // error inesperado: loguear y devolver mensaje genérico
+        console.error("[finalizarNotaAction] unexpected:", err);
+        return { ok: false, error: "Error interno", code: "INTERNAL", status: 500 };
     }
-
-    const updated = await prisma.nota.update({
-        where: { id },
-        data: { estado: "FINALIZADA" },
-    });
-
-    return updated;
 }
-
 
 export async function getNotasFinalizadasHoy(): Promise<Nota[]> {
     const now = new Date();
