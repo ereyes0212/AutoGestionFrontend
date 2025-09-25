@@ -64,10 +64,10 @@ export async function GET() {
             return lines;
         };
 
-        // Función para renderizar tabla por grupo
+        // Función para renderizar grupo
         const renderGroup = (
             title: string,
-            notas: { titulo: string; createAtAdjusted: string }[]
+            notas: { titulo: string }[]
         ) => {
             if (y < 100) {
                 currentPage = pdfDoc.addPage();
@@ -82,94 +82,54 @@ export async function GET() {
                 font: titleFont,
                 color: rgb(0.2, 0.2, 0.2),
             });
-            y -= 25;
+            y -= 20;
 
-            // Dibujar encabezado de tabla
-            const headerHeight = 24;
-            currentPage.drawRectangle({
-                x: 50,
-                y: y - 5,
-                width: width - 100,
-                height: headerHeight,
-                color: rgb(0.85, 0.9, 1),
-            });
-            currentPage.drawText("N°", { x: 55, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-            currentPage.drawText("Título", { x: 85, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-            currentPage.drawText("Hora", { x: width - 100, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-            y -= headerHeight;
+            const maxTitleWidth = width - 100;
+            const rowSpacing = 12;
 
-            const rowPadding = 6;
-            const maxTitleWidth = width - 180;
-            const rowSpacing = 8;
-
-            notas.forEach((nota, index) => {
-                const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título"), bodyFont, 10, maxTitleWidth);
-                const rowHeight = titleLines.length * 12 + rowPadding * 2;
+            notas.forEach((nota) => {
+                const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título"), bodyFont, 11, maxTitleWidth);
+                const rowHeight = titleLines.length * 12;
 
                 if (y - rowHeight < 60) {
                     currentPage = pdfDoc.addPage();
                     y = height - 60;
-
-                    // Redibuja encabezado en nueva página
-                    currentPage.drawRectangle({
-                        x: 50,
-                        y: y - 5,
-                        width: width - 100,
-                        height: headerHeight,
-                        color: rgb(0.85, 0.9, 1),
-                    });
-                    currentPage.drawText("N°", { x: 55, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-                    currentPage.drawText("Título", { x: 85, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-                    currentPage.drawText("Hora", { x: width - 100, y, size: 12, font: titleFont, color: rgb(0.1, 0.2, 0.5) });
-                    y -= headerHeight;
                 }
 
-                // Fondo alternado
-                currentPage.drawRectangle({
+                // Dibujar viñeta
+                currentPage.drawText("•", {
                     x: 50,
-                    y: y - rowHeight + rowPadding,
-                    width: width - 100,
-                    height: rowHeight,
-                    color: index % 2 === 0 ? rgb(0.97, 0.98, 1) : rgb(1, 1, 1),
+                    y,
+                    size: 12,
+                    font: bodyFont,
+                    color: rgb(0.1, 0.2, 0.5), // mismo azul que usabas antes
                 });
 
-                // Línea separadora
-                currentPage.drawRectangle({
-                    x: 50,
-                    y: y - rowHeight + rowPadding,
-                    width: width - 100,
-                    height: 0.5,
-                    color: rgb(0.7, 0.8, 0.9),
-                });
-
-                // Número
-                currentPage.drawText(String(index + 1), { x: 55, y: y - 8, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
-
-                // Título con wrap
+                // Dibujar título
                 titleLines.forEach((line, i) => {
-                    currentPage.drawText(cleanText(line), { x: 85, y: y - 14 * i, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
+                    currentPage.drawText(cleanText(line), {
+                        x: 65, // desplazado a la derecha de la viñeta
+                        y: y - 14 * i,
+                        size: 11,
+                        font: bodyFont,
+                        color: rgb(0.1, 0.1, 0.1),
+                    });
                 });
-
-                // Hora
-                const horaStr: string = new Date(
-                    new Date(nota.createAtAdjusted).getTime() - 6 * 60 * 60 * 1000
-                ).toLocaleTimeString("es-ES", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                });
-                currentPage.drawText(horaStr, { x: width - 100, y: y - 8, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
 
                 y -= rowHeight + rowSpacing;
             });
 
-            y -= 20;
+            y -= 15;
         };
 
         renderGroup("Notas de la mañana", manana);
         renderGroup("Notas de la tarde", tarde);
 
-        // Footer
-        const timestamp = new Date().toLocaleString("es-ES");
+        // Footer ajustado con -6 horas
+        const now = new Date();
+        const adjusted = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+        const timestamp = adjusted.toLocaleString("es-ES");
+
         currentPage.drawText(
             `Generado: ${timestamp} | Total: ${manana.length + tarde.length}`,
             { x: 50, y: 20, size: 9, font: bodyFont, color: rgb(0.4, 0.4, 0.4) }
