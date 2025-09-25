@@ -256,9 +256,14 @@ export async function aprobarNota(
 }
 
 
-// Finalizar nota (redactor asignado)
+
 export async function finalizarNota(id: string) {
+    // valida parámetros
+    if (!id) throw new Error("Falta el id de la nota");
+
     const session = await getSession();
+    if (!session) throw new Error("No autenticado");
+
     const nota = await prisma.nota.findUnique({ where: { id } });
 
     if (!nota) throw new Error("Nota no encontrada");
@@ -267,11 +272,14 @@ export async function finalizarNota(id: string) {
         throw new Error("No puedes finalizar una nota que no está asignada a ti");
     }
 
-    return prisma.nota.update({
+    const updated = await prisma.nota.update({
         where: { id },
         data: { estado: "FINALIZADA" },
     });
+
+    return updated;
 }
+
 
 export async function getNotasFinalizadasHoy(): Promise<Nota[]> {
     const now = new Date();
