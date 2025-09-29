@@ -1,26 +1,46 @@
 version: "3.9"
 
 services:
-  web:
-    build: .
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env       # tu archivo de variables de entorno
-    mem_limit: 1536m  # limita RAM a 1.5 GB
-    restart: unless-stopped
-    container_name: nextjs_app
-
   db:
     image: mariadb:11
+    container_name: mi_mariadb
     restart: unless-stopped
     env_file:
-      - .env       # puedes definir DB_USER, DB_PASSWORD, DB_NAME
-    ports:
-      - "3306:3306"
-    mem_limit: 1024m  # limita RAM a 1 GB
+      - .env
+    # No publicar 3306 al host para mayor seguridad; comentar si necesitas acceso directo:
+    # ports:
+    #   - "3306:3306"
+    mem_limit: 1024m
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build: .
+    container_name: nextjs_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    mem_limit: 1536m
+    depends_on:
+      db:
+        condition: service_healthy
+    # Montar .env y/o volúmenes si lo deseas:
+    # volumes:
+    #   - ./.next:/app/.next   # opcional si haces build en host
+    #   - ./.env:/app/.env     # opcional, pero usamos env_file ya
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   db_data:

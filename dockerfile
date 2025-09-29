@@ -1,39 +1,43 @@
-# Usamos Node LTS
+# ---------- STAGE: builder ----------
 FROM node:20-alpine AS builder
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Copiamos package.json y package-lock.json
+# Instala dependencias completas (dev + prod)
 COPY package*.json ./
-
-# Instalamos todas las dependencias (incluyendo dev para build)
 RUN npm install
 
-# Copiamos el resto del proyecto
+# Copia todo el proyecto (incluye prisma/schema.prisma)
 COPY . .
 
-# Build de Next.js
+# Genera el cliente de Prisma explícitamente (evita dependencia de postinstall)
+# Solo si usas prisma; si tu package.json ya ejecuta prisma generate en postinstall,
+# esto asegura que se ejecute en el builder.
+RUN npx prisma generate || true
+
+# Build de Next.js (genera .next)
 RUN npm run build
 
-# ==================================================
-# Stage final: imagen de producción más ligera
-FROM node:20-alpine
+# ---------- STAGE: runner (producción) ----------
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Copiamos solo dependencias de producción
+# Copiamos package.json para poder usar npm start metadata
 COPY package*.json ./
-RUN npm install --production
 
-# Copiamos el build desde el stage builder
+# Copiamos node_modules desde el builder (tiene @prisma/client generado)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copiamos build y assets desde el builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/package.json ./  # opcional, útil para npm start
+# Si necesitas archivos de prisma en runtime (no es obligatorio si copias node_modules),
+# puedes copiarlos también:
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/next.config.js ./next.config.js
 
-# Exponemos puerto
+ENV NODE_ENV=production
 EXPOSE 3000
 
-# Ejecutamos la app
 CMD ["npm", "start"]
