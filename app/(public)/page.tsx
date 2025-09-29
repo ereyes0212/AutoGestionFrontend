@@ -19,6 +19,7 @@ export default async function LoginPage() {
     redirect("/profile");
   }
 
+
   return (
     <Card className="w-full max-w-md mx-auto bg-gray-800 text-white border-gray-700 shadow-lg">
       <CardHeader className="space-y-1">
