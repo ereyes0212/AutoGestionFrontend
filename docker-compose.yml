@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env       # tu archivo de variables de entorno
+    mem_limit: 1536m  # limita RAM a 1.5 GB
+    restart: unless-stopped
+    container_name: nextjs_app
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    env_file:
+      - .env       # puedes definir DB_USER, DB_PASSWORD, DB_NAME
+    ports:
+      - "3306:3306"
+    mem_limit: 1024m  # limita RAM a 1 GB
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
