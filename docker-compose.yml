@@ -4,11 +4,9 @@ services:
   web:
     build: .
     container_name: nextjs_app
-    restart: unless-stopped
     env_file:
       - .env
-    # Con host networking el contenedor usa la red del host (localhost = host)
-    network_mode: "host"
+    network_mode: "host"     # usa la red del host: localhost dentro del contenedor = localhost del host
     mem_limit: 1536m
     restart: unless-stopped
     logging:
