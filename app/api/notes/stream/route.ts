@@ -1,8 +1,6 @@
-import { getSessionPermisos } from "@/auth";
+// app/api/notes/stream/route.ts
+import { getSessionPermisos } from "@/auth"; // ajusta si hace falta
 import broadcaster from "../broadcaster";
-
-export const runtime = "edge";            // ✅ Edge Runtime
-export const dynamic = "force-dynamic";   // ✅ Evita cacheo de respuesta
 
 export async function GET(req: Request) {
     const permisos = await getSessionPermisos();
@@ -16,23 +14,13 @@ export async function GET(req: Request) {
         start(controller) {
             clientId = broadcaster.register(controller);
 
-            // Enviar comentario inicial para mantener conexión viva
+            // Send an initial comment/heartbeat
             controller.enqueue(new TextEncoder().encode(":ok\n\n"));
-
-            // Opcional: enviar heartbeat cada 15s para evitar timeout del CDN
-            const interval = setInterval(() => {
-                try {
-                    controller.enqueue(new TextEncoder().encode(":heartbeat\n\n"));
-                } catch (e) {
-                    clearInterval(interval);
-                }
-            }, 15000);
         },
         cancel() {
+            // Se ejecuta cuando el cliente cierra la conexión -> desregistrar
             if (clientId !== undefined) {
-                try {
-                    broadcaster.unregister(clientId);
-                } catch (e) { /* noop */ }
+                try { broadcaster.unregister(clientId); } catch (e) { /* noop */ }
             }
         },
     });
