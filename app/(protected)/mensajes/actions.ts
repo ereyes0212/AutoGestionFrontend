@@ -170,7 +170,7 @@ export async function traerMensajes(conversacionId: string, userId: string) {
         const conversacion = await prisma.conversacion.findUnique({
             where: { id: conversacionId },
             include: {
-                participantes: { select: { usuarioId: true } }, // para validar membresía
+                participantes: true, // para validar membresía
                 mensajes: {
                     orderBy: { createdAt: "asc" },
                     include: {
@@ -194,7 +194,7 @@ export async function traerMensajes(conversacionId: string, userId: string) {
             return { status: "FORBIDDEN", mensajes: [] };
         }
 
-        return { status: "OK", mensajes: conversacion.mensajes };
+        return { status: "OK", mensajes: conversacion.mensajes, conversacion };
     } catch (error) {
         console.error("Error al traer mensajes:", error);
         return { status: "ERROR", mensajes: [] };
@@ -227,4 +227,65 @@ export async function sendMessage(
     });
 
     return mensaje;
+}
+
+export async function updateGroupName(conversacionId: string, nuevoNombre: string) {
+    if (!nuevoNombre.trim()) throw new Error("El nombre del grupo es obligatorio");
+
+    const updated = await prisma.conversacion.update({
+        where: { id: conversacionId },
+        data: { nombre: nuevoNombre },
+    });
+
+    return updated;
+}
+
+/**
+ * Agrega usuarios a un grupo existente
+ */
+export async function addUsersToGroup(conversacionId: string, userIds: string[]) {
+    if (userIds.length === 0) return;
+
+    // Evitar duplicados
+    const existingIds = await prisma.participante.findMany({
+        where: { conversacionId, usuarioId: { in: userIds } },
+        select: { usuarioId: true },
+    });
+
+    const filteredIds = userIds.filter(id => !existingIds.some(e => e.usuarioId === id));
+
+    if (filteredIds.length === 0) return;
+
+    await prisma.participante.createMany({
+        data: filteredIds.map(id => ({
+            conversacionId,
+            usuarioId: id,
+            rol: "member",
+        })),
+    });
+}
+
+/**
+ * Expulsa usuarios de un grupo
+ */
+export async function removeUsersFromGroup(conversacionId: string, userIds: string[]) {
+    if (userIds.length === 0) return;
+
+    // Evitar expulsar al creador
+    const conversacion = await prisma.conversacion.findUnique({
+        where: { id: conversacionId },
+        select: { creadorId: true },
+    });
+
+    if (!conversacion) throw new Error("Grupo no encontrado");
+
+    const filteredIds = userIds.filter(id => id !== conversacion.creadorId);
+    if (filteredIds.length === 0) return;
+
+    await prisma.participante.deleteMany({
+        where: {
+            conversacionId,
+            usuarioId: { in: filteredIds },
+        },
+    });
 }

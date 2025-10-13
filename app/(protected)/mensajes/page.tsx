@@ -6,6 +6,7 @@ import { getUsuarios } from "../usuarios/actions";
 import { getChatsForUser } from "./actions";
 import ChatListClient from "./components/chatsList";
 import NewChatDialog from "./components/dialognewChat";
+import NewGroupChatDialog from "./components/dialognewChatGroup";
 
 export default async function EstadoServicio() {
     const permisos = await getSessionPermisos();
@@ -26,11 +27,18 @@ export default async function EstadoServicio() {
                 screenName="Mensajes"
             />
 
-            <div className="flex justify-end mb-2">
+            <div className="flex justify-end mb-2 space-x-4">
                 <NewChatDialog
                     usuarios={usuarios}
                     idUsuarioCreador={session?.IdUser!}
                 />
+                {permisos!.includes("crear_grupo") &&
+
+                    <NewGroupChatDialog
+                        usuarios={usuarios}
+                        idUsuarioCreador={session?.IdUser!}
+                    />
+                }
             </div>
 
             <ChatListClient chats={data} currentUserId={session?.IdUser!} />

@@ -15,11 +15,12 @@ interface Props {
 export default function NewChatDialog({ usuarios, idUsuarioCreador }: Props) {
     const [open, setOpen] = useState(false);
     const router = useRouter();
+
     const handleStartChat = async (idUsuarioDestino: string) => {
         const conversacion = await createPrivateConversation(idUsuarioCreador, idUsuarioDestino);
         if (conversacion && conversacion.conversacion) {
             setOpen(false);
-            router.push(`/mensajes/${conversacion.conversacion.id}/mensaje`); // 👈 Redirige directamente a la conversación
+            router.push(`/mensajes/${conversacion.conversacion.id}/mensaje`);
         }
     };
 
@@ -28,11 +29,13 @@ export default function NewChatDialog({ usuarios, idUsuarioCreador }: Props) {
             <DialogTrigger asChild>
                 <Button>Nuevo Mensaje</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md p-4">
                 <DialogHeader>
                     <DialogTitle>Iniciar nueva conversación</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-2">
+
+                {/* Área de usuarios con scroll */}
+                <div className="mt-4 max-h-72 overflow-y-auto space-y-2">
                     {usuarios.length === 0 ? (
                         <p className="text-sm text-gray-500">No hay usuarios disponibles.</p>
                     ) : (

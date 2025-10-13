@@ -89,6 +89,7 @@ async function main() {
 
     { nombre: "ver_mensajes", descripcion: "Permiso para ver el modulo de mensajes" },
     { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" }
+
   ];
 
   const permisoIds: string[] = [];

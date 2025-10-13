@@ -1,3 +1,4 @@
+import { getUsuarios } from "@/app/(protected)/usuarios/actions";
 import { getSession } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import { Card } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { ChatConversation } from "../../components/conversation";
 export default async function ConversationPage({ params }: { params: { id: string } }) {
     const session = await getSession();
     const result = await traerMensajes(params.id, session?.IdUser!);
+    const usuarios = await getUsuarios();
 
     if (result.status === "NOT_FOUND") {
         return (
@@ -38,7 +40,7 @@ export default async function ConversationPage({ params }: { params: { id: strin
             </div>
         );
     }
-
+    console.log(result.conversacion?.creadorId);
     return (
         <div className="p-4 mx-auto ">
             <HeaderComponent
@@ -47,6 +49,13 @@ export default async function ConversationPage({ params }: { params: { id: strin
                 screenName="Mensajes"
             />
             <ChatConversation
+                creadorId={result.conversacion?.creadorId || ""}
+                nombreActual={result.conversacion?.nombre || ""}
+                participantes={((result.conversacion?.participantes || []).map(p => usuarios.find(u => u.id === p.usuarioId)).filter(Boolean) as any)}
+                usuarios={usuarios}
+                tipo={result.conversacion?.tipo || "private"}
+
+
                 conversacionId={params.id}
                 currentUserId={session?.IdUser!}
                 initialMessages={result.mensajes}
