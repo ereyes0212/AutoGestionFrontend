@@ -23,7 +23,7 @@ export default function useSocket() {
                 const { token } = await tokenRes.json();
 
                 // 3) Conectar al mismo origin (si usás otro host, pon NEXT_PUBLIC_SOCKET_URL)
-                const socket = io("https://autogestion.tiempo.hn", {
+                const socket = io(`${window.location.origin}/api/socketio`, {
                     auth: { token },
                     transports: ["websocket"], // fuerza WebSocket
                     autoConnect: true,
