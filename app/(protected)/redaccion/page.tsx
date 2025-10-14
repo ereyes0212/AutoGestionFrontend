@@ -31,17 +31,24 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
                 screenName="Propuestas notas"
             />
 
-            <div className="mb-4 flex items-center gap-2">
-                <NotasDatePickerClient desdeInit={desde} hastaInit={hasta} />
+            {/* Reemplaza este bloque por el siguiente */}
+            <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {/* Datepicker ocupa toda la anchura en móvil y auto en pantallas >= sm */}
+                <div className="w-full sm:w-auto">
+                    <NotasDatePickerClient desdeInit={desde} hastaInit={hasta} />
+                </div>
 
-                {(permisos?.includes("cambiar_estado_notas")) && (
-                    <DownloadExcelButton />
-                )}
-                {(permisos?.includes("cambiar_estado_notas")) && (
-                    <DownloadPDFButton />
-                )}
-
+                {/* Botones en columna en móvil, en fila en sm+ */}
+                <div className=" col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    {permisos?.includes("cambiar_estado_notas") && (
+                        <DownloadExcelButton />
+                    )}
+                    {permisos?.includes("cambiar_estado_notas") && (
+                        <DownloadPDFButton />
+                    )}
+                </div>
             </div>
+
             <div className="">
                 <NotasRealtimeWrapper initialNotas={data} />
             </div>

@@ -31,7 +31,7 @@ export default function DownloadExcelButton() {
             disabled={loading}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border"
         >
-            {loading ? "Generando..." : "Exportar notas finalizadas"}
+            {loading ? "Generando..." : "Exportar notas"}
         </Button>
     );
 }

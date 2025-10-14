@@ -8,13 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-
 import { Nota } from "../types";
 
 interface NotaListMobileProps {
@@ -23,6 +16,7 @@ interface NotaListMobileProps {
 
 export default function NotaListMobile({ notas }: NotaListMobileProps) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [expandedFeedback, setExpandedFeedback] = useState<Record<string, boolean>>({});
 
     const filteredNotas = notas.filter(
         (nota) =>
@@ -30,6 +24,10 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
             nota.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (nota.empleadoCreador?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
     );
+
+    const toggleFeedback = (id: string) => {
+        setExpandedFeedback((prev) => ({ ...prev, [id]: !prev[id] }));
+    };
 
     return (
         <div className="space-y-4 max-w-3xl mx-auto">
@@ -61,68 +59,69 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                     filteredNotas.map((nota) => (
                         <Card key={nota.id}>
                             <CardContent className="p-0">
-                                <div className="flex items-center justify-between p-4">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-2">
                                     <div className="flex-1 min-w-0 space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-medium truncate">{nota.titulo}</h3>
-                                            <Badge
-                                                variant={
-                                                    nota.estado === "APROBADA"
-                                                        ? "default"
-                                                        : nota.estado === "PENDIENTE"
-                                                            ? "secondary"
-                                                            : nota.estado === "FINALIZADA"
-                                                                ? "outline"
-                                                                : "destructive"
-                                                }
-                                                className="text-xs"
-                                            >
-                                                {nota.estado}
-                                            </Badge>
+                                        <Badge
+                                            variant={
+                                                nota.estado === "APROBADA"
+                                                    ? "default"
+                                                    : nota.estado === "PENDIENTE"
+                                                        ? "secondary"
+                                                        : nota.estado === "FINALIZADA"
+                                                            ? "outline"
+                                                            : "destructive"
+                                            }
+                                            className="text-xs w-fit"
+                                        >
+                                            {nota.estado}
+                                        </Badge>
+
+                                        <h3 className="font-medium text-base leading-snug">{nota.titulo}</h3>
+
+                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                            {nota.descripcion || "Sin descripción"}
+                                        </p>
+
+                                        <div className="pt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                                            {nota.empleadoCreador && (
+                                                <p className="text-xs text-muted-foreground leading-relaxed">Creado: {nota.empleadoCreador}</p>
+                                            )}
+                                            {nota.empleadoAsignado && (
+                                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                                    Asignado: {nota.empleadoAsignado}
+                                                </p>
+                                            )}
+                                            {nota.empleadoAprobador && (
+                                                <p className="text-xs text-muted-foreground leading-relaxed">
+                                                    Aprobado: {nota.empleadoAprobador}
+                                                </p>
+                                            )}
                                         </div>
 
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <p className="text-sm text-muted-foreground truncate">
-                                                        {nota.descripcion || "Sin descripción"}
-                                                    </p>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p className="max-w-xs">
-                                                        {nota.descripcion || "Sin descripción"}
-                                                    </p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-
-                                        {nota.empleadoCreador && (
-                                            <p className="text-xs text-muted-foreground">
-                                                Creado por: {nota.empleadoCreador}
-                                            </p>
-                                        )}
-                                        {nota.empleadoAsignado && (
-                                            <p className="text-xs text-muted-foreground">
-                                                Asignado por: {nota.empleadoAsignado}
-                                            </p>
-                                        )}
-                                        {nota.empleadoAprobador && (
-                                            <p className="text-xs text-muted-foreground">
-                                                Aprobado por: {nota.empleadoAprobador}
-                                            </p>
+                                        {/* Feedback de notas rechazadas */}
+                                        {nota.estado === "RECHAZADA" && nota.fellback && (
+                                            <div className="mt-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => toggleFeedback(nota.id!)}
+                                                    className="flex items-center gap-1"
+                                                >
+                                                    <Info className="h-3 w-3" />
+                                                    {expandedFeedback[nota.id!] ? "Ocultar feedback" : "Ver feedback"}
+                                                </Button>
+                                                {expandedFeedback[nota.id!] && (
+                                                    <div className="mt-1 p-2 border rounded-md text-sm whitespace-pre-wrap">
+                                                        {nota.fellback}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
 
                                     {/* Botón editar */}
-                                    <Link
-                                        href={`/redaccion/${nota.id}/edit`}
-                                        className="ml-2 flex-shrink-0"
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 rounded-full"
-                                        >
+                                    <Link href={`/redaccion/${nota.id}/edit`} className="ml-2 flex-shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                                             <Pencil className="h-4 w-4" />
                                             <span className="sr-only">Editar nota</span>
                                         </Button>
@@ -136,9 +135,7 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                         <Info className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                         <p className="text-muted-foreground">No se encontraron notas.</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                            {searchTerm
-                                ? "Intenta con otra búsqueda."
-                                : "Crea una nueva nota para comenzar."}
+                            {searchTerm ? "Intenta con otra búsqueda." : "Crea una nueva nota para comenzar."}
                         </p>
                     </div>
                 )}

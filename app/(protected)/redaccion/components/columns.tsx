@@ -8,14 +8,11 @@ import {
 } from "@/components/ui/hover-card";
 import { ColumnDef } from "@tanstack/react-table";
 import {
-  ArrowUpDown,
-  Award,
-  CheckCircle,
-  Clock,
-  XCircle
+  ArrowUpDown
 } from "lucide-react";
 import { Nota } from "../types";
 import { ActionsCell } from "./actionCell";
+import { EstadoCell } from "./EstadCell";
 export const columns: ColumnDef<Nota>[] = [
   {
     accessorKey: "titulo",
@@ -129,8 +126,7 @@ export const columns: ColumnDef<Nota>[] = [
         </HoverCard>
       );
     },
-  },
-  {
+  }, {
     accessorKey: "estado",
     header: ({ column }) => (
       <Button
@@ -144,47 +140,9 @@ export const columns: ColumnDef<Nota>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => {
-      const estado = row.original.estado as
-        | "PENDIENTE"
-        | "APROBADA"
-        | "FINALIZADA"
-        | "RECHAZADA";
-
-      const map = {
-        PENDIENTE: {
-          Icon: Clock,
-          color: "text-yellow-500",
-          label: "PENDIENTE",
-        },
-        APROBADA: {
-          Icon: CheckCircle,
-          color: "text-green-600",
-          label: "APROBADA",
-        },
-        FINALIZADA: {
-          Icon: Award,
-          color: "text-blue-600",
-          label: "FINALIZADA",
-        },
-        RECHAZADA: {
-          Icon: XCircle,
-          color: "text-red-600",
-          label: "RECHAZADA",
-        },
-      } as const;
-
-      const info = map[estado] ?? map.PENDIENTE;
-      const Icon = info.Icon;
-
-      return (
-        <div className="flex items-center">
-          <Icon className={`mr-2 h-4 w-4 ${info.color}`} />
-          <span className="text-sm font-medium">{info.label}</span>
-        </div>
-      );
-    },
-  },
+    cell: ({ row }) => <EstadoCell estado={row.original.estado} feedback={row.original.fellback || ''} />,
+  }
+  ,
   {
     id: "actions",
     header: "Acciones",
