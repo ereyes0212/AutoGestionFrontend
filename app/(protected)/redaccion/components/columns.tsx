@@ -96,37 +96,62 @@ export const columns: ColumnDef<Nota>[] = [
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() =>
-          column.toggleSorting(column.getIsSorted() === "asc")
-        }
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         className="text-center"
       >
-        Descripción
+        Descripción y fuente
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
     cell: ({ row }) => {
-      const text = row.original.descripcion;
+      const descripcion = row.original.descripcion || "";
+      const fuente = row.original.fuente || "";
       const maxLength = 30;
+      const combinedText = `${descripcion}${fuente ? ` (Fuente: ${fuente})` : ""}`;
       const display =
-        text.length > maxLength
-          ? text.slice(0, maxLength) + "..."
-          : text;
+        combinedText.length > maxLength
+          ? combinedText.slice(0, maxLength) + "..."
+          : combinedText;
+
+      // Detectar si la fuente es un enlace
+      const isUrl = fuente.startsWith("http://") || fuente.startsWith("https://");
 
       return (
         <HoverCard openDelay={200} closeDelay={100}>
           <HoverCardTrigger asChild>
             <span className="cursor-pointer">{display}</span>
           </HoverCardTrigger>
-          {text.length > maxLength && (
+          {combinedText.length > maxLength && (
             <HoverCardContent className="max-w-80">
-              <p className="whitespace-pre-wrap">{text}</p>
+              <p className="whitespace-pre-wrap">
+                {descripcion}
+                {fuente && (
+                  <>
+                    <br />
+                    <strong>Fuente:</strong>{" "}
+                    {isUrl ? (
+                      <a
+                        href={fuente}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline hover:text-blue-800"
+                      >
+                        {fuente}
+                      </a>
+                    ) : (
+                      fuente
+                    )}
+                  </>
+                )}
+              </p>
             </HoverCardContent>
           )}
         </HoverCard>
       );
     },
-  }, {
+  }
+  ,
+  {
     accessorKey: "estado",
     header: ({ column }) => (
       <Button

@@ -1,6 +1,6 @@
 "use client";
 
-import { Info, Pencil, Plus, Search } from "lucide-react";
+import { Award, CheckCircle, Clock, Info, Pencil, Plus, Search, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -24,6 +24,12 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
             nota.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (nota.empleadoCreador?.toLowerCase() ?? "").includes(searchTerm.toLowerCase())
     );
+    const estadoMap = {
+        PENDIENTE: { Icon: Clock, color: "bg-yellow-100 text-yellow-800", label: "PENDIENTE" },
+        APROBADA: { Icon: CheckCircle, color: "bg-green-100 text-green-800", label: "APROBADA" },
+        FINALIZADA: { Icon: Award, color: "bg-blue-100 text-blue-800", label: "FINALIZADA" },
+        RECHAZADA: { Icon: XCircle, color: "bg-red-100 text-red-800", label: "RECHAZADA" },
+    } as const;
 
     const toggleFeedback = (id: string) => {
         setExpandedFeedback((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -62,18 +68,9 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-2">
                                     <div className="flex-1 min-w-0 space-y-1">
                                         <Badge
-                                            variant={
-                                                nota.estado === "APROBADA"
-                                                    ? "default"
-                                                    : nota.estado === "PENDIENTE"
-                                                        ? "secondary"
-                                                        : nota.estado === "FINALIZADA"
-                                                            ? "outline"
-                                                            : "destructive"
-                                            }
-                                            className="text-xs w-fit"
+                                            className={`text-xs w-fit ${estadoMap[nota.estado as keyof typeof estadoMap].color}`}
                                         >
-                                            {nota.estado}
+                                            {estadoMap[nota.estado as keyof typeof estadoMap].label}
                                         </Badge>
 
                                         <h3 className="font-medium text-base leading-snug">{nota.titulo}</h3>

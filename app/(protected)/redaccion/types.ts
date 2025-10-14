@@ -6,6 +6,7 @@ export type Nota = {
   descripcion: string;
   estado: 'PENDIENTE' | 'APROBADA' | 'FINALIZADA' | 'RECHAZADA';
   titulo: string;
+  fuente: string | null;
   fellback?: string | null;
   createAt?: Date;
   updateAt?: Date;

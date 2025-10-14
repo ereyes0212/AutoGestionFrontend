@@ -84,6 +84,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
     empleadoAprobador: "Aprobador",
     titulo: "Título",
     estado: "Estado",
+    descripcion: "Descripción",
     // agrega aquí más mapeos si querés
   };
 

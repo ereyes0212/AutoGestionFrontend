@@ -443,6 +443,7 @@ model Nota {
   aprobadorEmpleadoId String?    @db.VarChar(36)
   estado              NotaEstado
   titulo              String     @db.VarChar(250)
+  fuente              String?    @db.VarChar(250)
   descripcion         String     @db.LongText
   fellback            String?    @db.LongText
   createAt            DateTime   @default(now()) @db.DateTime(6)

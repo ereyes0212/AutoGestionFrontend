@@ -98,9 +98,11 @@ export function NotaFormulario({
           // Actualizar título/descripcion si cambiaron (evita sobreescribir campos nulos)
           const tituloParaActualizar = data.titulo?.trim();
           const descripcionParaActualizar = (data as any).descripcion;
+          const fuenteParaActualizar = data.fuente?.trim();
           if (tituloParaActualizar !== undefined || descripcionParaActualizar !== undefined) {
             await updateNota(data.id, {
               ...(tituloParaActualizar !== undefined ? { titulo: tituloParaActualizar } : {}),
+              ...(fuenteParaActualizar !== undefined ? { fuente: fuenteParaActualizar ?? null } : {}),
               ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
             });
           }
@@ -141,6 +143,7 @@ export function NotaFormulario({
               creadorEmpleadoId: data.creadorEmpleadoId,
               titulo,
               descripcion: allDescriptions[i] ?? "",
+              fuente: data.fuente?.trim() || '',
             })
           )
         );
@@ -194,6 +197,34 @@ export function NotaFormulario({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="fuente"
+              render={({ field }) => (
+                <FormItem className="w-full mt-2">
+                  <FormLabel>Fuente</FormLabel>
+                  <FormControl>
+                    <Input
+                      required={false}
+                      placeholder="Ingresa la fuente de la información"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                      disabled={
+                        !canChangeEstado &&
+                        (estado === "APROBADA" || estado === "FINALIZADA" || estado === "RECHAZADA")
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription>Fuente de la información.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+
+            />
+
             {/* Descripción principal — queda debajo porque está dentro del mismo bloque que hace span en sm */}
             <FormField
               control={form.control}
@@ -242,6 +273,7 @@ export function NotaFormulario({
                     </Button>
                   </div>
                 </div>
+
 
                 {/* descripción (debajo, full width) */}
                 <div>

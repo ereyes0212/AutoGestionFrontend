@@ -11,10 +11,12 @@ export async function createNota({
     creadorEmpleadoId,
     titulo,
     descripcion,
+    fuente
 }: {
     creadorEmpleadoId: string;
     titulo: string;
     descripcion: string;
+    fuente: string;
 }) {
     const permisos = await getSessionPermisos();
 
@@ -26,6 +28,7 @@ export async function createNota({
             titulo,
             estado: "PENDIENTE",
             creadorEmpleadoId,
+            fuente,
             descripcion,
             asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
             aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
@@ -153,12 +156,13 @@ export async function tomarNota(id: string) {
 
 export async function updateNota(
     id: string,
-    data: { titulo?: string; descripcion?: string | null }
+    data: { titulo?: string; descripcion?: string | null; fuente?: string | null }
 ): Promise<Nota> {
     try {
         const updatePayload: Record<string, any> = {};
         if (data.titulo !== undefined) updatePayload.titulo = data.titulo;
         if (data.descripcion !== undefined) updatePayload.descripcion = data.descripcion ?? undefined;
+        if (data.fuente !== undefined) updatePayload.fuente = data.fuente ?? null;
 
         const nota = await prisma.nota.update({
             where: { id },
