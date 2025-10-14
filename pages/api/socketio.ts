@@ -16,10 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
     console.log("Inicializando Socket.IO (pages/api/socketio.ts)...");
 
     const io = new IOServer(res.socket.server, {
+        path: "/api/socketio", // <-- importante: coincide con la ruta que usás desde el cliente
         cors: {
             origin: process.env.CORS_ORIGIN ?? "http://localhost:3000",
             credentials: true,
         },
+        transports: ['polling', 'websocket'] // permitir polling como fallback
     });
 
     // Guardamos la instancia para reutilizarla

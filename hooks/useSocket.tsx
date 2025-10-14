@@ -23,10 +23,12 @@ export default function useSocket() {
                 const { token } = await tokenRes.json();
 
                 // 3) Conectar al mismo origin (si usás otro host, pon NEXT_PUBLIC_SOCKET_URL)
-                const socket = io(`${window.location.origin}/api/socketio`, {
+                const socket = io(window.location.origin, {
+                    path: '/api/socketio',      // <-- coincide con el server (o '/socket.io' si elegís eso)
                     auth: { token },
-                    transports: ["websocket"], // fuerza WebSocket
+                    transports: ['polling', 'websocket'], // polling first, then upgrade
                     autoConnect: true,
+                    withCredentials: true,
                 });
 
                 socketRef.current = socket;
