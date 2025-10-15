@@ -53,6 +53,7 @@ export default function ChatBox({
             setMessages(formatted.slice(-20));
         });
     }, [conversacionId, currentUserId]);
+    const chatName = nombre ?? (tipo === "PRIVATE" ? initialLastMessage?.autor?.usuario : "Chat");
 
     useEffect(() => {
         if (bottomRef.current) {
@@ -156,7 +157,7 @@ export default function ChatBox({
                     <div className="p-3 flex-1 overflow-auto" style={{ maxHeight: "280px" }}>
                         <div className="space-y-3">
                             {messages.map((m, i) => {
-                                const isMe = m.autor?.usuario === "Tú" || m.autor?.id === undefined;
+                                const isMe = m.autor?.id === currentUserId; // <-- cambio
                                 return (
                                     <div key={m.id ?? `${i}-${m.createdAt}`} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                                         <div className={`px-3 py-2 rounded-xl ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`} style={{ maxWidth: "75%" }}>

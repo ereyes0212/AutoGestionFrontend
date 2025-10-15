@@ -1,8 +1,6 @@
 // components/SocketNotifier.tsx
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import useSocket from "@/hooks/useSocket";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -18,7 +16,6 @@ export default function SocketNotifier({
 }) {
     const { socketRef } = useSocket();
     const socket = socketRef?.current;
-    const { toast } = useToast();
     const router = useRouter();
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -78,27 +75,6 @@ export default function SocketNotifier({
                     console.error("Error dispatching open-chat:", err);
                 }
 
-                // Mostrar toast (opcional: puedes quitar si no lo querés)
-                const preview = contenido.length > 120 ? contenido.slice(0, 120) + "…" : contenido;
-                const title = m?.autor?.usuario ?? "Nuevo mensaje";
-
-                toast({
-                    title,
-                    description: preview,
-                    action: (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                                if (onNotifyClick) onNotifyClick(conversacionId ?? null);
-                                if (conversacionId) router.push(`/mensajes/${conversacionId}/mensaje`);
-                            }}
-                        >
-                            Abrir
-                        </Button>
-                    ),
-                    duration: 6000,
-                });
             } catch (err) {
                 console.error("SocketNotifier error:", err);
             }
@@ -108,7 +84,7 @@ export default function SocketNotifier({
         return () => {
             try { socket.off("message", handleMessage); } catch { /* ignore */ }
         };
-    }, [socket, currentUserId, getActiveConversationId, onNotifyClick, router, toast]);
+    }, [socket, currentUserId, getActiveConversationId, onNotifyClick, router]);
 
     return null;
 }
