@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import useSocket from "@/hooks/useSocket";
-import { Send } from "lucide-react";
+import { ChevronsDown, ChevronsUp, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-// Actions
 
 type MiniMensaje = {
     id?: string;
@@ -35,6 +33,7 @@ export default function ChatBox({
     const { socketRef, connected } = useSocket();
     const socket = socketRef?.current;
     const [open, setOpen] = useState(true);
+    const [minimized, setMinimized] = useState(false);
     const [messages, setMessages] = useState<MiniMensaje[]>(initialLastMessage ? [initialLastMessage] : []);
     const [texto, setTexto] = useState("");
     const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -61,7 +60,7 @@ export default function ChatBox({
                 try { bottomRef.current!.scrollIntoView({ behavior: "smooth", block: "end" }); } catch { }
             }, 30);
         }
-    }, [messages]);
+    }, [messages, minimized]);
 
     useEffect(() => {
         if (!socket) return;
@@ -97,7 +96,6 @@ export default function ChatBox({
         setSending(true);
         const contenido = texto.trim();
 
-        // local optimistic message
         const tempId = `temp-${Math.random().toString(36).slice(2, 9)}`;
         const optimistic: MiniMensaje = {
             id: tempId,
@@ -109,7 +107,6 @@ export default function ChatBox({
         setTexto("");
 
         try {
-            // Usar action directamente
             const mensaje = await sendMessage(conversacionId, currentUserId, contenido, []);
             setMessages((prev) =>
                 prev.map((x) =>
@@ -119,7 +116,6 @@ export default function ChatBox({
                 )
             );
 
-            // Emitir por socket si está conectado
             if (socket && connected) {
                 socket.emit("send_message", { conversacionId, contenido, attachments: [] });
             }
@@ -145,41 +141,52 @@ export default function ChatBox({
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setMinimized((m) => !m)}>
+                        {minimized ? <ChevronsUp className="w-4 h-4" /> : <ChevronsDown className="w-4 h-4" />}
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => { setOpen(false); onClose(); }}>
                         Cerrar
                     </Button>
                 </div>
             </div>
 
-            {/* messages */}
-            <div className="p-3 flex-1 overflow-auto" style={{ maxHeight: "280px" }}>
-                <div className="space-y-3">
-                    {messages.map((m, i) => {
-                        const isMe = m.autor?.usuario === "Tú" || m.autor?.id === undefined;
-                        return (
-                            <div key={m.id ?? `${i}-${m.createdAt}`} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                                <div className={`px-3 py-2 rounded-xl ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`} style={{ maxWidth: "75%" }}>
-                                    <div className="text-sm">{m.contenido}</div>
-                                    <div className="text-xs text-muted-foreground mt-1 text-right">{m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <div ref={bottomRef} />
-                </div>
-            </div>
+            {/* cuerpo del chat */}
+            {!minimized && (
+                <>
+                    <div className="p-3 flex-1 overflow-auto" style={{ maxHeight: "280px" }}>
+                        <div className="space-y-3">
+                            {messages.map((m, i) => {
+                                const isMe = m.autor?.usuario === "Tú" || m.autor?.id === undefined;
+                                return (
+                                    <div key={m.id ?? `${i}-${m.createdAt}`} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                                        <div className={`px-3 py-2 rounded-xl ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`} style={{ maxWidth: "75%" }}>
+                                            <div className="text-sm">{m.contenido}</div>
+                                            <div className="text-xs text-muted-foreground mt-1 text-right">{m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div ref={bottomRef} />
+                        </div>
+                    </div>
 
-            <Separator />
+                    <Separator />
 
-            {/* input */}
-            <div className="p-3">
-                <div className="flex gap-2">
-                    <Input placeholder="Escribe un mensaje..." value={texto} onChange={(e) => setTexto(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }} />
-                    <Button size="icon" onClick={handleSend} disabled={sending}>
-                        <Send className="w-4 h-4" />
-                    </Button>
-                </div>
-            </div>
+                    <div className="p-3">
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Escribe un mensaje..."
+                                value={texto}
+                                onChange={(e) => setTexto(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
+                            />
+                            <Button size="icon" onClick={handleSend} disabled={sending}>
+                                <Send className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }
