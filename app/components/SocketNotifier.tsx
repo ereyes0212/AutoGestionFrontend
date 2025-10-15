@@ -33,6 +33,7 @@ export default function SocketNotifier({
         if (!socket) return;
 
         const handleMessage = (m: any) => {
+            console.log("SocketNotifier received message:", m);
             try {
                 const autorId = m?.autor?.id ?? m?.autorId ?? null;
                 const conversacionId = m?.conversacionId ?? m?.conversacion?.id ?? null;

@@ -42,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
         const user = (socket as any).user;
         console.log("socket conectado:", user?.id, socket.id);
 
+        // Unimos el socket a su canal de usuario (para notificaciones globales)
         socket.join(`user:${user.id}`);
 
         socket.on("join_conversation", async (conversacionId: string, ack?: Function) => {
@@ -95,7 +96,23 @@ export default async function handler(req: NextApiRequest, res: NextSocketApiRes
                     data: { updatedAt: new Date() },
                 });
 
+                // 1) Emitir a la sala de la conversación (quienes están "dentro" del chat)
                 io.to(`conversation:${conversacionId}`).emit("message", mensaje);
+
+                // 2) Emitir también a cada usuario participante en su sala user:<id>.
+                //    Esto permite que sockets globales (ej. SocketNotifier) reciban la notificación,
+                //    aunque no estén unidos a la sala conversation:<id>.
+                try {
+                    for (const p of participantes) {
+                        // opcional: evitar notificar al autor (si no quieres que su otra sesión reciba toast)
+                        if (p.usuarioId === user.id) continue;
+                        io.to(`user:${p.usuarioId}`).emit("message", mensaje);
+                        console.debug(`Emitted message to user:${p.usuarioId}`);
+                    }
+                } catch (emitErr) {
+                    console.error("Error emitiendo a users:", emitErr);
+                }
+
                 ack?.({ status: "OK", mensaje });
             } catch (err) {
                 console.error("send_message error", err);
