@@ -13,6 +13,7 @@ type MiniMensaje = {
     contenido: string;
     createdAt?: string;
     autor?: { id?: string; usuario?: string };
+    _fromInitial?: boolean; // para evitar duplicados iniciales
 };
 
 export default function ChatBox({
@@ -32,14 +33,17 @@ export default function ChatBox({
 }) {
     const { socketRef, connected } = useSocket();
     const socket = socketRef?.current;
+
     const [open, setOpen] = useState(true);
     const [minimized, setMinimized] = useState(false);
-    const [messages, setMessages] = useState<MiniMensaje[]>(initialLastMessage ? [initialLastMessage] : []);
+    const [messages, setMessages] = useState<MiniMensaje[]>(
+        initialLastMessage ? [{ ...initialLastMessage, _fromInitial: true }] : []
+    );
     const [texto, setTexto] = useState("");
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [sending, setSending] = useState(false);
 
-    // Cargar mensajes históricos usando action
+    // Cargar mensajes históricos
     useEffect(() => {
         if (!conversacionId || !currentUserId) return;
 
@@ -53,56 +57,69 @@ export default function ChatBox({
             setMessages(formatted.slice(-20));
         });
     }, [conversacionId, currentUserId]);
-    const chatName = nombre ?? (tipo === "PRIVATE" ? initialLastMessage?.autor?.usuario : "Chat");
 
+    // Nombre del chat
+    const chatName =
+        nombre ??
+        (tipo === "PRIVATE"
+            ? messages.find((m) => m.autor?.id !== currentUserId)?.autor?.usuario ?? "Chat"
+            : "Chat");
+
+    // Scroll automático
     useEffect(() => {
         if (bottomRef.current) {
             setTimeout(() => {
-                try { bottomRef.current!.scrollIntoView({ behavior: "smooth", block: "end" }); } catch { }
+                try {
+                    bottomRef.current!.scrollIntoView({ behavior: "smooth", block: "end" });
+                } catch { }
             }, 30);
         }
     }, [messages, minimized]);
 
+    // Socket listener
     useEffect(() => {
         if (!socket) return;
 
         const handler = (m: any) => {
-            try {
-                const convId = m.conversacionId ?? m.conversacion?.id ?? null;
-                if (!convId || convId !== conversacionId) return;
-                setMessages((prev) => {
-                    if (m.id && prev.some((p) => p.id === m.id)) return prev;
-                    const nm: MiniMensaje = {
+            const convId = m.conversacionId ?? m.conversacion?.id ?? null;
+            if (!convId || convId !== conversacionId) return;
+
+            setMessages((prev) => {
+                if (prev.some((p) => p.id === m.id)) return prev;
+                return [
+                    ...prev,
+                    {
                         id: m.id,
                         contenido: m.contenido,
                         createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
                         autor: m.autor ?? undefined,
-                    };
-                    return [...prev, nm];
-                });
-            } catch (err) {
-                console.error("ChatBox handler error", err);
-            }
+                    },
+                ];
+            });
         };
 
         socket.on("message", handler);
+
+        // función de limpieza correcta
         return () => {
-            try { socket.off("message", handler); } catch { }
+            socket.off("message", handler);
         };
     }, [socket, conversacionId]);
+
 
     const handleSend = async () => {
         if (!texto || !texto.trim()) return;
 
         setSending(true);
         const contenido = texto.trim();
-
         const tempId = `temp-${Math.random().toString(36).slice(2, 9)}`;
+
+        // Optimistic
         const optimistic: MiniMensaje = {
             id: tempId,
             contenido,
             createdAt: new Date().toISOString(),
-            autor: { id: undefined, usuario: "Tú" },
+            autor: { id: currentUserId, usuario: "Tú" },
         };
         setMessages((prev) => [...prev, optimistic]);
         setTexto("");
@@ -117,9 +134,10 @@ export default function ChatBox({
                 )
             );
 
-            if (socket && connected) {
-                socket.emit("send_message", { conversacionId, contenido, attachments: [] });
-            }
+            // No emitir por socket si el backend ya lo distribuye
+            // if (socket && connected) {
+            //     socket.emit("send_message", { conversacionId, contenido, attachments: [] });
+            // }
         } catch (err) {
             console.error("Error enviando mensaje:", err);
         } finally {
@@ -133,11 +151,11 @@ export default function ChatBox({
             <div className="flex items-center justify-between px-3 py-2 border-b">
                 <div className="flex items-center gap-3 min-w-0">
                     <Avatar className="w-9 h-9">
-                        <AvatarFallback>{(nombre ?? "G").charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{(chatName ?? "G").charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{nombre ?? (tipo === "GROUP" ? "Grupo" : "Chat")}</div>
-                        <div className="text-xs text-muted-foreground"> {tipo ?? ""} </div>
+                        <div className="text-sm font-medium truncate">{chatName}</div>
+                        <div className="text-xs text-muted-foreground">{tipo ?? ""}</div>
                     </div>
                 </div>
 
@@ -157,12 +175,14 @@ export default function ChatBox({
                     <div className="p-3 flex-1 overflow-auto" style={{ maxHeight: "280px" }}>
                         <div className="space-y-3">
                             {messages.map((m, i) => {
-                                const isMe = m.autor?.id === currentUserId; // <-- cambio
+                                const isMe = m.autor?.id === currentUserId;
                                 return (
                                     <div key={m.id ?? `${i}-${m.createdAt}`} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                                         <div className={`px-3 py-2 rounded-xl ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"}`} style={{ maxWidth: "75%" }}>
                                             <div className="text-sm">{m.contenido}</div>
-                                            <div className="text-xs text-muted-foreground mt-1 text-right">{m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                                            <div className="text-xs text-muted-foreground mt-1 text-right">
+                                                {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
+                                            </div>
                                         </div>
                                     </div>
                                 );
