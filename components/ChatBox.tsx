@@ -1,4 +1,6 @@
 "use client";
+
+import { traerMensajes } from "@/app/(protected)/mensajes/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +43,24 @@ export default function ChatBox({
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [sending, setSending] = useState(false);
 
-    // Scroll al final
+    // 1️⃣ Traer últimos 20 mensajes al montar el chat
+    useEffect(() => {
+        if (!conversacionId || !currentUserId) return;
+
+        traerMensajes(conversacionId, currentUserId)
+            .then(({ mensajes }) => {
+                const formatted = mensajes.map((m: any) => ({
+                    id: m.id,
+                    contenido: m.contenido,
+                    createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : undefined,
+                    autor: m.autor ? { id: m.autor.id, usuario: m.autor.usuario } : undefined,
+                }));
+                setMessages(formatted.slice(-20)); // últimos 20
+            })
+            .catch((err) => console.error("Error cargando historial:", err));
+    }, [conversacionId, currentUserId]);
+
+    // 2️⃣ Scroll automático al final
     useEffect(() => {
         if (bottomRef.current) {
             setTimeout(() => {
@@ -52,7 +71,7 @@ export default function ChatBox({
         }
     }, [messages, minimized]);
 
-    // Escuchar mensajes del socket
+    // 3️⃣ Escuchar mensajes del socket
     useEffect(() => {
         if (!socket) return;
 
@@ -81,7 +100,7 @@ export default function ChatBox({
         };
     }, [socket, conversacionId, currentUserId]);
 
-    // Enviar mensaje por socket
+    // 4️⃣ Enviar mensaje con optimist update
     const handleSend = () => {
         if (!texto.trim() || !socket) return;
 

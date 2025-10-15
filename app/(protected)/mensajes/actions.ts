@@ -289,3 +289,16 @@ export async function removeUsersFromGroup(conversacionId: string, userIds: stri
         },
     });
 }
+
+export async function traerUtlimosMensajes(conversacionId: string, currentUserId: string) {
+    const mensajes = await prisma.mensaje.findMany({
+        where: { conversacionId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        include: {
+            autor: { select: { id: true, usuario: true } },
+        },
+    });
+
+    return { mensajes: mensajes.reverse() }; // invertimos para que queden del más antiguo al más reciente
+}
