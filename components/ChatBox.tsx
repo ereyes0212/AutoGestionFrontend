@@ -43,6 +43,17 @@ export default function ChatBox({
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [sending, setSending] = useState(false);
 
+    // indicador de nuevos mensajes cuando está minimizado
+    const [hasNewWhileMinimized, setHasNewWhileMinimized] = useState(false);
+
+    // audio notification
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    useEffect(() => {
+        // pequeño beep (data URI WAV)
+        audioRef.current = new Audio("/sounds/notification.mp3");
+        try { audioRef.current.volume = 0.6; } catch { /* ignore */ }
+    }, []);
+
     // 1️⃣ Traer últimos 20 mensajes al montar el chat
     useEffect(() => {
         if (!conversacionId || !currentUserId) return;
@@ -78,10 +89,25 @@ export default function ChatBox({
         const handler = (m: any) => {
             const convId = m.conversacionId ?? m.conversacion?.id ?? null;
             if (!convId || convId !== conversacionId) return;
+
+            // Si el autor es currentUser, lo ignoramos (evitamos duplicados si ya optimist update)
             if (m.autor?.id === currentUserId) return;
 
+            // reproducir sonido y marcar indicador si está minimizado
+            try {
+                audioRef.current?.play().catch(() => { });
+            } catch { /* ignore */ }
+
             setMessages((prev) => {
-                if (prev.some((p) => p.id === m.id)) return prev;
+                // evitar duplicados
+                if (prev.some((p) => p.id === m.id)) {
+                    return prev;
+                }
+                // si está minimizado, poner indicador
+                if (minimized) {
+                    setHasNewWhileMinimized(true);
+                }
+
                 return [
                     ...prev,
                     {
@@ -98,9 +124,16 @@ export default function ChatBox({
         return () => {
             socket.off("message", handler);
         };
-    }, [socket, conversacionId, currentUserId]);
+    }, [socket, conversacionId, currentUserId, minimized]);
 
-    // 4️⃣ Enviar mensaje con optimist update
+    // Si el usuario desminimiza, borrar indicador de nuevos mensajes
+    useEffect(() => {
+        if (!minimized) {
+            setHasNewWhileMinimized(false);
+        }
+    }, [minimized]);
+
+    // 4️⃣ Enviar mensaje con optimist update (por socket)
     const handleSend = () => {
         if (!texto.trim() || !socket) return;
 
@@ -118,7 +151,7 @@ export default function ChatBox({
         setMessages((prev) => [...prev, optimistic]);
         setTexto("");
 
-        // Emitir mensaje al socket
+        // Emitir mensaje al socket; el servidor persistirá y devolverá el mensaje real en el ack (o lo emitirá a la room)
         socket.emit("send_message", { conversacionId, contenido, attachments: [] }, (res: any) => {
             if (res?.status === "OK" && res.mensaje) {
                 setMessages((prev) =>
@@ -152,7 +185,7 @@ export default function ChatBox({
 
     return (
         <div className="w-[340px] max-w-[95vw] bg-background shadow-lg rounded-t-xl border overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-3 py-2 border-b">
+            <div className="flex items-center justify-between px-3 py-2 border-b relative">
                 <div className="flex items-center gap-3 min-w-0">
                     <Avatar className="w-9 h-9">
                         <AvatarFallback>{(chatName ?? "G").charAt(0).toUpperCase()}</AvatarFallback>
@@ -162,8 +195,24 @@ export default function ChatBox({
                         <div className="text-xs text-muted-foreground">{tipo ?? ""}</div>
                     </div>
                 </div>
+
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setMinimized((m) => !m)}>
+                    {/* indicador visual cuando está minimizado y llega mensaje */}
+                    {hasNewWhileMinimized && (
+                        <div
+                            title="Nuevo mensaje"
+                            className="mr-1 w-3 h-3 rounded-full bg-rose-500 animate-pulse"
+                        />
+                    )}
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            // invertir minimizado; al abrir se limpia el indicador
+                            setMinimized((m) => !m);
+                        }}
+                    >
                         {minimized ? <ChevronsUp className="w-4 h-4" /> : <ChevronsDown className="w-4 h-4" />}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={onClose}>
