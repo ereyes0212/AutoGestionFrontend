@@ -1,5 +1,4 @@
 "use client";
-import { sendMessage, traerMensajes } from "@/app/(protected)/mensajes/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,19 +41,7 @@ export default function ChatBox({
     const bottomRef = useRef<HTMLDivElement | null>(null);
     const [sending, setSending] = useState(false);
 
-    useEffect(() => {
-        if (!conversacionId || !currentUserId) return;
-        traerMensajes(conversacionId, currentUserId).then(({ mensajes }) => {
-            const formatted = mensajes.map((m: any) => ({
-                id: m.id,
-                contenido: m.contenido,
-                createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : undefined,
-                autor: m.autor ? { id: m.autor.id, usuario: m.autor.usuario } : undefined,
-            }));
-            setMessages(formatted.slice(-20));
-        });
-    }, [conversacionId, currentUserId]);
-
+    // Scroll al final
     useEffect(() => {
         if (bottomRef.current) {
             setTimeout(() => {
@@ -65,6 +52,7 @@ export default function ChatBox({
         }
     }, [messages, minimized]);
 
+    // Escuchar mensajes del socket
     useEffect(() => {
         if (!socket) return;
 
@@ -80,9 +68,7 @@ export default function ChatBox({
                     {
                         id: m.id,
                         contenido: m.contenido,
-                        createdAt: m.createdAt
-                            ? new Date(m.createdAt).toISOString()
-                            : new Date().toISOString(),
+                        createdAt: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
                         autor: m.autor ?? undefined,
                     },
                 ];
@@ -95,42 +81,48 @@ export default function ChatBox({
         };
     }, [socket, conversacionId, currentUserId]);
 
-    const handleSend = async () => {
-        if (!texto || !texto.trim()) return;
+    // Enviar mensaje por socket
+    const handleSend = () => {
+        if (!texto.trim() || !socket) return;
 
         setSending(true);
         const contenido = texto.trim();
         const tempId = `temp-${Math.random().toString(36).slice(2, 9)}`;
 
+        // Optimistic update
         const optimistic: MiniMensaje = {
             id: tempId,
             contenido,
             createdAt: new Date().toISOString(),
             autor: { id: currentUserId, usuario: "Tú" },
         };
-
         setMessages((prev) => [...prev, optimistic]);
         setTexto("");
 
-        try {
-            const mensaje = await sendMessage(conversacionId, currentUserId, contenido, []);
-            setMessages((prev) =>
-                prev.map((x) =>
-                    x.id === tempId
-                        ? {
-                            id: mensaje.id,
-                            contenido: mensaje.contenido,
-                            createdAt: mensaje.createdAt?.toISOString(),
-                            autor: mensaje.autor,
-                        }
-                        : x
-                )
-            );
-        } catch (err) {
-            console.error("Error enviando mensaje:", err);
-        } finally {
+        // Emitir mensaje al socket
+        socket.emit("send_message", { conversacionId, contenido, attachments: [] }, (res: any) => {
+            if (res?.status === "OK" && res.mensaje) {
+                setMessages((prev) =>
+                    prev.map((x) =>
+                        x.id === tempId
+                            ? {
+                                id: res.mensaje.id,
+                                contenido: res.mensaje.contenido,
+                                createdAt: res.mensaje.createdAt
+                                    ? new Date(res.mensaje.createdAt).toISOString()
+                                    : new Date().toISOString(),
+                                autor: res.mensaje.autor,
+                            }
+                            : x
+                    )
+                );
+            } else {
+                console.error("Error enviando mensaje:", res?.error);
+                // Remover mensaje optimista si falla
+                setMessages((prev) => prev.filter((x) => x.id !== tempId));
+            }
             setSending(false);
-        }
+        });
     };
 
     const chatName =
@@ -168,7 +160,10 @@ export default function ChatBox({
                             {messages.map((m, i) => {
                                 const isMe = m.autor?.id === currentUserId;
                                 return (
-                                    <div key={m.id ?? `${i}-${m.createdAt}`} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                                    <div
+                                        key={m.id ?? `${i}-${m.createdAt}`}
+                                        className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                                    >
                                         <div
                                             className={`px-3 py-2 rounded-xl ${isMe ? "bg-primary text-primary-foreground" : "bg-muted"
                                                 }`}
