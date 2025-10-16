@@ -22,11 +22,7 @@ export async function createNota({
 
     const esJefe = permisos!.includes("cambiar_estado_notas");
 
-    // SHIFT de 6 horas en ms (restaremos 6h)
-    const SHIFT_MS = 6 * 60 * 60 * 1000;
 
-    // fecha que vamos a guardar en createAt (ahora - 6h)
-    const createdAtToSave = new Date(Date.now() - SHIFT_MS);
 
     // crea la nota (guardando createAt con -6h)
     const nuevaNota = await prisma.nota.create({
@@ -38,7 +34,6 @@ export async function createNota({
             descripcion,
             asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
             aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
-            createAt: createdAtToSave,
         },
     });
 

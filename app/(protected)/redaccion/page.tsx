@@ -19,10 +19,7 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
     // obtiene las notas iniciales en el server
     const data = await getNotas(desde, hasta);
 
-    // 🔽 Ordena por fecha de creación (más recientes primero)
-    const notasOrdenadas = [...data].sort(
-        (a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
-    );
+
 
     return (
         <div className="container mx-auto py-2">
@@ -49,7 +46,7 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
 
             <div>
                 {/* 🔽 Enviamos la lista ya ordenada */}
-                <NotasRealtimeWrapper initialNotas={notasOrdenadas} />
+                <NotasRealtimeWrapper initialNotas={data} />
             </div>
         </div>
     );
