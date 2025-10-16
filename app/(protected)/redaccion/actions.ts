@@ -22,7 +22,13 @@ export async function createNota({
 
     const esJefe = permisos!.includes("cambiar_estado_notas");
 
-    // crea la nota
+    // SHIFT de 6 horas en ms (restaremos 6h)
+    const SHIFT_MS = 6 * 60 * 60 * 1000;
+
+    // fecha que vamos a guardar en createAt (ahora - 6h)
+    const createdAtToSave = new Date(Date.now() - SHIFT_MS);
+
+    // crea la nota (guardando createAt con -6h)
     const nuevaNota = await prisma.nota.create({
         data: {
             titulo,
@@ -32,7 +38,7 @@ export async function createNota({
             descripcion,
             asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
             aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
-            // si tu schema define createAt con default now() no hace falta setearlo
+            createAt: createdAtToSave,
         },
     });
 
@@ -54,7 +60,6 @@ export async function createNota({
             empleadoAsignado: "No asignado",
             empleadoAprobador: "No asignado",
         };
-
 
     // buscar jefes (tu query adaptada)
     const jefes = await prisma.empleados.findMany({
@@ -110,6 +115,7 @@ export async function createNota({
 
     return notaFormateada;
 }
+
 
 // Redactor toma nota
 export async function tomarNota(id: string) {
@@ -318,106 +324,70 @@ export async function getNotasFinalizadasHoy(): Promise<Nota[]> {
     }));
 }
 
-export async function getNotas(desde?: string | Date, hasta?: string | Date): Promise<Nota[]> {
+const HN_OFFSET_MS = 6 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function startUtcForLocalDate(v: string | Date): Date {
+    // si recibimos 'YYYY-MM-DD'
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+        const [y, mm, dd] = v.split('-').map(Number);
+        // local midnight HN (00:00 HN) es UTC (00:00 + 6h) => UTC y: Date.UTC(y,mm-1,dd,6,0,0)
+        return new Date(Date.UTC(y, mm - 1, dd, 6, 0, 0));
+    }
+
+    // si es Date (o string parseable), normalizamos a Date
+    const d = v instanceof Date ? v : new Date(v);
+    if (isNaN(d.getTime())) throw new Error('Fecha inválida: ' + v);
+
+    // trasladamos el instante -6h para obtener la fecha local en HN,
+    // y extraemos su YMD (usando getters UTC para evitar dependencias del SO)
+    const shifted = new Date(d.getTime() - HN_OFFSET_MS);
+    const y = shifted.getUTCFullYear();
+    const mo = shifted.getUTCMonth();
+    const day = shifted.getUTCDate();
+    return new Date(Date.UTC(y, mo, day, 6, 0, 0));
+}
+
+export async function getNotas(desde?: string | Date, hasta?: string | Date): Promise<any[]> {
     try {
         const where: any = {};
 
-        const parseStartOfDay = (v: string | Date) => {
-            if (v instanceof Date) {
-                const d = new Date(v);
-                d.setHours(0, 0, 0, 0);
-                return d;
-            }
-            if (typeof v === "string") {
-                const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                if (m) {
-                    const y = Number(m[1]);
-                    const mo = Number(m[2]) - 1;
-                    const day = Number(m[3]);
-                    return new Date(y, mo, day, 0, 0, 0, 0);
-                } else {
-                    const d = new Date(v);
-                    if (isNaN(d.getTime())) throw new Error("Fecha inválida: " + v);
-                    d.setHours(0, 0, 0, 0);
-                    return d;
-                }
-            }
-            throw new Error("Tipo de fecha no soportado");
-        };
-
-        const parseEndOfDay = (v: string | Date) => {
-            if (v instanceof Date) {
-                const d = new Date(v);
-                d.setHours(23, 59, 59, 999);
-                return d;
-            }
-            if (typeof v === "string") {
-                const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-                if (m) {
-                    const y = Number(m[1]);
-                    const mo = Number(m[2]) - 1;
-                    const day = Number(m[3]);
-                    return new Date(y, mo, day, 23, 59, 59, 999);
-                } else {
-                    const d = new Date(v);
-                    if (isNaN(d.getTime())) throw new Error("Fecha inválida: " + v);
-                    d.setHours(23, 59, 59, 999);
-                    return d;
-                }
-            }
-            throw new Error("Tipo de fecha no soportado");
-        };
-
-        // ===== Ajuste sencillo para servidor adelantado +6h: sólo para el caso "hoy"
-        const SHIFT_MS = 6 * 60 * 60 * 1000; // 6 horas en ms
-
         if (!desde && !hasta) {
-            // 1) Tomamos "ahora" en servidor, lo desplazamos -6h para obtener la hora local real
+            // traer "hoy" en HN
             const now = new Date();
-            const shifted = new Date(now.getTime() - SHIFT_MS);
-
-            // 2) Calculamos inicio y fin del día en esa hora local (shifted)
-            const startShifted = new Date(shifted);
-            startShifted.setHours(0, 0, 0, 0);
-
-            const endShifted = new Date(shifted);
-            endShifted.setHours(23, 59, 59, 999);
-
-            // 3) Convertimos esos límites de vuelta al timeline del servidor sumando +6h
-            const startForQuery = new Date(startShifted.getTime() + SHIFT_MS);
-            const endForQuery = new Date(endShifted.getTime() + SHIFT_MS);
-
-            where.createAt = { gte: startForQuery, lte: endForQuery };
+            const startUtc = startUtcForLocalDate(now); // inicio del día HN en UTC
+            const nextStartUtc = new Date(startUtc.getTime() + DAY_MS);
+            where.createAt = { gte: startUtc, lt: nextStartUtc };
         } else {
             if (desde) {
-                const d = parseStartOfDay(desde);
-                where.createAt = { ...(where.createAt ?? {}), gte: d };
+                const startUtc = startUtcForLocalDate(desde);
+                where.createAt = { ...(where.createAt ?? {}), gte: startUtc };
             }
-
             if (hasta) {
-                const h = parseEndOfDay(hasta);
-                where.createAt = { ...(where.createAt ?? {}), lte: h };
+                // usamos el inicio del siguiente día local y lt (strict)
+                const startNextUtc = startUtcForLocalDate(hasta);
+                const nextStartUtc = new Date(startNextUtc.getTime() + DAY_MS);
+                where.createAt = { ...(where.createAt ?? {}), lt: nextStartUtc };
             }
         }
 
         const notas = await prisma.nota.findMany({
             where,
-            orderBy: { createAt: "desc" },
+            orderBy: { createAt: 'desc' },
             include: { creador: true, asignado: true, aprobador: true },
         });
 
         return notas.map((n) => ({
             ...n,
-            empleadoCreador: n.creador?.nombre ?? "No asignado",
-            empleadoAsignado: n.asignado?.nombre ?? "No asignado",
-            empleadoAprobador: n.aprobador?.nombre ?? "No asignado",
+            empleadoCreador: n.creador?.nombre ?? 'No asignado',
+            empleadoAsignado: n.asignado?.nombre ?? 'No asignado',
+            empleadoAprobador: n.aprobador?.nombre ?? 'No asignado',
         }));
-    } catch (error) {
-        console.error("Error al obtener notas:", error);
-        throw new Error("No se pudieron obtener las notas");
+    } catch (err) {
+        console.error('Error al obtener notas:', err);
+        throw new Error('No se pudieron obtener las notas');
     }
 }
-
 
 
 // Obtener nota por ID
