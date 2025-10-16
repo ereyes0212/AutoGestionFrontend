@@ -1,60 +1,59 @@
-"use client";
-import React from "react";
-import { columns } from "./components/columns";
-import { DataTable } from "./components/data-table";
-import { Nota } from "./types";
+// app/puestos/page.tsx (Server Component)
+import { getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { Pencil } from "lucide-react";
+import { getNotas } from "./actions";
+// no importes DataTable / NotaListMobile directamente aquí: lo hace el wrapper client
+// importa el client wrapper que escucha SSE y mantiene el estado en el cliente
 
-interface Props {
-    initialNotas: Nota[];
-}
+// importa el client component de datepicker y el botón
+import NotasDatePickerClient from "./components/datepickerselect";
+import NotasRealtimeWrapper from "./components/notasWrapper";
+import DownloadExcelButton from "./components/reportebutton";
+import DownloadPDFButton from "./components/reportebuttonCompleto";
 
-export default function NotasRealtimeWrapper({ initialNotas }: Props) {
-    const [notas, setNotas] = React.useState<Nota[]>(() => {
-        // inicial: clonar y ordenar descendente por createAt
-        return [...initialNotas].sort((a, b) => new Date(b.createAt!).getTime() - new Date(a.createAt!).getTime());
-    });
+export default async function Puestos({ searchParams }: { searchParams?: Record<string, string> }) {
+    const permisos = await getSessionPermisos();
+    if (!permisos?.includes("ver_notas")) return <NoAcceso />;
 
-    // Si querés agregar createAtLocal para mostrar HN:
-    const notasConLocal = React.useMemo(() => {
-        return notas.map((n) => ({
-            ...n,
-            createAtLocal: new Date(n.createAt!).toLocaleString("es-HN", {
-                timeZone: "America/Tegucigalpa",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-            }),
-        }));
-    }, [notas]);
+    const desde = searchParams?.desde;
+    const hasta = searchParams?.hasta;
 
-    React.useEffect(() => {
-        // ejemplo SSE: adaptalo a tu implementación real
-        const evtSource = new EventSource("/api/sse/notas"); // o la ruta que uses
+    // obtiene las notas iniciales en el server (lo que ya tenías)
+    const data = await getNotas(desde, hasta);
 
-        evtSource.addEventListener("nota_creada", (ev: any) => {
-            try {
-                const payload = JSON.parse(ev.data);
-                const nuevaNota: Nota = payload.nota;
+    return (
+        <div className="container mx-auto py-2">
+            <HeaderComponent
+                Icon={Pencil}
+                description="En este apartado podrá ver todos las notas y asignaciones."
+                screenName="Propuestas notas"
+            />
 
-                setNotas((prev) => {
-                    // insertamos y mantenemos orden descendente por createAt
-                    const merged = [nuevaNota, ...prev];
-                    merged.sort((a, b) => new Date(b.createAt!).getTime() - new Date(a.createAt!).getTime());
-                    return merged;
-                });
-            } catch (err) {
-                console.error("SSE nota_creada parse error", err);
-            }
-        });
+            {/* Reemplaza este bloque por el siguiente */}
+            <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {/* Datepicker ocupa toda la anchura en móvil y auto en pantallas >= sm */}
+                <div className="w-full sm:w-auto">
+                    <NotasDatePickerClient desdeInit={desde} hastaInit={hasta} />
+                </div>
 
-        // cleanup
-        return () => {
-            evtSource.close();
-        };
-    }, []);
+                {/* Botones en columna en móvil, en fila en sm+ */}
+                <div className=" col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                    {permisos?.includes("cambiar_estado_notas") && (
+                        <DownloadExcelButton />
+                    )}
+                    {permisos?.includes("cambiar_estado_notas") && (
+                        <DownloadPDFButton />
+                    )}
+                </div>
+            </div>
 
-    return <DataTable columns={columns} data={notasConLocal} />;
+            <div className="">
+                <NotasRealtimeWrapper initialNotas={data} />
+            </div>
+            {/* Aquí montamos el wrapper cliente que mantiene el estado y escucha SSE */}
+
+        </div>
+    );
 }
