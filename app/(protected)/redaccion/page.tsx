@@ -4,10 +4,6 @@ import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
 import { getNotas } from "./actions";
-// no importes DataTable / NotaListMobile directamente aquí: lo hace el wrapper client
-// importa el client wrapper que escucha SSE y mantiene el estado en el cliente
-
-// importa el client component de datepicker y el botón
 import NotasDatePickerClient from "./components/datepickerselect";
 import NotasRealtimeWrapper from "./components/notasWrapper";
 import DownloadExcelButton from "./components/reportebutton";
@@ -20,8 +16,13 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
     const desde = searchParams?.desde;
     const hasta = searchParams?.hasta;
 
-    // obtiene las notas iniciales en el server (lo que ya tenías)
+    // obtiene las notas iniciales en el server
     const data = await getNotas(desde, hasta);
+
+    // 🔽 Ordena por fecha de creación (más recientes primero)
+    const notasOrdenadas = [...data].sort(
+        (a, b) => new Date(b.createAt).getTime() - new Date(a.createAt).getTime()
+    );
 
     return (
         <div className="container mx-auto py-2">
@@ -31,29 +32,25 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
                 screenName="Propuestas notas"
             />
 
-            {/* Reemplaza este bloque por el siguiente */}
             <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                {/* Datepicker ocupa toda la anchura en móvil y auto en pantallas >= sm */}
                 <div className="w-full sm:w-auto">
                     <NotasDatePickerClient desdeInit={desde} hastaInit={hasta} />
                 </div>
 
-                {/* Botones en columna en móvil, en fila en sm+ */}
-                <div className=" col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                <div className="col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     {permisos?.includes("cambiar_estado_notas") && (
-                        <DownloadExcelButton />
-                    )}
-                    {permisos?.includes("cambiar_estado_notas") && (
-                        <DownloadPDFButton />
+                        <>
+                            <DownloadExcelButton />
+                            <DownloadPDFButton />
+                        </>
                     )}
                 </div>
             </div>
 
-            <div className="">
-                <NotasRealtimeWrapper initialNotas={data} />
+            <div>
+                {/* 🔽 Enviamos la lista ya ordenada */}
+                <NotasRealtimeWrapper initialNotas={notasOrdenadas} />
             </div>
-            {/* Aquí montamos el wrapper cliente que mantiene el estado y escucha SSE */}
-
         </div>
     );
 }
