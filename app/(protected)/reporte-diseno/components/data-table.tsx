@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import DownloadReporteTurnoButton from "./reporte-diseño-botom";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -77,6 +78,7 @@ export function DataTable<TData, TValue>({
             <Plus />
           </Button>
         </Link>
+        <DownloadReporteTurnoButton></DownloadReporteTurnoButton>
       </div>
 
       <div className="rounded-md border">
