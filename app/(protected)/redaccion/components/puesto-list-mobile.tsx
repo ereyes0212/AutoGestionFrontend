@@ -1,12 +1,13 @@
 "use client";
 
-import { Award, CheckCircle, Clock, Info, Pencil, Plus, Search, XCircle } from "lucide-react";
+import { AlertTriangle, Award, CheckCircle, Clock, Info, Pencil, Plus, Search, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { Nota } from "../types";
 
@@ -67,11 +68,32 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                             <CardContent className="p-0">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 gap-2">
                                     <div className="flex-1 min-w-0 space-y-1">
-                                        <Badge
-                                            className={`text-xs w-fit ${estadoMap[nota.estado as keyof typeof estadoMap].color}`}
-                                        >
-                                            {estadoMap[nota.estado as keyof typeof estadoMap].label}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge
+                                                className={`text-xs w-fit ${estadoMap[nota.estado as keyof typeof estadoMap].color}`}
+                                            >
+                                                {estadoMap[nota.estado as keyof typeof estadoMap].label}
+                                            </Badge>
+
+                                            {/* Icono de prioridad */}
+                                            {nota.esPrioridad && (
+                                                <HoverCard openDelay={200} closeDelay={100}>
+                                                    <HoverCardTrigger asChild>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0 flex items-center justify-center"
+                                                            aria-label="Esta nota es de prioridad"
+                                                        >
+                                                            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                                                        </Button>
+                                                    </HoverCardTrigger>
+                                                    <HoverCardContent className="max-w-xs">
+                                                        <p className="text-sm">Esta nota es de prioridad</p>
+                                                    </HoverCardContent>
+                                                </HoverCard>
+                                            )}
+                                        </div>
 
                                         <h3 className="font-medium text-base leading-snug">{nota.titulo}</h3>
 
@@ -91,6 +113,20 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                                             {nota.empleadoAprobador && (
                                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                                     Aprobado: {nota.empleadoAprobador}
+                                                </p>
+                                            )}
+                                            {/* Fuente (si existe) - ahora es un link */}
+                                            {nota.fuente && (
+                                                <p className="text-xs leading-relaxed">
+                                                    <a
+                                                        href={nota.fuente}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="underline text-xs break-words text-blue-600 max-w-[220px] block truncate"
+                                                        title={nota.fuente}
+                                                    >
+                                                        {nota.fuente}
+                                                    </a>
                                                 </p>
                                             )}
                                         </div>

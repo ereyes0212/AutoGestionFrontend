@@ -11,6 +11,7 @@ export const NotaEstadoEnum = z.enum([
 // Schema Zod para Nota (coincide con Prisma)
 export const NotaSchema = z.object({
   id: z.string().optional(),
+  esPrioridad: z.boolean().optional(),              // Boolean @default(false)
   creadorEmpleadoId: z.string(),                       // String @db.VarChar(36)
   asignadoEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)
   aprobadorEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)

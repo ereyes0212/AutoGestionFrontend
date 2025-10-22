@@ -21,6 +21,7 @@ import { Loader2, Plus, Trash } from "lucide-react";
 import { z } from "zod";
 
 import { SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@radix-ui/react-select";
 import { aprobarNota, createNota, finalizarNota, tomarNota, updateNota } from "../actions";
@@ -104,6 +105,7 @@ export function NotaFormulario({
               ...(tituloParaActualizar !== undefined ? { titulo: tituloParaActualizar } : {}),
               ...(fuenteParaActualizar !== undefined ? { fuente: fuenteParaActualizar ?? null } : {}),
               ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
+              ...(data.esPrioridad !== undefined ? { esPrioridad: data.esPrioridad } : {}),
             });
           }
 
@@ -338,6 +340,26 @@ export function NotaFormulario({
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="esPrioridad"
+              render={({ field }) => (
+                <FormItem className="mt-2 flex items-center space-x-4">
+                  <FormLabel className="m-0">Prioridad</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value ?? false}
+                      onCheckedChange={field.onChange}
+                      disabled={!canChangeEstado}
+                    />
+                  </FormControl>
+                  <FormDescription>Marca si esta entrada es de prioridad.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
           </>
         )}
 

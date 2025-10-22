@@ -4,6 +4,7 @@ export type Nota = {
   asignadoEmpleadoId?: string | null;
   aprobadorEmpleadoId?: string | null;
   descripcion: string;
+  esPrioridad?: boolean;
   estado: 'PENDIENTE' | 'APROBADA' | 'FINALIZADA' | 'RECHAZADA';
   titulo: string;
   fuente: string | null;
