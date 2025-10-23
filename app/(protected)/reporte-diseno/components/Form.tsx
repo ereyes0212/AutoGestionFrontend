@@ -26,6 +26,7 @@ import { z } from "zod";
 import { TipoSeccion } from "../../tipo-seccion/types";
 import { createReporteDiseño } from "../actions";
 import { ReporteDisenoDTOSchema } from "../schema";
+import { TimePicker } from "./time-picket";
 
 type ReporteFormValues = z.input<typeof ReporteDisenoDTOSchema>;
 
@@ -153,12 +154,18 @@ export function FormularioReporte({
               <FormItem>
                 <FormLabel>Hora Inicio</FormLabel>
                 <FormControl>
-                  <Input type="time" step={1} {...field} />
+                  <TimePicker
+                    value={field.value}
+                    onChange={(v) => field.onChange(v)}
+                    onBlur={() => field.onBlur?.()}
+                    withSeconds={false} // true si querés segundos
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
             name="HoraFin"
@@ -166,7 +173,12 @@ export function FormularioReporte({
               <FormItem>
                 <FormLabel>Hora Fin</FormLabel>
                 <FormControl>
-                  <Input type="time" step={1} {...field} />
+                  <TimePicker
+                    value={field.value}
+                    onChange={(v) => field.onChange(v)}
+                    onBlur={() => field.onBlur?.()}
+                    withSeconds={false}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
