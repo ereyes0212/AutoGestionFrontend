@@ -5,6 +5,7 @@ export type Nota = {
   aprobadorEmpleadoId?: string | null;
   descripcion: string;
   esPrioridad?: boolean;
+  esUltimaHora?: boolean;
   estado: 'PENDIENTE' | 'APROBADA' | 'FINALIZADA' | 'RECHAZADA';
   titulo: string;
   fuente: string | null;

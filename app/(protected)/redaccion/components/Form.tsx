@@ -106,6 +106,7 @@ export function NotaFormulario({
               ...(fuenteParaActualizar !== undefined ? { fuente: fuenteParaActualizar ?? null } : {}),
               ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
               ...(data.esPrioridad !== undefined ? { esPrioridad: data.esPrioridad } : {}),
+              ...(data.esUltimaHora !== undefined ? { esUltimaHora: data.esUltimaHora } : {}),
             });
           }
 
@@ -355,6 +356,24 @@ export function NotaFormulario({
                     />
                   </FormControl>
                   <FormDescription>Marca si esta entrada es de prioridad.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="esUltimaHora"
+              render={({ field }) => (
+                <FormItem className="mt-2 flex items-center space-x-4">
+                  <FormLabel className="m-0">Última hora</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value ?? false}
+                      onCheckedChange={field.onChange}
+                      disabled={!canChangeEstado}
+                    />
+                  </FormControl>
+                  <FormDescription>Marca si esta entrada es de última hora.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

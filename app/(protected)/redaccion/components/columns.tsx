@@ -165,7 +165,7 @@ export const columns: ColumnDef<Nota>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => <EstadoCell estado={row.original.estado} feedback={row.original.fellback || ''} esPrioridad={row.original.esPrioridad} />,
+    cell: ({ row }) => <EstadoCell estado={row.original.estado} feedback={row.original.fellback || ''} esPrioridad={row.original.esPrioridad} esUltimaHora={row.original.esUltimaHora} />,
   }
   ,
   {

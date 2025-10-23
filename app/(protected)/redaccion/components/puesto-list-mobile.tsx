@@ -93,6 +93,24 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                                                     </HoverCardContent>
                                                 </HoverCard>
                                             )}
+                                            {/* Icono de prioridad */}
+                                            {nota.esUltimaHora && (
+                                                <HoverCard openDelay={200} closeDelay={100}>
+                                                    <HoverCardTrigger asChild>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0 flex items-center justify-center"
+                                                            aria-label="Esta nota es de prioridad"
+                                                        >
+                                                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                                                        </Button>
+                                                    </HoverCardTrigger>
+                                                    <HoverCardContent className="max-w-xs">
+                                                        <p className="text-sm">Esta nota es de última hora</p>
+                                                    </HoverCardContent>
+                                                </HoverCard>
+                                            )}
                                         </div>
 
                                         <h3 className="font-medium text-base leading-snug">{nota.titulo}</h3>

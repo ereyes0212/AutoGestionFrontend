@@ -23,14 +23,15 @@ import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { finalizarNota } from "../actions";
+import { aprobarNota, finalizarNota } from "../actions";
 import type { Nota } from "../types";
 
 export function ActionsCell({ nota }: { nota: Nota }) {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = React.useState(false);
-    const [open, setOpen] = React.useState(false);
+    const [openFinalizar, setOpenFinalizar] = React.useState(false);
+    const [openAprobar, setOpenAprobar] = React.useState(false);
 
     const handleFinalizar = async () => {
         setLoading(true);
@@ -61,7 +62,39 @@ export function ActionsCell({ nota }: { nota: Nota }) {
             });
         } finally {
             setLoading(false);
-            setOpen(false);
+            setOpenFinalizar(false);
+        }
+    };
+
+    const handleAprobar = async () => {
+        setLoading(true);
+        try {
+            const res = await aprobarNota(nota.id!, "APROBADA", null);
+            // seguir el mismo patrón de respuesta que finalizarNota
+            if (!res?.ok) {
+                toast({
+                    title: "No se pudo aprobar",
+                    description: res?.error ?? "Ocurrió un error al aprobar",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            toast({
+                title: "Nota aprobada",
+                description: "La nota fue aprobada correctamente.",
+            });
+
+            router.refresh();
+        } catch (err: any) {
+            toast({
+                title: "Error al aprobar",
+                description: String(err?.message ?? err),
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+            setOpenAprobar(false);
         }
     };
 
@@ -84,26 +117,56 @@ export function ActionsCell({ nota }: { nota: Nota }) {
                         </DropdownMenuItem>
                     </Link>
 
-                    {/* Abrir el dialog desde el item */}
-                    <DropdownMenuItem onSelect={(event) => { event.preventDefault(); setOpen(true); }}>
+                    <DropdownMenuItem
+                        onSelect={(event) => {
+                            event.preventDefault();
+                            setOpenFinalizar(true);
+                        }}
+                    >
                         Finalizar
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                        onSelect={(event) => {
+                            event.preventDefault();
+                            setOpenAprobar(true);
+                        }}
+                    >
+                        Aprobar
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* AlertDialog (confirmación estilo shadcn) */}
-            <AlertDialog open={open} onOpenChange={setOpen}>
+            {/* Dialog Finalizar */}
+            <AlertDialog open={openFinalizar} onOpenChange={setOpenFinalizar}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Finalizar nota</AlertDialogTitle>
                         <AlertDialogDescription>
-                            ¿Estás seguro que querés finalizar esta nota? Esta acción cambiará su estado a
-                            <strong> FINALIZADA</strong>.
+                            ¿Estás seguro que querés finalizar esta nota? Esta acción cambiará su estado a <strong>FINALIZADA</strong>.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setOpen(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setOpenFinalizar(false)}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleFinalizar} disabled={loading}>
+                            {loading ? "Procesando..." : "Confirmar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Dialog Aprobar */}
+            <AlertDialog open={openAprobar} onOpenChange={setOpenAprobar}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Aprobar nota</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ¿Confirmás aprobar esta nota? Esta acción cambiará su estado a <strong>APROBADA</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setOpenAprobar(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAprobar} disabled={loading}>
                             {loading ? "Procesando..." : "Confirmar"}
                         </AlertDialogAction>
                     </AlertDialogFooter>

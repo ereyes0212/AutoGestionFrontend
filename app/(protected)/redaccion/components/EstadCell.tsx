@@ -8,10 +8,10 @@ interface EstadoCellProps {
     estado: "PENDIENTE" | "APROBADA" | "FINALIZADA" | "RECHAZADA";
     feedback?: string;
     esPrioridad?: boolean;
+    esUltimaHora?: boolean;
 }
 
-export const EstadoCell: React.FC<EstadoCellProps> = ({ estado, feedback, esPrioridad = false }) => {
-    console.log("🚀 ~ EstadoCell ~ esPrioridad:", esPrioridad)
+export const EstadoCell: React.FC<EstadoCellProps> = ({ estado, feedback, esPrioridad = false, esUltimaHora = false }) => {
     const map = {
         PENDIENTE: { Icon: Clock, color: "bg-yellow-100 text-yellow-800", label: "PENDIENTE" },
         APROBADA: { Icon: CheckCircle, color: "bg-green-100 text-green-800", label: "APROBADA" },
@@ -45,6 +45,24 @@ export const EstadoCell: React.FC<EstadoCellProps> = ({ estado, feedback, esPrio
                     </HoverCardTrigger>
                     <HoverCardContent className="max-w-xs">
                         <p className="text-sm">Esta nota es de prioridad</p>
+                    </HoverCardContent>
+                </HoverCard>
+            )}
+            {/* Icono de prioridad (si aplica) */}
+            {esUltimaHora && (
+                <HoverCard openDelay={200} closeDelay={100}>
+                    <HoverCardTrigger asChild>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 flex items-center justify-center"
+                            aria-label="Esta nota es de prioridad"
+                        >
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                        </Button>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="max-w-xs">
+                        <p className="text-sm">Esta nota es de última hora</p>
                     </HoverCardContent>
                 </HoverCard>
             )}

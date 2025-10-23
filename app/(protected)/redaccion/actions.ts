@@ -13,12 +13,14 @@ export async function createNota({
     descripcion,
     fuente,
     esPrioridad = false,
+    esUltimaHora = false,
 }: {
     creadorEmpleadoId: string;
     titulo: string;
     descripcion: string;
     fuente: string;
     esPrioridad?: boolean;
+    esUltimaHora?: boolean;
 }) {
     const permisos = await getSessionPermisos();
 
@@ -34,6 +36,7 @@ export async function createNota({
             esPrioridad,
             creadorEmpleadoId,
             fuente,
+            esUltimaHora,
             descripcion,
             asignadoEmpleadoId: esJefe ? null : creadorEmpleadoId,
             aprobadorEmpleadoId: esJefe ? creadorEmpleadoId : null,
@@ -160,13 +163,14 @@ export async function tomarNota(id: string) {
 
 export async function updateNota(
     id: string,
-    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean }
+    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean; esUltimaHora?: boolean }
 ): Promise<Nota> {
     try {
         const updatePayload: Record<string, any> = {};
         if (data.titulo !== undefined) updatePayload.titulo = data.titulo;
         if (data.descripcion !== undefined) updatePayload.descripcion = data.descripcion ?? undefined;
         if (data.fuente !== undefined) updatePayload.fuente = data.fuente ?? null;
+        if (data.esUltimaHora !== undefined) updatePayload.esUltimaHora = data.esUltimaHora ?? null;
         if (data.esPrioridad !== undefined) updatePayload.esPrioridad = data.esPrioridad;
 
         const nota = await prisma.nota.update({
@@ -188,80 +192,95 @@ export async function updateNota(
     }
 }
 
-// Aprobar nota (jefe)
 export async function aprobarNota(
     id: string,
     estado: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'FINALIZADA',
     fellback: string | null
-) {
-    const permisos = await getSessionPermisos();
-    const session = await getSession();
+): Promise<ActionResult> {
+    try {
+        if (!id) return { ok: false, error: "Falta id de nota", code: "MISSING_ID", status: 400 };
 
-    if (!permisos!.includes("cambiar_estado_notas")) {
-        throw new Error("No autorizado para aprobar notas");
-    }
+        const session = await getSession();
+        if (!session) return { ok: false, error: "No autenticado", code: "NO_SESSION", status: 401 };
 
-    // --- Actualizar nota y traer con relaciones
-    const notaActualizada = await prisma.nota.update({
-        where: { id },
-        data: {
-            estado,
-            aprobadorEmpleadoId: session?.IdEmpleado,
-            fellback,
-        },
-        include: {
-            creador: true,
-            asignado: true,
-            aprobador: true,
-        },
-    });
+        const permisos = await getSessionPermisos();
+        if (!permisos || !permisos.includes("cambiar_estado_notas")) {
+            return { ok: false, error: "No autorizado para cambiar el estado de notas", code: "NO_PERMISSIONS", status: 403 };
+        }
 
-    // --- Formato extendido (igual que en getNotas y createNota)
-    const notaExtendida = {
-        ...notaActualizada,
-        empleadoCreador: notaActualizada.creador?.nombre ?? "No asignado",
-        empleadoAsignado: notaActualizada.asignado?.nombre ?? "No asignado",
-        empleadoAprobador: notaActualizada.aprobador?.nombre ?? "No asignado",
-    };
+        const nota = await prisma.nota.findUnique({ where: { id } });
+        if (!nota) return { ok: false, error: "Nota no encontrada", code: "NOT_FOUND", status: 404 };
 
-    // --- Notificación solo si hay asignado
-    const asignadoId = notaActualizada.asignadoEmpleadoId;
-    if (asignadoId) {
-        const subs = await prisma.pushSubscription.findMany({
-            where: {
-                empleadoId: asignadoId,
-                revoked: false,
+        // Si ya está en el mismo estado, devolver conflicto
+        if (nota.estado === estado) {
+            return { ok: false, error: "La nota ya está en ese estado", code: "SAME_STATE", status: 409 };
+        }
+
+        // --- Actualizar nota y traer con relaciones
+        const notaActualizada = await prisma.nota.update({
+            where: { id },
+            data: {
+                estado,
+                aprobadorEmpleadoId: session?.IdEmpleado,
+                fellback,
+            },
+            include: {
+                creador: true,
+                asignado: true,
+                aprobador: true,
             },
         });
 
-        const payload = {
-            title: 'Estado de Nota Actualizado',
-            body: `${notaActualizada.titulo} ha cambiado a ${estado}`,
-            url: `/notas/${notaActualizada.id}`,
-            icon: '/icons/notification.png',
+        // --- Formato extendido (igual que en getNotas y createNota)
+        const notaExtendida = {
+            ...notaActualizada,
+            empleadoCreador: notaActualizada.creador?.nombre ?? "No asignado",
+            empleadoAsignado: notaActualizada.asignado?.nombre ?? "No asignado",
+            empleadoAprobador: notaActualizada.aprobador?.nombre ?? "No asignado",
         };
 
-        for (const s of subs) {
-            try {
-                await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
-            } catch (err: any) {
-                if (err.statusCode === 410 || err.statusCode === 404) {
-                    await prisma.pushSubscription.delete({ where: { id: s.id } });
-                } else {
-                    console.error("web-push error", err);
+        // --- Notificación solo si hay asignado
+        const asignadoId = notaActualizada.asignadoEmpleadoId;
+        if (asignadoId) {
+            const subs = await prisma.pushSubscription.findMany({
+                where: {
+                    empleadoId: asignadoId,
+                    revoked: false,
+                },
+            });
+
+            const payload = {
+                title: 'Estado de Nota Actualizado',
+                body: `${notaActualizada.titulo} ha cambiado a ${estado}`,
+                url: `/notas/${notaActualizada.id}`,
+                icon: '/icons/notification.png',
+            };
+
+            for (const s of subs) {
+                try {
+                    await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
+                } catch (err: any) {
+                    if (err?.statusCode === 410 || err?.statusCode === 404) {
+                        await prisma.pushSubscription.delete({ where: { id: s.id } });
+                    } else {
+                        console.error("web-push error", err);
+                    }
                 }
             }
         }
-    }
 
-    // --- Broadcast en tiempo real (SSE)
-    try {
-        broadcaster.broadcast({ type: "nota_actualizada", nota: notaExtendida });
+        // --- Broadcast en tiempo real (SSE)
+        try {
+            broadcaster.broadcast({ type: "nota_actualizada", nota: notaExtendida });
+        } catch (err) {
+            console.error("Error broadcasting nota_actualizada:", err);
+        }
+
+        return { ok: true, result: notaActualizada };
     } catch (err) {
-        console.error("Error broadcasting nota_actualizada:", err);
+        console.error("[aprobarNotaAction] unexpected:", err);
+        return { ok: false, error: "Error interno", code: "INTERNAL", status: 500 };
     }
-
-    return notaExtendida;
 }
 
 

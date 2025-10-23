@@ -12,6 +12,7 @@ export const NotaEstadoEnum = z.enum([
 export const NotaSchema = z.object({
   id: z.string().optional(),
   esPrioridad: z.boolean().optional(),              // Boolean @default(false)
+  esUltimaHora: z.boolean().optional(),              // Boolean @default(false)
   creadorEmpleadoId: z.string(),                       // String @db.VarChar(36)
   asignadoEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)
   aprobadorEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)

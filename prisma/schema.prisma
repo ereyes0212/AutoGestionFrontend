@@ -444,6 +444,7 @@ model Nota {
   estado              NotaEstado
   titulo              String     @db.VarChar(250)
   esPrioridad         Boolean    @default(false)
+  esUltimaHora        Boolean    @default(false)
   fuente              String?    @db.VarChar(250)
   descripcion         String     @db.LongText
   fellback            String?    @db.LongText
