@@ -88,7 +88,13 @@ async function main() {
     { nombre: "ver_tareas", descripcion: "Permiso para ver el modulo de tareas" },
 
     { nombre: "ver_mensajes", descripcion: "Permiso para ver el modulo de mensajes" },
-    { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" }
+    { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" },
+
+    //eventos
+    { nombre: "ver_eventos", descripcion: "Permiso para ver el modulo de eventos" },
+    { nombre: "crear_eventos", descripcion: "Permiso para crear eventos" },
+    { nombre: "editar_eventos", descripcion: "Permiso para editar eventos" },
+    { nombre: "ver_todos_eventos", descripcion: "Permiso para ver todos los eventos" },
 
   ];
 

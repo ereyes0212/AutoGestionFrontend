@@ -80,6 +80,7 @@ model Empleados {
   NotasAprobadas   Nota[]             @relation("NotasAprobador")
   PushSubscription PushSubscription[]
   TareaEmpleado    TareaEmpleado[]
+  Evento           Evento[]
 
   @@index([jefe_id])
   @@index([puesto_id])
@@ -523,4 +524,19 @@ model TareaEmpleado {
   @@id([tareaId, empleadoId]) // clave compuesta evita duplicados
   @@index([empleadoId])
   @@map("tareas_empleados")
+}
+
+model Evento {
+  id             String    @id @default(uuid()) @db.VarChar(36)
+  titulo         String
+  descripcion    String    @db.Text
+  fecha          DateTime
+  ubicacion      String    @db.VarChar(250)
+  empleadoId     String    @db.VarChar(36) // quien creó el evento
+  facturaAdjunta String    @db.VarChar(500) // URL o path del archivo adjunto
+  notaEnlace     String    @db.VarChar(500) // URL o path de la nota relacionada
+  monto          Decimal   @db.Decimal(10, 2) // monto asociado al evento, si aplica
+  creadoAt       DateTime  @default(now())
+  actualizadoAt  DateTime  @updatedAt
+  empleado       Empleados @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
 }
