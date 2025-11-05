@@ -164,12 +164,23 @@ export const columns: ColumnDef<Nota>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    // filterFn opcional si no enriquecés columnas desde DataTable:
+    filterFn: (row: any, id: string, filterValue: string) => {
+      const raw = row.original?.createAt;
+      if (!raw) return false;
+      const date = new Date(raw);
+      if (isNaN(date.getTime())) return false;
+      const formatted = format(date, "dd/MM/yyyy hh:mm a", { locale: es });
+      if (!filterValue || filterValue === "__all") return true;
+      return formatted === filterValue;
+    },
     cell: ({ row }) => {
       const creacion = row.original.createAt;
       const date = creacion ? new Date(creacion) : undefined;
-      const timeDisplay = date ? format(date, "HH:mm") : "--:--";
+      // Hora en 12 horas para mostrar en la celda: "08:30 PM"
+      const timeDisplay = date ? format(date, "hh:mm a", { locale: es }) : "--:--";
       const fullDisplay = date
-        ? format(date, "dd 'de' MMMM yyyy, HH:mm", { locale: es })
+        ? format(date, "dd 'de' MMMM yyyy, hh:mm a", { locale: es }) // ejemplo: 31 de octubre 2025, 08:30 PM
         : "Sin fecha";
 
       return (
@@ -184,6 +195,8 @@ export const columns: ColumnDef<Nota>[] = [
       );
     },
   },
+
+
   {
     accessorKey: "estado",
     header: ({ column }) => (

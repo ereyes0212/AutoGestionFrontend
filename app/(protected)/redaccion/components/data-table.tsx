@@ -14,6 +14,8 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
+import { format as dfFormat } from "date-fns";
+import { es as esLocale } from "date-fns/locale";
 import * as React from "react";
 
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -50,13 +52,58 @@ export function DataTable<TData extends Record<string, any>, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState<string>("");
 
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+
+  // -----------------------
+  // Helpers para fechas
+  // -----------------------
+  const formatDate = React.useCallback((d: Date | string | number) => {
+    if (!d) return "";
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date.getTime())) return String(d);
+    // Formato: DD/MM/YYYY hh:mm AM/PM => ej: "31/10/2025 08:30 PM"
+    return dfFormat(date, "dd/MM/yyyy hh:mm a", { locale: esLocale });
+  }, []);
+  // -----------------------
+  // Creamos una función de filtro personalizada para fechas
+  // -----------------------
+  const filterFns = React.useMemo(() => ({
+    dateTimeEquals: (row: any, columnId: string, filterValue: string) => {
+      const cell = row.getValue(columnId);
+      if (filterValue === undefined || filterValue === null || filterValue === "__all") return true;
+      if (cell == null) return false;
+      const formatted = formatDate(cell);
+      return formatted === filterValue;
+    },
+  }), [formatDate]);
+
+  // -----------------------
+  // Si la columna es createAt / createdAt, la enriquecemos con filterFn y cell renderer
+  // -----------------------
+  const enhancedColumns = React.useMemo(() => {
+    return columns.map((col) => {
+      const accessor = (col as any).accessorKey ?? (col as any).id ?? "";
+      const key = String(accessor);
+      if (key === "createAt" || key === "createdAt") {
+        return {
+          ...col,
+          // asegura que el header tenga un label amigable si no lo tiene
+          header: (col as any).header ?? "Fecha Creacion",
+          // usa el filterFn personalizado (nombre CORRECTO)
+          filterFn: "dateTimeEquals",
+          // NOTA: no sobrescribimos `cell` para no perder tu HoverCard original
+        } as unknown as ColumnDef<TData, TValue>;
+      }
+      return col;
+    });
+  }, [columns, formatDate]);
+
   const table = useReactTable({
     data,
-    columns,
+    columns: enhancedColumns, // <-- usamos las columns enriquecidas
     getCoreRowModel: getCoreRowModel(),
-
+    // añadimos filterFns aquí
+    filterFns,
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -85,11 +132,12 @@ export function DataTable<TData extends Record<string, any>, TValue>({
     titulo: "Título",
     estado: "Estado",
     descripcion: "Descripción",
+    createAt: "Fecha Creación",
     // agrega aquí más mapeos si querés
   };
 
   const columnOptions = React.useMemo(() => {
-    return columns
+    return enhancedColumns
       .map((col) => {
         const accessor = (col as any).accessorKey ?? (col as any).id ?? "";
         // Si existe un displayName en el mapa lo usamos, si no intentamos usar header (si es string)
@@ -102,7 +150,7 @@ export function DataTable<TData extends Record<string, any>, TValue>({
         return { key: String(accessor), label: headerLabel };
       })
       .filter((c) => c.key && !excludeColumnKeys.includes(c.key));
-  }, [columns, excludeColumnKeys]);
+  }, [enhancedColumns, excludeColumnKeys]);
 
   const [selectedColumn, setSelectedColumn] = React.useState<string | undefined>(
     columnOptions[0]?.key
@@ -120,14 +168,19 @@ export function DataTable<TData extends Record<string, any>, TValue>({
         });
       } else {
         const raw = row[selectedColumn];
-        if (raw != null) setVals.add(String(raw));
+
+        if (selectedColumn === "createAt" || selectedColumn === "createdAt") {
+          if (raw != null) {
+            setVals.add(formatDate(raw)); // <<--- acá usamos fecha+hora 12h
+          }
+        } else {
+          if (raw != null) setVals.add(String(raw));
+        }
       }
     }
 
     return Array.from(setVals).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
-
-  }, [data, selectedColumn]);
-
+  }, [data, selectedColumn, formatDate]);
 
   // RESET handler: limpia filtros, global, selectedColumn, sorting y pone la página 0
   const resetAll = React.useCallback(() => {
@@ -238,6 +291,9 @@ export function DataTable<TData extends Record<string, any>, TValue>({
             }
             onValueChange={(val) => {
               if (!selectedColumn) return;
+
+              // Si la columna es fecha y el usuario selecciona una fecha formateada,
+              // simplemente ponemos ese string en el filtro (la filterFn dateEquals la interpretará)
               table
                 .getColumn(selectedColumn)
                 ?.setFilterValue(val === "__all" ? undefined : val);
