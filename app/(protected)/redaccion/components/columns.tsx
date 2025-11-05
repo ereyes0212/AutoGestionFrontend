@@ -7,6 +7,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import {
   ArrowUpDown
 } from "lucide-react";
@@ -149,8 +151,39 @@ export const columns: ColumnDef<Nota>[] = [
         </HoverCard>
       );
     },
-  }
-  ,
+  },
+  {
+    accessorKey: "createAt",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        className="text-center"
+      >
+        Creación
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const creacion = row.original.createAt;
+      const date = creacion ? new Date(creacion) : undefined;
+      const timeDisplay = date ? format(date, "HH:mm") : "--:--";
+      const fullDisplay = date
+        ? format(date, "dd 'de' MMMM yyyy, HH:mm", { locale: es })
+        : "Sin fecha";
+
+      return (
+        <HoverCard openDelay={200} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <span className="cursor-pointer text-sm font-medium">{timeDisplay}</span>
+          </HoverCardTrigger>
+          <HoverCardContent className="max-w-xs">
+            <p className="whitespace-pre-wrap">{fullDisplay}</p>
+          </HoverCardContent>
+        </HoverCard>
+      );
+    },
+  },
   {
     accessorKey: "estado",
     header: ({ column }) => (

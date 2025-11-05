@@ -100,9 +100,11 @@ export function NotaFormulario({
           const tituloParaActualizar = data.titulo?.trim();
           const descripcionParaActualizar = (data as any).descripcion;
           const fuenteParaActualizar = data.fuente?.trim();
+          const fellback = data.fellback?.trim();
           if (tituloParaActualizar !== undefined || descripcionParaActualizar !== undefined) {
             await updateNota(data.id, {
               ...(tituloParaActualizar !== undefined ? { titulo: tituloParaActualizar } : {}),
+              ...(fellback !== undefined ? { fellback: fellback } : {}),
               ...(fuenteParaActualizar !== undefined ? { fuente: fuenteParaActualizar ?? null } : {}),
               ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
               ...(data.esPrioridad !== undefined ? { esPrioridad: data.esPrioridad } : {}),

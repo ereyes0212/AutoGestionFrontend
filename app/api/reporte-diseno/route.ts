@@ -62,7 +62,7 @@ export async function GET() {
 
         // turno fijo 08 -> 02 (se mantiene por compatibilidad con la action)
         const startHour = 8;
-        const endHour = 2;
+        const endHour = 5;
 
         // obtén reportes desde tu action (usa FechaRegistro en UTC internamente)
         const registros = await getReportesPorTurnoDia(dateStr, startHour, endHour);

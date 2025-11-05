@@ -163,11 +163,12 @@ export async function tomarNota(id: string) {
 
 export async function updateNota(
     id: string,
-    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean; esUltimaHora?: boolean }
+    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean; esUltimaHora?: boolean, fellback?: string | null }
 ): Promise<Nota> {
     try {
         const updatePayload: Record<string, any> = {};
         if (data.titulo !== undefined) updatePayload.titulo = data.titulo;
+        if (data.fellback !== undefined) updatePayload.fellback = data.fellback;
         if (data.descripcion !== undefined) updatePayload.descripcion = data.descripcion ?? undefined;
         if (data.fuente !== undefined) updatePayload.fuente = data.fuente ?? null;
         if (data.esUltimaHora !== undefined) updatePayload.esUltimaHora = data.esUltimaHora ?? null;

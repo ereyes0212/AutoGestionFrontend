@@ -43,7 +43,7 @@ export default function DownloadReporteTurnoButton() {
             const href = URL.createObjectURL(blob);
 
             const fecha = hoyEnHondurasYYYYMMDD(); // para que coincida con la fecha usada en server
-            const nombreArchivo = `reporte-diseno-${fecha}-turno-08-02.pdf`;
+            const nombreArchivo = `reporte-diseno-${fecha}.pdf`;
 
             const a = document.createElement("a");
             a.href = href;
