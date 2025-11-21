@@ -465,7 +465,7 @@ type SimpleRow = {
     createAtAdjusted: string; // ISO
 };
 
-export async function getNotasAgrupadasHoySimple(): Promise<{
+export async function getNotasAgrupadasHoySimple(fecha?: string | Date): Promise<{
     meta: {
         nowServer: string;
         queryStartIso: string;
@@ -479,16 +479,45 @@ export async function getNotasAgrupadasHoySimple(): Promise<{
     manana: SimpleRow[];
     tarde: SimpleRow[];
 }> {
+    console.log("🚀 ~ getNotasAgrupadasHoySimple ~ fecha:", fecha)
     const SHIFT_MS = 6 * 60 * 60 * 1000; // 6 horas
 
+    // Si se proporciona una fecha, usarla; si no, usar la fecha actual
+    let fechaBase: Date;
+    if (fecha) {
+        // Si es string en formato 'YYYY-MM-DD', interpretarlo como día local de HN
+        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+            const [y, mm, dd] = fecha.split('-').map(Number);
+            // Crear fecha local (sin hora, solo día) y luego aplicar shift para obtener fecha base
+            // Usamos Date.UTC para evitar problemas de zona horaria del servidor
+            // El día seleccionado en HN empieza a las 06:00 UTC del mismo día
+            fechaBase = new Date(Date.UTC(y, mm - 1, dd, 6, 0, 0));
+        } else {
+            // Si es Date o string parseable, normalizarlo
+            const d = fecha instanceof Date ? fecha : new Date(fecha);
+            if (isNaN(d.getTime())) {
+                throw new Error('Fecha inválida: ' + fecha);
+            }
+            // Trasladar -6h para obtener fecha local HN, luego extraer YMD y crear UTC a las 06:00
+            const shifted = new Date(d.getTime() - SHIFT_MS);
+            const y = shifted.getUTCFullYear();
+            const mo = shifted.getUTCMonth();
+            const day = shifted.getUTCDate();
+            fechaBase = new Date(Date.UTC(y, mo, day, 6, 0, 0));
+        }
+    } else {
+        fechaBase = new Date();
+    }
+
     const now = new Date();
-    const shifted = new Date(now.getTime() - SHIFT_MS);
-
-    const startShifted = new Date(shifted);
-    startShifted.setHours(0, 0, 0, 0);
-
-    const endShifted = new Date(shifted);
-    endShifted.setHours(23, 59, 59, 999);
+    // fechaBase representa el inicio del día seleccionado en UTC (06:00 UTC = 00:00 HN)
+    // El día seleccionado en HN va desde fechaBase hasta fechaBase + 24h - 1ms
+    // Cuando ajustamos con -6h para obtener la fecha "shifted":
+    // - Inicio del día ajustado: fechaBase - 6h = 00:00 UTC del día seleccionado
+    // - Fin del día ajustado: (fechaBase + 24h - 1ms) - 6h = 23:59:59.999 UTC del día seleccionado
+    const startShifted = new Date(fechaBase.getTime() - SHIFT_MS); // 00:00 UTC del día seleccionado
+    const endOfDayUTC = new Date(fechaBase.getTime() + 24 * 60 * 60 * 1000 - 1); // 05:59:59.999 UTC del día siguiente
+    const endShifted = new Date(endOfDayUTC.getTime() - SHIFT_MS); // 23:59:59.999 UTC del día seleccionado
 
     const startForQuery = new Date(startShifted.getTime() + SHIFT_MS);
     const endForQuery = new Date(endShifted.getTime() + SHIFT_MS);

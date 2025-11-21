@@ -8,9 +8,25 @@ function cleanText(text: string) {
     return text.replace(/[\u202F\u00A0]/g, " ");
 }
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const { manana, tarde } = await getNotasAgrupadasHoySimple();
+        // Obtener la fecha desde los query parameters
+        const { searchParams } = new URL(request.url);
+        const fechaParam = searchParams.get("fecha");
+
+        // Parsear la fecha o usar la actual si no se proporciona
+        let fecha: string | Date | undefined = undefined;
+        console.log("🚀 ~ GET ~ fecha:", fecha)
+        if (fechaParam) {
+            // Validar formato YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}$/.test(fechaParam)) {
+                fecha = fechaParam;
+            } else {
+                return NextResponse.json({ error: "Formato de fecha inválido. Use YYYY-MM-DD" }, { status: 400 });
+            }
+        }
+
+        const { manana, tarde, meta } = await getNotasAgrupadasHoySimple(fecha);
         const pdfDoc = await PDFDocument.create();
         let currentPage = pdfDoc.addPage();
         const { width, height } = currentPage.getSize();
@@ -20,10 +36,18 @@ export async function GET() {
 
         let y = height - 60;
 
-        // Título principal
-        const fechaStr: string = new Date(
-            Date.now() - 6 * 60 * 60 * 1000
-        ).toLocaleDateString("es-ES", {
+        // Título principal - usar la fecha del reporte
+        // Parsear la fecha correctamente para evitar problemas de zona horaria
+        let fechaReporte: Date;
+        if (fecha && typeof fecha === 'string') {
+            // Parsear YYYY-MM-DD como fecha local (sin zona horaria)
+            const [y, mm, dd] = fecha.split('-').map(Number);
+            fechaReporte = new Date(y, mm - 1, dd);
+        } else {
+            // Si no hay fecha, usar la actual ajustada -6h
+            fechaReporte = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        }
+        const fechaStr: string = fechaReporte.toLocaleDateString("es-ES", {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -136,11 +160,13 @@ export async function GET() {
         );
 
         const pdfBytes = await pdfDoc.save();
+        // Usar la fecha del reporte en el nombre del archivo
+        const fechaArchivo = fechaReporte.toISOString().split("T")[0];
         return new Response(new Uint8Array(pdfBytes), {
             status: 200,
             headers: {
                 "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="reporte-notas-${new Date().toISOString().split("T")[0]}.pdf"`,
+                "Content-Disposition": `attachment; filename="reporte-notas-${fechaArchivo}.pdf"`,
             },
         });
     } catch (err) {
