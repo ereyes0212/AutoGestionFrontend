@@ -47,9 +47,8 @@ export default function SolicitudAprobaciones({
         setCurrentSolicitud(solicitud)
         // Marcar automáticamente al empleado que hizo la solicitud
         const empleadoQueSolicita = empleados.find(e => e.id === solicitud.empleadoId)
-        // Marcar automáticamente al jefe inmediato
-        const jefeInmediato = empleados.find(e => e.id === solicitud.empleadoId)
-        const iniciales = [empleadoQueSolicita?.id, jefeInmediato?.id].filter(Boolean) as string[]
+        // Solo agregar el empleado que solicita (sin duplicar)
+        const iniciales = empleadoQueSolicita?.id ? [empleadoQueSolicita.id] : []
         setCheckedFirmas(iniciales)
         setSearch("")
         setDialogOpen(true)
