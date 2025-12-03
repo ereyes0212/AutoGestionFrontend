@@ -526,7 +526,7 @@ export async function postSolicitud({
       const mail = ap.Empleados?.correo;
       if (!mail) return;
       const nivel = ap.Nivel;
-      const linkRevisar = `${baseUrl}/solicitudes/aprobacion`;
+      const linkRevisar = `${baseUrl}solicitudes/aprobacion`;
       await emailService.sendMail({
         to: mail,
         subject: `Revisión requerida: solicitud de vacaciones nivel ${nivel}`,
