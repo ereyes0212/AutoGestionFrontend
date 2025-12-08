@@ -16,7 +16,6 @@ export async function GET(request: Request) {
 
         // Parsear la fecha o usar la actual si no se proporciona
         let fecha: string | Date | undefined = undefined;
-        console.log("🚀 ~ GET ~ fecha:", fecha)
         if (fechaParam) {
             // Validar formato YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}$/.test(fechaParam)) {

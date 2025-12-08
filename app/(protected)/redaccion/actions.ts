@@ -479,7 +479,6 @@ export async function getNotasAgrupadasHoySimple(fecha?: string | Date): Promise
     manana: SimpleRow[];
     tarde: SimpleRow[];
 }> {
-    console.log("🚀 ~ getNotasAgrupadasHoySimple ~ fecha:", fecha)
     const SHIFT_MS = 6 * 60 * 60 * 1000; // 6 horas
 
     // Si se proporciona una fecha, usarla; si no, usar la fecha actual

@@ -177,7 +177,6 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
     },
     orderBy: { FechaDecision: "desc" },
   });
-  console.log("🚀 ~ getSolicitudesAprobacionesHistorico ~ records:", records)
 
   return records.map(r => {
     const parent = r.SolicitudVacacion;

@@ -15,7 +15,6 @@ export default async function Empleados() {
 
     const aprobacionesPendientes = await getSolicitudesAprobaciones();
     const empleados = await getEmpleados();
-    console.log("🚀 ~ Empleados ~ empleados:", empleados)
 
     return (
         <div className="container mx-auto py-2 relative">

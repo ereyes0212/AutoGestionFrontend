@@ -39,7 +39,6 @@ export default function ClientPrintView({
     usuario: string;
     firmas: Firma[];
 }) {
-    console.log("🚀 ~ ClientPrintView ~ firmas:", firmas)
     useEffect(() => {
         const generarPDF = async () => {
             const doc = new jsPDF({
