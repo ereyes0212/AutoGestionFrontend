@@ -131,6 +131,9 @@ export const columns: ColumnDef<SolicitudPermiso>[] = [
             <Link href={`/solicitudes/${solicitud.id}/detalle`}>
               <DropdownMenuItem>Ver Detalle</DropdownMenuItem>
             </Link>
+            <Link href={`/solicitudes/${solicitud.id}/edit`}>
+              <DropdownMenuItem>Editar</DropdownMenuItem>
+            </Link>
           </DropdownMenuContent>
         </DropdownMenu>
       );

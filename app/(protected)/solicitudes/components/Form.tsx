@@ -52,6 +52,7 @@ export function EmpleadoFormulario({
         await putSolicitud({
           solicitud: {
             ...solicitudData.solicitud,
+            descripcion: solicitudData.solicitud.descripcion,
             fechaInicio: solicitudData.solicitud.fechaInicio.toISOString(),
             fechaFin: solicitudData.solicitud.fechaFin.toISOString(),
           },
@@ -168,7 +169,7 @@ export function EmpleadoFormulario({
             name="fechaFin"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Fecha de regreso</FormLabel>
+                <FormLabel>Fecha de finalización</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -200,7 +201,7 @@ export function EmpleadoFormulario({
                   </PopoverContent>
                 </Popover>
                 <FormDescription>
-                  Fecha de inicio de solicitud.
+                  Fecha de fin de solicitud.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

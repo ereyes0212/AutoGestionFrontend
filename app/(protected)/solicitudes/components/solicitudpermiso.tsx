@@ -58,12 +58,16 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
         <div>
           <CardTitle className="text-xl">Solicitud de Permiso</CardTitle>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            Imprimir
-          </Button>
-          <EstadoAprobacion aprobado={estadoGeneral} />
-        </div>
+        {
+          solicitud.aprobado === true &&
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              Imprimir
+            </Button>
+
+            <EstadoAprobacion aprobado={estadoGeneral} />
+          </div>
+        }
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -147,7 +151,7 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
                     {a.fechaAprobacion ? formatearFecha(a.fechaAprobacion) : "Pendiente"}
                   </TableCell>
                   <TableCell>{a.comentario || "Sin comentarios"}</TableCell>
-                  <TableCell>{a.descripcion || "Sin aprobador asignado"}</TableCell>
+                  <TableCell>{a.nombreEmpleado || "Sin aprobador asignado"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

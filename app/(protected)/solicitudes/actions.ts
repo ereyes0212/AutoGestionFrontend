@@ -177,6 +177,7 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
     },
     orderBy: { FechaDecision: "desc" },
   });
+  console.log("🚀 ~ getSolicitudesAprobacionesHistorico ~ records:", records)
 
   return records.map(r => {
     const parent = r.SolicitudVacacion;
@@ -197,10 +198,10 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
       fechaAprobacion: r.FechaDecision ? r.FechaDecision.toISOString() : "",
       empleadoId: r.EmpleadoAprobadorId ?? "",
       nombreEmpleado: r.Empleados
-        ? `${r.Empleados.nombre} ${r.Empleados.apellido}`
+        ? `${r.SolicitudVacacion.Empleados.nombre} ${r.SolicitudVacacion.Empleados.apellido}`
         : "",
       puestoId: r.ConfiguracionAprobacion.puesto_id ?? "",
-      puesto: r.ConfiguracionAprobacion.Puesto?.Nombre ?? r.ConfiguracionAprobacion.Descripcion,
+      puesto: r.SolicitudVacacion.Puesto.Nombre ?? r.SolicitudVacacion.Descripcion,
       fechaSolicitud: fechaSolicitudStr,
       fechaInicio: fechaInicioStr,
       fechaFin: fechaFinStr,

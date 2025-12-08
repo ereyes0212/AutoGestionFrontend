@@ -104,13 +104,19 @@ export default function SolicitudAprobaciones({
                                             <User className="h-4 w-4" />
                                             <span>Información del Empleado</span>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleOpenDialog(solicitud)}
-                                        >
-                                            Imprimir
-                                        </Button>
+                                        {solicitud.aprobado === 'Rechazado' ? (
+                                            <Button variant="outline" size="sm" disabled title="No se puede imprimir una solicitud rechazada">
+                                                Imprimir
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleOpenDialog(solicitud)}
+                                            >
+                                                Imprimir
+                                            </Button>
+                                        )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
                                             <div>
                                                 <p className="text-xs font-medium text-gray-500">Nombre:</p>
@@ -217,38 +223,40 @@ export default function SolicitudAprobaciones({
                                                 }
                                             }}
                                         />
-                                        <ApprovalDialog
-                                            action="reject"
-                                            fechaInicio={new Date(solicitud.fechaInicio)}
-                                            fechaFin={new Date(solicitud.fechaFin)}
-                                            onConfirm={async (comentario, diasRestantes, diasGozados, periodo, fechaPresentacion) => {
+                                        <Button
+                                            variant="destructive"
+                                            onClick={async () => {
                                                 try {
+                                                    // Envío directo del rechazo sin abrir diálogo
                                                     await processApproval({
                                                         id: solicitud.id,
                                                         nivel: solicitud.nivel,
                                                         aprobado: false,
-                                                        comentarios: comentario,
-                                                        diasRestantes,
-                                                        diasGozados,
-                                                        periodo,
-                                                        fechaPresentacion,
+                                                        comentarios: "",
+                                                        diasRestantes: diasRestantes,
+                                                        diasGozados: 0,
+                                                        periodo: "",
+                                                        fechaPresentacion: new Date().toString(),
                                                     });
                                                     toast({
-                                                        title: "Aprobación rechazada",
+                                                        title: "Solicitud rechazada",
                                                         description: "La solicitud de vacaciones fue rechazada.",
                                                         variant: "default",
                                                     });
                                                     router.push("/solicitudes");
                                                     router.refresh();
-                                                } catch {
+                                                } catch (err) {
+                                                    console.error(err);
                                                     toast({
-                                                        title: "Error en la aprobación",
-                                                        description: "Hubo un problema al procesar la aprobación.",
+                                                        title: "Error en la operación",
+                                                        description: "Hubo un problema al procesar el rechazo.",
                                                         variant: "destructive",
                                                     });
                                                 }
                                             }}
-                                        />
+                                        >
+                                            Rechazar
+                                        </Button>
                                     </CardFooter>
                                 )}
                             </Card>
