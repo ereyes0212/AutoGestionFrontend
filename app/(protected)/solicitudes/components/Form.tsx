@@ -147,6 +147,8 @@ export function EmpleadoFormulario({
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
+                      startMonth={new Date(2024, 0)}
+                      endMonth={new Date(2040, 0)}
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
@@ -191,6 +193,8 @@ export function EmpleadoFormulario({
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
+                      startMonth={new Date(2024, 0)}
+                      endMonth={new Date(2040, 0)}
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
