@@ -79,6 +79,7 @@ export async function getSolicitudesByEmpleado(): Promise<SolicitudPermiso[]> {
       nombreEmpleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
       puestoId: r.Puesto.Id,
       puesto: r.Puesto.Nombre,
+      tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
       fechaSolicitud: fechaSolicitudStr,
       fechaInicio: fechaInicioStr,
       fechaFin: fechaFinStr,
@@ -145,6 +146,7 @@ export async function getSolicitudesAprobaciones(): Promise<SolicitudAprobacion[
       fechaFin: fechaFinStr,
       diasSolicitados,
       descripcion: parent.Descripcion ?? "",
+      tipoSolicitud: (parent as any).TipoSolicitud ?? "VACACION",
     };
   });
 }
@@ -206,6 +208,7 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
       fechaFin: fechaFinStr,
       diasSolicitados,
       descripcion: parent.Descripcion ?? "",
+      tipoSolicitud: (parent as any).TipoSolicitud ?? "VACACION",
     };
   });
 }
@@ -268,6 +271,7 @@ export async function getSolicitudesById(id: string): Promise<SolicitudPermiso |
     diasRestantes: r.DiasRestantes ?? 0,
     aprobado: r.Aprobado ?? null,
     descripcion: r.Descripcion ?? "",
+    tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
     aprobaciones,
     periodo: r.Periodo ?? "",
     fechaPresentacion: r.FechaPresentacion?.toISOString() ?? "",
@@ -286,6 +290,7 @@ export async function putSolicitud({ solicitud }: { solicitud: SolicitudCreateIn
       FechaInicio: new Date(solicitud.fechaInicio),
       FechaFin: new Date(solicitud.fechaFin),
       Descripcion: solicitud.descripcion,
+      TipoSolicitud: solicitud.tipoSolicitud,
     },
   });
 
@@ -306,6 +311,7 @@ export async function putSolicitud({ solicitud }: { solicitud: SolicitudCreateIn
     diasSolicitados,
     aprobado: r.Aprobado ?? null,
     descripcion: r.Descripcion ?? "",
+    tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
     aprobaciones: [], // no se devuelven aquí
   };
 }
@@ -486,6 +492,7 @@ export async function postSolicitud({
       FechaInicio: fechaInicio,
       FechaFin: fechaFin,
       Descripcion: data.descripcion,
+      TipoSolicitud: data.tipoSolicitud ?? "VACACION",
       Aprobado: null,
       SolicitudVacacionAprobacion: { create: aprobacionesData },
     },
@@ -507,6 +514,7 @@ export async function postSolicitud({
     fechaInicio,
     fechaFin,
     descripcion: data.descripcion,
+    tipoSolicitud: data.tipoSolicitud ?? "VACACION",
   };
 
   // 5.1️⃣ Email al solicitante
@@ -566,6 +574,7 @@ export async function postSolicitud({
     empleadoId: r.EmpleadoId,
     nombreEmpleado: dto.empleadoNombre,
     puestoId: r.PuestoId,
+    tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
     fechaSolicitud: fechaSolicitudStr,
     fechaInicio: fechaInicioStr,
     fechaFin: fechaFinStr,

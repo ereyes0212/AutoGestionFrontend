@@ -21,11 +21,18 @@ export default async function Create() {
 
 
 
-  const initialData = {
+  const initialData: {
+    id: string;
+    fechaInicio: Date;
+    fechaFin: Date;
+    descripcion: string;
+    tipoSolicitud: "VACACION" | "DIACOMPENSATORIO" | "MIXTO";
+  } = {
     id: "",
     fechaInicio: new Date(),
     fechaFin: new Date(),
     descripcion: "",
+    tipoSolicitud: "VACACION"
   };
 
   return (

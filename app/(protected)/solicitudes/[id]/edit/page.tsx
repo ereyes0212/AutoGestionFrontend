@@ -25,7 +25,8 @@ export default async function Edit({ params }: { params: { id: string } }) {
         id: solicitud.id,
         fechaInicio: new Date(solicitud.fechaInicio),
         fechaFin: new Date(solicitud.fechaFin),
-        descripcion: solicitud.descripcion
+        descripcion: solicitud.descripcion,
+        tipoSolicitud: solicitud.tipoSolicitud as "VACACION" | "DIACOMPENSATORIO" | "MIXTO"
     };
 
 
