@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/analytics-sections/route.ts
 import { EmailService, MailPayload } from "@/lib/sendEmail";
 import { generateAnalyticsReportHtmlSections, SectionReport } from "@/lib/templates/analyticReporteSections";
