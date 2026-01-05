@@ -7,6 +7,7 @@ export const SolicitudSchema = z.object({
   fechaInicio: z.date(),
   fechaFin: z.date(),
   descripcion: z.string(),
+  tipoSolicitud: z.enum(["VACACION", "DIACOMPENSATORIO", "MIXTO"]).default("VACACION"),
 });
 
 export type Solicitud = z.infer<typeof SolicitudSchema>;

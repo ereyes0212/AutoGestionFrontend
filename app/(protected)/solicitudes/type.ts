@@ -20,6 +20,7 @@ export interface SolicitudPermiso {
   nombreEmpleado: string;
   puestoId: string;
   puesto: string;
+  tipoSolicitud?: string;
   fechaSolicitud: string;
   fechaInicio: string;
   fechaFin: string;
@@ -44,6 +45,7 @@ export type SolicitudAprobacion = {
   nombreEmpleado: string;
   puestoId: string;
   puesto: string;
+  tipoSolicitud?: string;
   fechaSolicitud: string;
   fechaInicio: string;
   fechaFin: string;
@@ -56,5 +58,6 @@ export type SolicitudCreateInput = {
   fechaInicio: string;   // ISO string ("2025-06-10"), se convertirá a Date en el servidor
   fechaFin: string;      // ISO string
   descripcion: string;
+  tipoSolicitud?: string;
 }
 
