@@ -2,6 +2,7 @@
 "use server";
 
 import { getSession } from "@/auth";
+import { TipoSolicitudVacacion } from "@/lib/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { EmailService } from "@/lib/sendEmail";
 import { solicitudCreadaTemplate, SolicitudData, solicitudParaAprobadorTemplate } from "@/lib/templates/solicitudVacacionesEmail";
@@ -10,6 +11,7 @@ import {
   Aprobacion,
   SolicitudAprobacion,
   SolicitudCreateInput,
+  SolicitudHistoricoUpdateInput,
   SolicitudPermiso
 } from "./type";
 
@@ -209,8 +211,94 @@ export async function getSolicitudesAprobacionesHistorico(): Promise<SolicitudAp
       diasSolicitados,
       descripcion: parent.Descripcion ?? "",
       tipoSolicitud: (parent as any).TipoSolicitud ?? "VACACION",
+      periodo: parent.Periodo ?? null,
+      diasGozados: parent.DiasGozados ?? null,
+      diasRestantes: parent.DiasRestantes ?? null,
+      fechaPresentacion: parent.FechaPresentacion ? parent.FechaPresentacion.toISOString() : null,
     };
   });
+}
+
+/**
+ * Actualiza una solicitud del histórico con los campos editables.
+ */
+export async function updateSolicitudHistorico({
+  idSolicitud,
+  periodo,
+  diasGozados,
+  diasRestantes,
+  fechaPresentacion,
+  comentario,
+}: SolicitudHistoricoUpdateInput) {
+  const session = await getSession();
+  const idEmp = session?.IdEmpleado;
+  if (!idEmp) {
+    throw new Error("Empleado no autenticado");
+  }
+
+  // Verificar que el usuario tiene una aprobación relacionada con esta solicitud
+  const aprobacion = await prisma.solicitudVacacionAprobacion.findFirst({
+    where: {
+      SolicitudVacacionId: idSolicitud,
+      EmpleadoAprobadorId: idEmp,
+      NOT: { Estado: "Pendiente" },
+    },
+  });
+
+  if (!aprobacion) {
+    throw new Error("No tienes permisos para editar esta solicitud");
+  }
+
+  // Construir el objeto de datos para actualizar solo los campos proporcionados
+  const updateData: any = {};
+  if (periodo !== undefined) {
+    updateData.Periodo = periodo;
+  }
+  if (diasGozados !== undefined) {
+    updateData.DiasGozados = diasGozados;
+  }
+  if (diasRestantes !== undefined) {
+    updateData.DiasRestantes = diasRestantes;
+  }
+  if (fechaPresentacion !== undefined) {
+    updateData.FechaPresentacion = fechaPresentacion ? new Date(fechaPresentacion) : null;
+  }
+
+  // Actualizar la solicitud
+  const solicitud = await prisma.solicitudVacacion.update({
+    where: { Id: idSolicitud },
+    data: updateData,
+    include: {
+      Empleados: true,
+      Puesto: true,
+    },
+  });
+
+  // Si se proporciona comentario, actualizar también la aprobación
+  if (comentario !== undefined) {
+    await prisma.solicitudVacacionAprobacion.update({
+      where: { Id: aprobacion.Id },
+      data: {
+        Comentarios: comentario,
+      },
+    });
+  }
+
+  // Si se actualizaron los días restantes y no es null, actualizar también en el empleado
+  if (diasRestantes !== undefined && diasRestantes !== null) {
+    await prisma.empleados.update({
+      where: { id: solicitud.EmpleadoId },
+      data: { Vacaciones: diasRestantes },
+    });
+  }
+
+  return {
+    id: solicitud.Id,
+    periodo: solicitud.Periodo,
+    diasGozados: solicitud.DiasGozados,
+    diasRestantes: solicitud.DiasRestantes,
+    fechaPresentacion: solicitud.FechaPresentacion ? solicitud.FechaPresentacion.toISOString() : null,
+  };
 }
 
 /**
@@ -290,7 +378,7 @@ export async function putSolicitud({ solicitud }: { solicitud: SolicitudCreateIn
       FechaInicio: new Date(solicitud.fechaInicio),
       FechaFin: new Date(solicitud.fechaFin),
       Descripcion: solicitud.descripcion,
-      TipoSolicitud: solicitud.tipoSolicitud,
+      TipoSolicitud: solicitud.tipoSolicitud as TipoSolicitudVacacion,
     },
   });
 
@@ -492,7 +580,7 @@ export async function postSolicitud({
       FechaInicio: fechaInicio,
       FechaFin: fechaFin,
       Descripcion: data.descripcion,
-      TipoSolicitud: data.tipoSolicitud ?? "VACACION",
+      TipoSolicitud: (data.tipoSolicitud ?? "VACACION") as TipoSolicitudVacacion,
       Aprobado: null,
       SolicitudVacacionAprobacion: { create: aprobacionesData },
     },
@@ -510,7 +598,7 @@ export async function postSolicitud({
 
   // Datos comunes
   const dto: SolicitudData = {
-    empleadoNombre: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    empleadoNombre: `${r.Empleados?.nombre ?? ""} ${r.Empleados?.apellido ?? ""}`,
     fechaInicio,
     fechaFin,
     descripcion: data.descripcion,
@@ -518,7 +606,7 @@ export async function postSolicitud({
   };
 
   // 5.1️⃣ Email al solicitante
-  if (r.Empleados.correo) {
+  if (r.Empleados?.correo) {
     await emailService.sendMail({
       to: r.Empleados.correo,
       subject: `Tu solicitud de vacaciones está registrada`,
@@ -530,7 +618,7 @@ export async function postSolicitud({
   // 5.2️⃣ Emails a aprobadores
   const frontendBase = process.env.FRONTEND_URL || "";
   await Promise.all(
-    r.SolicitudVacacionAprobacion.map(async (ap) => {
+    r.SolicitudVacacionAprobacion.map(async (ap: { Empleados?: { correo?: string | null } | null; Nivel: number }) => {
       const mail = ap.Empleados?.correo;
       if (!mail) return;
       const nivel = ap.Nivel;
@@ -549,7 +637,7 @@ export async function postSolicitud({
   const fechaFinStr = r.FechaFin.toISOString();
   const diasSolicitados = calcularDiasSolicitados(r.FechaInicio, r.FechaFin);
 
-  const aprobacionesOut: Aprobacion[] = r.SolicitudVacacionAprobacion.map((a) => ({
+  const aprobacionesOut: Aprobacion[] = r.SolicitudVacacionAprobacion.map((a: { Id: string; Nivel: number; EmpleadoAprobadorId: string | null; Empleados: { nombre: string; apellido: string } | null; ConfiguracionAprobacion: { puesto_id: string | null } }) => ({
     id: a.Id,
     nivel: a.Nivel,
     aprobado: null,

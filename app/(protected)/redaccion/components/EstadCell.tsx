@@ -16,7 +16,7 @@ export const EstadoCell: React.FC<EstadoCellProps> = ({ estado, feedback, esPrio
         PENDIENTE: { Icon: Clock, color: "bg-yellow-100 text-yellow-800", label: "PENDIENTE" },
         APROBADA: { Icon: CheckCircle, color: "bg-green-100 text-green-800", label: "APROBADA" },
         FINALIZADA: { Icon: Award, color: "bg-blue-100 text-blue-800", label: "FINALIZADA" },
-        RECHAZADA: { Icon: XCircle, color: "bg-red-100 text-red-800", label: "RECHAZADA" },
+        RECHAZADA: { Icon: XCircle, color: "bg-red-100 text-red-800", label: "DESCARTADA" },
     } as const;
 
     const info = map[estado] ?? map.PENDIENTE;
@@ -67,7 +67,7 @@ export const EstadoCell: React.FC<EstadoCellProps> = ({ estado, feedback, esPrio
                 </HoverCard>
             )}
 
-            {/* Solo para RECHAZADA mostramos el feedback */}
+            {/* Solo para RECHAZADA (mostrada como DESCARTADA) mostramos el feedback */}
             {feedback && (
                 <HoverCard openDelay={200} closeDelay={100}>
                     <HoverCardTrigger asChild>

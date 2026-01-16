@@ -21,6 +21,9 @@ export async function getTransporter() {
         // Opcionales:
         // greetingTimeout: 30000,
         // socketTimeout: 60000,
+        tls: {
+            rejectUnauthorized: false,
+        },
     });
 }
 

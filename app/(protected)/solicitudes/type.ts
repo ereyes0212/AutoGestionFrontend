@@ -51,6 +51,10 @@ export type SolicitudAprobacion = {
   fechaFin: string;
   diasSolicitados: number;
   descripcion: string;
+  periodo?: string | null;
+  diasGozados?: number | null;
+  diasRestantes?: number | null;
+  fechaPresentacion?: string | null;
 }
 
 export type SolicitudCreateInput = {
@@ -59,5 +63,14 @@ export type SolicitudCreateInput = {
   fechaFin: string;      // ISO string
   descripcion: string;
   tipoSolicitud?: string;
+}
+
+export type SolicitudHistoricoUpdateInput = {
+  idSolicitud: string;
+  periodo?: string | null;
+  diasGozados?: number | null;
+  diasRestantes?: number | null;
+  fechaPresentacion?: string | null;
+  comentario?: string | null;
 }
 

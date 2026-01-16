@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -36,7 +43,7 @@ export function EmpleadoFormulario({
 
   const form = useForm<z.infer<typeof SolicitudSchema>>({
     resolver: zodResolver(SolicitudSchema),
-    defaultValues: initialData || {},
+    defaultValues: initialData || { tipoSolicitud: "VACACION" },
   });
 
   async function onSubmit(data: z.infer<typeof SolicitudSchema>) {
@@ -55,6 +62,7 @@ export function EmpleadoFormulario({
             descripcion: solicitudData.solicitud.descripcion,
             fechaInicio: solicitudData.solicitud.fechaInicio.toISOString(),
             fechaFin: solicitudData.solicitud.fechaFin.toISOString(),
+            tipoSolicitud: solicitudData.solicitud.tipoSolicitud,
           },
         }); // Llamada a la API para actualizar
       } else {
@@ -71,6 +79,7 @@ export function EmpleadoFormulario({
             ...solicitudData.solicitud,
             fechaInicio: solicitudData.solicitud.fechaInicio.toISOString(),
             fechaFin: solicitudData.solicitud.fechaFin.toISOString(),
+            tipoSolicitud: solicitudData.solicitud.tipoSolicitud,
           },
         }); // Llamada a la API para crear un nuevo empleado
       }
@@ -115,6 +124,32 @@ export function EmpleadoFormulario({
                 <FormDescription>
                   Por favor ingresa una descripción.
                 </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="tipoSolicitud"
+            render={({ field }) => (
+              <FormItem className="col-span-1 sm:col-span-1">
+                <FormLabel>Tipo de solicitud</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={(val) => field.onChange(val)}
+                    value={field.value || "VACACION"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="VACACION">Vacación</SelectItem>
+                      <SelectItem value="DIACOMPENSATORIO">Día compensatorio</SelectItem>
+                      <SelectItem value="MIXTO">Mixto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription>Selecciona el tipo de solicitud.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

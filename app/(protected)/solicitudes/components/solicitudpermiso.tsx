@@ -45,6 +45,19 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
 
   const estadoGeneral = determinarEstadoGeneral(solicitud)
 
+  const tipoSolicitudLabel = (tipo?: string) => {
+    switch (tipo) {
+      case "VACACION":
+        return "Vacación"
+      case "DIACOMPENSATORIO":
+        return "Día compensatorio"
+      case "MIXTO":
+        return "Mixto"
+      default:
+        return "No especificado"
+    }
+  }
+
   const handlePrint = () => {
     window.open(
       `/solicitudes/${solicitud.id}/imprimir`,
@@ -117,6 +130,10 @@ export default function SolicitudPermisoCard({ solicitud }: { solicitud: Solicit
             <div>
               <p className="text-sm font-medium text-muted-foreground">Días Solicitados:</p>
               <p>{solicitud.diasSolicitados} días</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Tipo de solicitud:</p>
+              <p>{tipoSolicitudLabel(solicitud.tipoSolicitud)}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Descripción:</p>

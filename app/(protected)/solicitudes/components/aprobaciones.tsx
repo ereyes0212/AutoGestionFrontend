@@ -14,9 +14,23 @@ import { Briefcase, CalendarDays, Clock, FileText, User } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Empleado } from "../../empleados/type"
-import { processApproval } from "../actions"
+import { processApproval, updateSolicitudHistorico } from "../actions"
 import { SolicitudAprobacion } from "../type"
 import { ApprovalDialog } from "./dialog-aprobacion"
+import { EditHistoricoDialog } from "./dialog-edit-historico"
+
+const tipoSolicitudLabel = (tipo?: string) => {
+    switch (tipo) {
+        case "VACACION":
+            return "Vacación"
+        case "DIACOMPENSATORIO":
+            return "Día compensatorio"
+        case "MIXTO":
+            return "Mixto"
+        default:
+            return "No especificado"
+    }
+}
 
 const formatearFecha = (fecha: string) => {
     if (!fecha) return "N/A"
@@ -162,6 +176,10 @@ export default function SolicitudAprobaciones({
                                                 <p>{solicitud.diasSolicitados} días</p>
                                             </div>
                                             <div>
+                                                <p className="text-xs font-medium text-gray-500">Tipo de solicitud:</p>
+                                                <p>{tipoSolicitudLabel(solicitud.tipoSolicitud)}</p>
+                                            </div>
+                                            <div>
                                                 <p className="text-xs font-medium text-gray-500">Estado de Aprobación:</p>
                                                 <div className="mt-1">
                                                     {solicitud.aprobado === "Aprobado" ? (
@@ -187,8 +205,73 @@ export default function SolicitudAprobaciones({
                                             <p className="mt-1">{solicitud.comentario}</p>
                                         </div>
                                     )}
+                                    {solicitud.aprobado !== 'Pendiente' && (
+                                        <div className="mb-2 space-y-2">
+                                            <div className="flex items-center gap-1 text-sm font-medium text-gray-500 border-b pb-1">
+                                                <span>Información Adicional</span>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                {solicitud.periodo && (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500">Periodo:</p>
+                                                        <p>{solicitud.periodo}</p>
+                                                    </div>
+                                                )}
+                                                {solicitud.diasGozados !== null && solicitud.diasGozados !== undefined && (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500">Días de goce:</p>
+                                                        <p>{solicitud.diasGozados} días</p>
+                                                    </div>
+                                                )}
+                                                {solicitud.diasRestantes !== null && solicitud.diasRestantes !== undefined && (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500">Días restantes:</p>
+                                                        <p>{solicitud.diasRestantes} días</p>
+                                                    </div>
+                                                )}
+                                                {solicitud.fechaPresentacion && (
+                                                    <div>
+                                                        <p className="text-xs font-medium text-gray-500">Fecha de presentación:</p>
+                                                        <p>{formatearFecha(solicitud.fechaPresentacion)}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </CardContent>
 
+                                {solicitud.aprobado !== 'Pendiente' && (
+                                    <CardFooter key={solicitud.id} className="flex justify-end gap-1">
+                                        <EditHistoricoDialog
+                                            solicitud={solicitud}
+                                            onConfirm={async (periodo, diasRestantes, diasGozados, fechaPresentacion, comentario) => {
+                                                try {
+                                                    await updateSolicitudHistorico({
+                                                        idSolicitud: solicitud.idSolicitud,
+                                                        periodo,
+                                                        diasRestantes,
+                                                        diasGozados,
+                                                        fechaPresentacion,
+                                                        comentario,
+                                                    });
+                                                    toast({
+                                                        title: "Actualización exitosa",
+                                                        description: "La solicitud ha sido actualizada correctamente.",
+                                                        variant: "default",
+                                                    });
+                                                    router.refresh();
+                                                } catch (error) {
+                                                    console.error(error);
+                                                    toast({
+                                                        title: "Error en la actualización",
+                                                        description: error instanceof Error ? error.message : "Hubo un problema al actualizar la solicitud.",
+                                                        variant: "destructive",
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                    </CardFooter>
+                                )}
                                 {solicitud.aprobado === 'Pendiente' && (
                                     <CardFooter key={solicitud.id} className="flex justify-end gap-1">
                                         <ApprovalDialog
