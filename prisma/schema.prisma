@@ -61,6 +61,7 @@ model Empleados {
   Vacaciones Int
   genero     String?  @db.VarChar(20)
   activo     Boolean  @db.Bit(1)
+  firma      String?  @db.LongText
   createAt   DateTime @default(now())
   updateAt   DateTime @updatedAt
 

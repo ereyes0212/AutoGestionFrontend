@@ -33,6 +33,8 @@ export interface Employee {
   jefe_id: string | null;
   jefe: string;
 
+  firma: string | null;
+
   createAt: Date;
   updateAt: Date;
 }

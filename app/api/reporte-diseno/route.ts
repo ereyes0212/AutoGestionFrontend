@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import { getReportesPorTurnoDia } from "@/app/(protected)/reporte-diseno/actions"; // ajusta ruta si necesario
-import { NextResponse } from "next/server";
+import { getReportesPorTurnoDia } from "@/app/(protected)/reporte-diseno/actions";
+import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 // limpia caracteres problemáticos básicos
@@ -55,16 +55,18 @@ function hoyEnHondurasYYYYMMDD(): string {
     return formatter.format(now); // "YYYY-MM-DD"
 }
 
-export async function GET() {
-    try {
-        // fecha HN de hoy
-        const dateStr = hoyEnHondurasYYYYMMDD();
+const YYYYMMDD = /^\d{4}-\d{2}-\d{2}$/;
 
-        // turno fijo 08 -> 02 (se mantiene por compatibilidad con la action)
+export async function GET(request: NextRequest) {
+    try {
+        const raw = request.nextUrl.searchParams.get("fecha");
+        const dateStr =
+            raw && YYYYMMDD.test(raw) ? raw : hoyEnHondurasYYYYMMDD();
+
+        // Turno: 8:00 AM del día seleccionado → 5:00 AM del día siguiente
         const startHour = 8;
         const endHour = 5;
 
-        // obtén reportes desde tu action (usa FechaRegistro en UTC internamente)
         const registros = await getReportesPorTurnoDia(dateStr, startHour, endHour);
 
         // crear PDF
@@ -77,9 +79,10 @@ export async function GET() {
 
         let y = height - 60;
 
-        // Título y fecha (formateada en HN)
-        const fechaFormateada = new Date().toLocaleDateString("es-ES", {
-            timeZone: "America/Tegucigalpa",
+        // Título y fecha del día seleccionado (formateada en HN)
+        const [year, month, day] = dateStr.split("-").map(Number);
+        const fechaObj = new Date(year, month - 1, day);
+        const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {
             weekday: "long",
             year: "numeric",
             month: "long",

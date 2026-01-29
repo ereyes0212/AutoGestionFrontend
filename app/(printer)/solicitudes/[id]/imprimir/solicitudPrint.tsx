@@ -28,6 +28,7 @@ async function getBase64FromUrl(url: string): Promise<string> {
 type Firma = {
     nombre: string;
     cargo?: string;
+    firmaBase64?: string | null;
 };
 
 export default function ClientPrintView({
@@ -203,24 +204,56 @@ export default function ClientPrintView({
             const colWidth = 200;
             const gap = 80;
             const startX = (pageWidth - (colWidth * 2 + gap)) / 2;
+            const firmaImageHeight = 40; // Altura de la imagen de firma
+            const espacioLineaFirma = 20; // Espacio entre firma y línea
 
             firmas.forEach((firma, index) => {
                 const col = index % 2;
                 const row = Math.floor(index / 2);
                 const x1 = startX + col * (colWidth + gap);
-                const y1 = yFirmas + row * 80;
+                let y1 = yFirmas + row * 110; // Aumentamos el espacio vertical para incluir la imagen
 
-                // Línea de firma
-                doc.line(x1, y1, x1 + colWidth, y1);
+                // Si hay imagen de firma, mostrarla centrada
+                if (firma.firmaBase64) {
+                    try {
+                        // Calcular el ancho de la imagen manteniendo proporción
+                        const firmaImageWidth = colWidth - 20; // Ancho con márgenes
+                        const centerX = x1 + colWidth / 2; // Centro de la columna
+                        const imageX = centerX - firmaImageWidth / 2; // Posición X para centrar
 
-                // Texto de nombre
+                        doc.addImage(
+                            firma.firmaBase64,
+                            "PNG",
+                            imageX,
+                            y1 - firmaImageHeight - espacioLineaFirma,
+                            firmaImageWidth,
+                            firmaImageHeight,
+                            undefined,
+                            "FAST"
+                        );
+                    } catch (error) {
+                        console.error("Error al agregar imagen de firma:", error);
+                    }
+                }
+
+                // Siempre dibujar la línea de firma (abajo de la imagen o solo la línea)
+                const yLineaFirma = firma.firmaBase64 
+                    ? y1 - espacioLineaFirma 
+                    : y1 - espacioLineaFirma;
+                doc.line(x1, yLineaFirma, x1 + colWidth, yLineaFirma);
+
+                // Texto de nombre centrado
                 doc.setFontSize(12);
-                doc.text(firma.nombre, x1 + 10, y1 + 18);
+                const nombreWidth = doc.getTextWidth(firma.nombre);
+                const nombreX = x1 + (colWidth - nombreWidth) / 2;
+                doc.text(firma.nombre, nombreX, y1 + 5);
 
-                // Cargo (si existe)
+                // Cargo centrado (si existe)
                 if (firma.cargo) {
                     doc.setFontSize(10);
-                    doc.text(firma.cargo, x1 + 10, y1 + 32);
+                    const cargoWidth = doc.getTextWidth(firma.cargo);
+                    const cargoX = x1 + (colWidth - cargoWidth) / 2;
+                    doc.text(firma.cargo, cargoX, y1 + 18);
                 }
                 doc.setFontSize(12);
             });

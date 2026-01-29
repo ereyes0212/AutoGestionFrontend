@@ -7,6 +7,7 @@ import { es } from "date-fns/locale"
 import { Mail, Phone } from "lucide-react"
 import { calcularEdad, calculateServiceDuration } from "../../../../lib/utils"
 import type { Employee } from "../type"
+import FirmaManager from "./firma-manager"
 
 interface EmployeeProfileProps {
     employee: Employee
@@ -118,6 +119,12 @@ export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
                                 )}
                             </dl>
                         </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    <div className="space-y-4">
+                        <FirmaManager firmaActual={employee.firma} />
                     </div>
                 </CardContent>
             </Card>
