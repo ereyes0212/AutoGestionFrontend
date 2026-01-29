@@ -24,8 +24,9 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { TipoSeccion } from "../../tipo-seccion/types";
-import { createReporteDiseño } from "../actions";
+import { createReporteDiseño, updateReporteDiseño } from "../actions";
 import { ReporteDisenoDTOSchema } from "../schema";
+import type { ReporteDiseño } from "../type";
 import { TimePicker } from "./time-picket";
 
 type ReporteFormValues = z.input<typeof ReporteDisenoDTOSchema>;
@@ -59,17 +60,23 @@ export function FormularioReporte({
   const onSubmit = async (values: ReporteFormValues) => {
     try {
       const payload = {
-        ...values,
-        tipoSeccion: tipoSecciones.find(ts => ts.id === values.SeccionId)?.nombre ?? "",
-        empleado: "",
-        id: initialData?.id ?? "",
-        fechaRegistro: new Date().toISOString(),
+        SeccionId: values.SeccionId ?? "",
+        PaginaInicio: values.PaginaInicio,
+        PaginaFin: values.PaginaFin,
+        HoraInicio: values.HoraInicio,
+        HoraFin: values.HoraFin,
+        Observacion: values.Observacion ?? "",
       };
 
-      if (isUpdate) {
+      if (isUpdate && initialData?.id) {
+        await updateReporteDiseño(initialData.id, payload);
         toast({ title: "Reporte actualizado", description: "Actualizado correctamente" });
       } else {
-        await createReporteDiseño(payload as any);
+        await createReporteDiseño({
+          ...payload,
+          Empleado: "",
+          FechaRegistro: new Date(),
+        } as ReporteDiseño);
         toast({ title: "Reporte creado", description: "Creado correctamente" });
       }
       router.push("/reporte-diseno");

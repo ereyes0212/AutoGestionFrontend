@@ -92,6 +92,55 @@ export async function createReporteDiseño(data: ReporteDiseño): Promise<Report
     Observacion: nuevo.Observacion ?? '',
   };
 }
+
+//
+// Actualizar un reporte existente.
+//
+export type UpdateReporteDiseñoInput = {
+  SeccionId: string;
+  PaginaInicio: number;
+  PaginaFin: number;
+  HoraInicio: string;
+  HoraFin: string;
+  Observacion?: string;
+};
+
+export async function updateReporteDiseño(
+  id: string,
+  data: UpdateReporteDiseñoInput
+): Promise<ReporteDiseño | null> {
+  const session = await getSession();
+  if (!session?.IdEmpleado) {
+    throw new Error("Empleado no autenticado");
+  }
+
+  const actualizado = await prisma.reporteDiseño.update({
+    where: { Id: id },
+    data: {
+      SeccionId: data.SeccionId,
+      PaginaInicio: data.PaginaInicio,
+      PaginaFin: data.PaginaFin,
+      HoraInicio: data.HoraInicio,
+      HoraFin: data.HoraFin,
+      Observacion: data.Observacion ?? '',
+    },
+    include: { TipoSeccion: true, Empleados: true },
+  });
+
+  return {
+    Id: actualizado.Id,
+    Empleado: `${actualizado.Empleados.nombre} ${actualizado.Empleados.apellido}`,
+    TipoSeccion: actualizado.TipoSeccion.Nombre,
+    SeccionId: actualizado.SeccionId,
+    FechaRegistro: actualizado.FechaRegistro,
+    PaginaInicio: actualizado.PaginaInicio,
+    PaginaFin: actualizado.PaginaFin,
+    HoraInicio: actualizado.HoraInicio,
+    HoraFin: actualizado.HoraFin,
+    Observacion: actualizado.Observacion ?? '',
+  };
+}
+
 // ------------------ Turnos / Reportes por turno ------------------
 
 const HN_OFFSET_HOURS = 6; // Honduras = UTC-6
