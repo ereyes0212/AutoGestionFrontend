@@ -65,7 +65,7 @@ export async function requestPasswordReset(username: string): Promise<boolean> {
 
     // 4️⃣ Construir enlace de restablecimiento
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const link = `${baseUrl}/forgot-password?token=${encodeURIComponent(token)}`;
+    const link = `${baseUrl}forgot-password?token=${encodeURIComponent(token)}`;
 
     // 5️⃣ Preparar correo usando la plantilla
     const fullName = `${user.Empleados.nombre} ${user.Empleados.apellido}`;

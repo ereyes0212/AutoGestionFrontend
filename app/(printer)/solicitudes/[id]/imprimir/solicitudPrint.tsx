@@ -98,7 +98,7 @@ export default function ClientPrintView({
             doc.setFont("helvetica", "normal");
             let yInfo = 150;
             const salto = 28;
-            const left = 60;
+            const left = 70;
             doc.setFont("helvetica", "bold");
             doc.text("Datos del empleado", left, yInfo - 8);
             doc.setFont("helvetica", "normal");
@@ -106,55 +106,55 @@ export default function ClientPrintView({
             yInfo += 10;
             doc.text(`Nombre del empleado:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${solicitud.nombreEmpleado}`, left + 180, yInfo);
+            doc.text(`${solicitud.nombreEmpleado}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Puesto:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${solicitud.puesto}`, left + 180, yInfo);
+            doc.text(`${solicitud.puesto}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Fecha de solicitud:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${formatearFecha(solicitud.fechaSolicitud)}`, left + 180, yInfo);
+            doc.text(`${formatearFecha(solicitud.fechaSolicitud)}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Periodo:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${solicitud.periodo}`, left + 180, yInfo);
+            doc.text(`${solicitud.periodo}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Días a gozar:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${solicitud.diasGozados || 0}`, left + 180, yInfo);
+            doc.text(`${solicitud.diasGozados || 0}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Días restantes:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${solicitud.diasRestantes || 0}`, left + 180, yInfo);
+            doc.text(`${solicitud.diasRestantes || 0}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
-            doc.text(`Fecha de goce de vacaciones:`, left, yInfo);
+            doc.text(`Fecha de inicio goce de vacaciones:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${formatearFecha(solicitud.fechaInicio)}`, left + 180, yInfo);
+            doc.text(`${formatearFecha(solicitud.fechaInicio)}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Fecha de fin de goce:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${formatearFecha(solicitud.fechaFin)}`, left + 180, yInfo);
+            doc.text(`${formatearFecha(solicitud.fechaFin)}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
             doc.text(`Fecha de presentacion:`, left, yInfo);
             doc.setFont("helvetica", "bold");
-            doc.text(`${formatearFecha(solicitud.fechaPresentacion || "")}`, left + 180, yInfo);
+            doc.text(`${formatearFecha(solicitud.fechaPresentacion || "")}`, left + 200, yInfo);
             doc.setFont("helvetica", "normal");
             yInfo += salto;
 
@@ -211,7 +211,7 @@ export default function ClientPrintView({
                 const col = index % 2;
                 const row = Math.floor(index / 2);
                 const x1 = startX + col * (colWidth + gap);
-                let y1 = yFirmas + row * 110; // Aumentamos el espacio vertical para incluir la imagen
+                const y1 = yFirmas + row * 110; // Aumentamos el espacio vertical para incluir la imagen
 
                 // Si hay imagen de firma, mostrarla centrada
                 if (firma.firmaBase64) {
@@ -237,8 +237,8 @@ export default function ClientPrintView({
                 }
 
                 // Siempre dibujar la línea de firma (abajo de la imagen o solo la línea)
-                const yLineaFirma = firma.firmaBase64 
-                    ? y1 - espacioLineaFirma 
+                const yLineaFirma = firma.firmaBase64
+                    ? y1 - espacioLineaFirma
                     : y1 - espacioLineaFirma;
                 doc.line(x1, yLineaFirma, x1 + colWidth, yLineaFirma);
 
