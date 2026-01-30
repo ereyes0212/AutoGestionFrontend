@@ -54,32 +54,35 @@ export default async function ImprimirPage({
         }
     }
 
-    // Obtenemos los nombres y cargos del query params
-    // Si vienen como string único, lo convertimos en array
-    const nombres = Array.isArray(searchParams?.nombre)
-        ? searchParams?.nombre
-        : searchParams?.nombre?.split(",") || [];
-    const cargos = Array.isArray(searchParams?.cargo)
-        ? searchParams?.cargo
-        : searchParams?.cargo?.split(",") || [];
+    // Leer correctamente todos los parámetros repetidos del query
+    const query = new URLSearchParams(
+        Object.entries(searchParams || {}).flatMap(([key, value]) =>
+            Array.isArray(value) ? value.map(v => [key, v]) : [[key, value]]
+        )
+    );
+
+    const nombres = query.getAll("nombre"); // todos los nombres
+    const cargos = query.getAll("cargo");   // todos los cargos
 
     // Crear el array de firmas
     const firmas: Firma[] = [];
 
-    // Agregar la firma del empleado que solicita como primera firma
-    if (empleadoSolicitante?.firma) {
+    // 1️⃣ Agregar siempre al solicitante primero
+    if (empleadoSolicitante) {
         firmas.push({
-            nombre: solicitud.nombreEmpleado,
-            cargo: solicitud.puesto,
-            firmaBase64: empleadoSolicitante.firma,
+            nombre: `${empleadoSolicitante.nombre} ${empleadoSolicitante.apellido}`,
+            cargo: solicitud.puesto || "Desconocido",
+            firmaBase64: empleadoSolicitante.firma || null,
         });
     }
 
-    // Agregar las firmas adicionales del query params
+    // 2️⃣ Agregar todas las firmas del query
     nombres.forEach((nombre, index) => {
-        // Evitar duplicar si ya agregamos la firma del empleado solicitante o del generador
+        const nombreSolicitante = `${empleadoSolicitante?.nombre} ${empleadoSolicitante?.apellido}`;
         const nombreGenerador = firmaGenerador?.nombre;
-        if (nombre !== solicitud.nombreEmpleado && nombre !== nombreGenerador) {
+
+        // Evitar duplicar al solicitante exacto y al generador
+        if (nombre !== nombreSolicitante && nombre !== nombreGenerador) {
             firmas.push({
                 nombre,
                 cargo: cargos[index] || "Desconocido",
@@ -87,8 +90,8 @@ export default async function ImprimirPage({
         }
     });
 
-    // Agregar la firma del usuario que genera el PDF al final (si no es el mismo que solicita)
-    if (firmaGenerador && firmaGenerador.nombre !== solicitud.nombreEmpleado) {
+    // 3️⃣ Agregar la firma del usuario que genera el PDF (si no es el solicitante)
+    if (firmaGenerador && firmaGenerador.nombre !== `${empleadoSolicitante?.nombre} ${empleadoSolicitante?.apellido}`) {
         firmas.push(firmaGenerador);
     }
 
