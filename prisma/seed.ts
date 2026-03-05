@@ -87,6 +87,10 @@ async function main() {
 
     { nombre: "ver_tareas", descripcion: "Permiso para ver el modulo de tareas" },
 
+    { nombre: "ver_facturas", descripcion: "Permiso para ver el modulo de facturas" },
+    { nombre: "crear_facturas", descripcion: "Permiso para crear eventos de factura" },
+    { nombre: "ver_facturas_jefe", descripcion: "Permiso para ver todas las facturas y filtrarlas" },
+
     { nombre: "ver_mensajes", descripcion: "Permiso para ver el modulo de mensajes" },
     { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" }
 

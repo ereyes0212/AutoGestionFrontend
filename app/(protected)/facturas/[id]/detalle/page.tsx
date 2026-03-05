@@ -1,0 +1,79 @@
+import { getSessionPermisos } from "@/auth";
+import HeaderComponent from "@/components/HeaderComponent";
+import NoAcceso from "@/components/noAccess";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ReceiptText } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getEventoFacturaById } from "../../actions";
+
+export default async function DetalleEventoFacturaPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const permisos = await getSessionPermisos();
+  if (!permisos?.includes("ver_facturas") && !permisos?.includes("ver_facturas_jefe")) {
+    return <NoAcceso />;
+  }
+
+  const evento = await getEventoFacturaById(params.id);
+  if (!evento) {
+    redirect("/facturas");
+  }
+
+  return (
+    <div className="container mx-auto py-2 space-y-4">
+      <HeaderComponent
+        Icon={ReceiptText}
+        screenName="Detalle de evento de factura"
+        description="Visualiza toda la información del evento y sus archivos adjuntos."
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{evento.titulo}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p><strong>Empleado:</strong> {evento.empleadoNombre}</p>
+          <p><strong>Fecha:</strong> {new Date(evento.fechaEvento).toLocaleString()}</p>
+          <p><strong>Nota vinculada:</strong> {evento.notaTitulo ?? "Sin nota"}</p>
+          <p><strong>Descripción:</strong> {evento.descripcion || "Sin descripción"}</p>
+          <p><strong>Total facturas:</strong> {evento.totalFacturas}</p>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {evento.archivos.map((archivo) => {
+          const isImage = archivo.archivoTipo.startsWith("image/");
+          return (
+            <Card key={archivo.id}>
+              <CardHeader>
+                <CardTitle className="text-base break-all">{archivo.archivoNombre}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={archivo.archivoUrl}
+                    alt={archivo.archivoNombre}
+                    className="w-full max-h-80 object-contain rounded border"
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Archivo PDF</p>
+                )}
+                <a
+                  href={archivo.archivoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline text-blue-600 text-sm"
+                >
+                  Abrir archivo
+                </a>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
