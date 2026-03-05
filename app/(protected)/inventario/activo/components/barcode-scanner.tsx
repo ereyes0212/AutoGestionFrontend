@@ -4,13 +4,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Html5Qrcode } from "html5-qrcode";
 import { Camera, FlipHorizontal, Scan, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function BarcodeScanner() {
-    const [scanner, setScanner] = useState<Html5Qrcode | null>(null);
+    const [scanner, setScanner] = useState<any>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [cameras, setCameras] = useState<{ id: string; label: string }[]>([]);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
@@ -23,6 +22,7 @@ export default function BarcodeScanner() {
     useEffect(() => {
         const initScanner = async () => {
             try {
+                const { Html5Qrcode } = await import("html5-qrcode");
                 const devices = await Html5Qrcode.getCameras();
                 if (devices && devices.length) {
                     setCameras(devices);
@@ -47,6 +47,7 @@ export default function BarcodeScanner() {
 
         const startScanner = async (deviceId: string) => {
             try {
+                const { Html5Qrcode } = await import("html5-qrcode");
                 const newScanner = new Html5Qrcode("reader");
                 await newScanner.start(
                     deviceId,
