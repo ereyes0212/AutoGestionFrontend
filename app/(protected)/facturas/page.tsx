@@ -28,7 +28,12 @@ export default async function FacturasPage({
       hasta: searchParams?.hasta,
       empleadoId: searchParams?.empleadoId,
     }),
-    puedeVerTodas ? getEmpleadosParaFiltro() : Promise.resolve([]),
+    puedeVerTodas
+      ? getEmpleadosParaFiltro({
+          desde: searchParams?.desde,
+          hasta: searchParams?.hasta,
+        })
+      : Promise.resolve([]),
   ]);
 
   return (
