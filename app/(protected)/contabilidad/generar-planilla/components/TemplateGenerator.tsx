@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
 import { getTemplate } from "../actions";
 import { EmpleadoTemplate, VoucherTemplateResponse } from "../types";
 
@@ -10,6 +9,7 @@ type RowData = Record<string, string | number | null>;
 
 export function TemplateGenerator() {
     const generate = async () => {
+        const XLSX = await import("xlsx");
         const { empleados, ajustes }: VoucherTemplateResponse = await getTemplate();
 
         const baseHeaders = [

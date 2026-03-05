@@ -9,8 +9,6 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { FileDown, FileText } from "lucide-react";
 import { Activo } from "../../../types";
 
@@ -27,8 +25,12 @@ interface RegistrosListProps {
 }
 
 export default function RegistrosList({ activo, registros }: RegistrosListProps) {
-    const generarPDF = () => {
-        const doc = new jsPDF();
+    const generarPDF = async () => {
+        const [{ default: JsPDF }, { default: autoTable }] = await Promise.all([
+            import("jspdf"),
+            import("jspdf-autotable"),
+        ]);
+        const doc = new JsPDF();
 
         // Título
         doc.setFontSize(16);

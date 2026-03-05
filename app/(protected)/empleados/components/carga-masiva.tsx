@@ -14,7 +14,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, FileSpreadsheet, Upload } from "lucide-react";
 import { useState } from "react";
-import * as XLSX from "xlsx";
 import { importEmpleadosFromExcel } from "../actions"; // <-- Importa la acción del servidor
 import { EmployeeDto } from "../type";
 
@@ -26,6 +25,8 @@ export function EmployeeImporter() {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string>("");
+
+    const loadXlsx = async () => import("xlsx");
 
     const monthMap: Record<string, string> = {
         ENERO: "01",
@@ -125,6 +126,7 @@ export function EmployeeImporter() {
         setData([]);
 
         try {
+            const XLSX = await loadXlsx();
             const arrayBuffer = await file.arrayBuffer();
             const workbook = XLSX.read(arrayBuffer, {
                 type: "array",
