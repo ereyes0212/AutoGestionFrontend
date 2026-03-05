@@ -1,12 +1,14 @@
 import { getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { ReceiptText } from "lucide-react";
-import { getEmpleadosParaFiltro, getEventosFactura, getNotasEmpleadoActual } from "./actions";
-import FormEventoFactura from "./components/FormEventoFactura";
-import FiltrosFacturas from "./components/filtros";
+import Link from "next/link";
+import { getEmpleadosParaFiltro, getEventosFactura } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
+import FiltrosFacturas from "./components/filtros";
 
 export default async function FacturasPage({
   searchParams,
@@ -20,8 +22,7 @@ export default async function FacturasPage({
 
   if (!puedeVerPropias && !puedeVerTodas) return <NoAcceso />;
 
-  const [notas, eventos, empleados] = await Promise.all([
-    getNotasEmpleadoActual(),
+  const [eventos, empleados] = await Promise.all([
     getEventosFactura({
       desde: searchParams?.desde,
       hasta: searchParams?.hasta,
@@ -35,10 +36,19 @@ export default async function FacturasPage({
       <HeaderComponent
         Icon={ReceiptText}
         screenName="Facturas de combustible"
-        description="Crea eventos, sube la factura a S3 y vincúlala con una nota."
+        description="Consulta los eventos y visualiza sus archivos adjuntos."
       />
 
-      {puedeCrear && <FormEventoFactura notas={notas} />}
+      {puedeCrear && (
+        <div className="flex justify-end">
+          <Link href="/facturas/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Crear evento de factura
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {puedeVerTodas && <FiltrosFacturas empleados={empleados} />}
 

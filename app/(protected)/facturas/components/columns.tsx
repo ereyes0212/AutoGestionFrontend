@@ -17,9 +17,9 @@ export const columns: ColumnDef<EventoFactura>[] = [
   { accessorKey: "titulo", header: "Título" },
   { accessorKey: "empleadoNombre", header: "Empleado" },
   {
-    accessorKey: "fechaEvento",
+    accessorKey: "fechaEventoLabel",
     header: "Fecha",
-    cell: ({ row }) => new Date(row.original.fechaEvento).toLocaleString(),
+    cell: ({ row }) => row.original.fechaEventoLabel,
   },
   {
     accessorKey: "notaTitulo",
@@ -48,6 +48,9 @@ export const columns: ColumnDef<EventoFactura>[] = [
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
             <Link href={`/facturas/${evento.id}/detalle`}>
               <DropdownMenuItem>Ver detalle</DropdownMenuItem>
+            </Link>
+            <Link href={`/facturas/${evento.id}/editar`}>
+              <DropdownMenuItem>Editar</DropdownMenuItem>
             </Link>
           </DropdownMenuContent>
         </DropdownMenu>
