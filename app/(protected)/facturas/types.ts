@@ -1,6 +1,7 @@
 export type FacturaArchivo = {
   id: string;
   archivoUrl: string;
+  archivoKey: string;
   archivoNombre: string;
   archivoTipo: string;
 };

@@ -37,7 +37,7 @@ export async function getEventosFactura(filtros?: FiltrosFactura): Promise<Event
       empleado: true,
       nota: { select: { id: true, titulo: true } },
       archivos: {
-        select: { id: true, archivoNombre: true, archivoTipo: true, archivoUrl: true },
+        select: { id: true, archivoNombre: true, archivoTipo: true, archivoUrl: true, archivoKey: true },
         orderBy: { createAt: "desc" },
       },
       _count: { select: { archivos: true } },
@@ -71,7 +71,7 @@ export async function getEventoFacturaById(id: string): Promise<EventoFactura | 
       empleado: true,
       nota: { select: { id: true, titulo: true } },
       archivos: {
-        select: { id: true, archivoNombre: true, archivoTipo: true, archivoUrl: true },
+        select: { id: true, archivoNombre: true, archivoTipo: true, archivoUrl: true, archivoKey: true },
         orderBy: { createAt: "desc" },
       },
       _count: { select: { archivos: true } },
@@ -128,16 +128,17 @@ export async function postEventoFactura(data: EventoFacturaFormInput) {
   const archivos = await Promise.all(
     data.files.map(async (file) => {
       const buffer = Buffer.from(file.fileBase64, "base64");
+      const fileId = randomUUID();
       const safeName = file.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const key = `facturas/${session.IdEmpleado}/${eventoId}/${Date.now()}-${safeName}`;
-      const archivoUrl = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
+      const key = `${eventoId}/${fileId.slice(0, 4)}-${safeName}`;
+      const objectKey = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
 
       return {
-        id: randomUUID(),
-        archivoKey: key,
+        id: fileId,
+        archivoKey: objectKey,
         archivoNombre: file.fileName,
         archivoTipo: file.fileType,
-        archivoUrl,
+        archivoUrl: objectKey,
       };
     })
   );

@@ -1,4 +1,10 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+
+type UploadBufferToS3Input = {
+  key: string;
+  contentType: string;
+  body: Buffer;
+};
 
 function isDevelopmentEnvironment() {
   return process.env.NODE_ENV !== "production";
@@ -44,29 +50,9 @@ export function getPrivatePdfBucketConfig() {
   return { bucket, prefix };
 }
 
-export function buildS3PublicUrl(bucket: string, key: string) {
-  const explicit = process.env.AWS_S3_PUBLIC_BASE_URL;
-  if (explicit) return `${explicit.replace(/\/$/, "")}/${key}`;
-
-  const endpoint = process.env.AWS_S3_ENDPOINT;
-  if (endpoint) return `${endpoint.replace(/\/$/, "")}/${bucket}/${key}`;
-
-  const region = process.env.AWS_REGION;
-  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
-}
-
-export async function uploadBufferToS3({
-  key,
-  contentType,
-  body,
-}: {
-  key: string;
-  contentType: string;
-  body: Buffer;
-}) {
+export async function uploadBufferToS3({ key, contentType, body }: UploadBufferToS3Input) {
   const client = getS3Client();
   const { bucket, prefix } = getPrivatePdfBucketConfig();
-
   const objectKey = prefix ? `${prefix.replace(/\/$/, "")}/${key}` : key;
 
   await client.send(
@@ -78,5 +64,29 @@ export async function uploadBufferToS3({
     }),
   );
 
-  return buildS3PublicUrl(bucket, objectKey);
+  return objectKey;
+}
+
+export async function downloadBufferFromS3(key: string) {
+  const client = getS3Client();
+  const { bucket } = getPrivatePdfBucketConfig();
+
+  const response = await client.send(
+    new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }),
+  );
+
+  const body = response.Body;
+  if (!body) {
+    throw new Error("No se pudo leer el archivo desde S3");
+  }
+
+  const bytes = await body.transformToByteArray();
+
+  return {
+    buffer: Buffer.from(bytes),
+    contentType: response.ContentType ?? "application/octet-stream",
+  };
 }

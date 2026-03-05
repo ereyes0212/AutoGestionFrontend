@@ -45,6 +45,8 @@ export default async function DetalleEventoFacturaPage({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {evento.archivos.map((archivo) => {
           const isImage = archivo.archivoTipo.startsWith("image/");
+          const previewUrl = `/api/facturas/archivo/${archivo.id}`;
+
           return (
             <Card key={archivo.id}>
               <CardHeader>
@@ -54,21 +56,17 @@ export default async function DetalleEventoFacturaPage({
                 {isImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={archivo.archivoUrl}
+                    src={previewUrl}
                     alt={archivo.archivoNombre}
                     className="w-full max-h-80 object-contain rounded border"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground">Archivo PDF</p>
+                  <iframe
+                    src={previewUrl}
+                    title={archivo.archivoNombre}
+                    className="w-full h-[28rem] rounded border"
+                  />
                 )}
-                <a
-                  href={archivo.archivoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline text-blue-600 text-sm"
-                >
-                  Abrir archivo
-                </a>
               </CardContent>
             </Card>
           );
