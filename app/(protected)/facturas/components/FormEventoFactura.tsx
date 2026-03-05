@@ -8,17 +8,29 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { postEventoFactura } from "../actions";
+import { postEventoFactura, updateEventoFactura } from "../actions";
 
-export default function FormEventoFactura({
-  notas,
-}: {
-  notas: { id: string; titulo: string }[];
-}) {
-  const [titulo, setTitulo] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [fechaEvento, setFechaEvento] = useState("");
-  const [notaId, setNotaId] = useState<string>("none");
+type NotaOption = { id: string; titulo: string };
+
+type Props = {
+  notas: NotaOption[];
+  isUpdate?: boolean;
+  eventoId?: string;
+  initialData?: {
+    titulo: string;
+    descripcion?: string | null;
+    fechaEvento: string;
+    notaId?: string | null;
+  };
+};
+
+export default function FormEventoFactura({ notas, isUpdate = false, eventoId, initialData }: Props) {
+  const [titulo, setTitulo] = useState(initialData?.titulo ?? "");
+  const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? "");
+  const [fechaEvento, setFechaEvento] = useState(
+    initialData?.fechaEvento ? initialData.fechaEvento.slice(0, 16) : "",
+  );
+  const [notaId, setNotaId] = useState<string>(initialData?.notaId ?? "none");
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -35,7 +47,7 @@ export default function FormEventoFactura({
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!files.length) {
+    if (!isUpdate && !files.length) {
       toast({ title: "Archivo requerido", description: "Debes adjuntar al menos una factura en imagen o PDF." });
       return;
     }
@@ -47,24 +59,33 @@ export default function FormEventoFactura({
           fileBase64: await toBase64(file),
           fileName: file.name,
           fileType: file.type || "application/octet-stream",
-        }))
+        })),
       );
 
-      await postEventoFactura({
+      const payload = {
         titulo,
         descripcion,
         fechaEvento,
         notaId: notaId === "none" ? "" : notaId,
         files: encodedFiles,
+      };
+
+      if (isUpdate) {
+        if (!eventoId) throw new Error("Falta el id del evento para actualizar");
+        await updateEventoFactura(eventoId, payload);
+      } else {
+        await postEventoFactura(payload);
+      }
+
+      toast({
+        title: isUpdate ? "Evento actualizado" : "Facturas guardadas",
+        description: isUpdate
+          ? "El evento fue actualizado correctamente."
+          : "El evento y sus facturas fueron registrados correctamente.",
       });
 
-      toast({ title: "Facturas guardadas", description: "El evento y sus facturas fueron registrados correctamente." });
+      router.push("/facturas");
       router.refresh();
-      setTitulo("");
-      setDescripcion("");
-      setFechaEvento("");
-      setNotaId("none");
-      setFiles([]);
     } catch (error) {
       toast({ title: "Error", description: `No se pudo guardar: ${error}` });
     } finally {
@@ -92,34 +113,38 @@ export default function FormEventoFactura({
 
       <div>
         <Label>Vincular con nota (opcional)</Label>
-        <Select value={notaId} onValueChange={setNotaId}>
+        <Select value={notaId || "none"} onValueChange={setNotaId}>
           <SelectTrigger>
             <SelectValue placeholder="Selecciona una nota" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">Sin nota</SelectItem>
             {notas.map((nota) => (
-              <SelectItem key={nota.id} value={nota.id}>{nota.titulo}</SelectItem>
+              <SelectItem key={nota.id} value={nota.id}>
+                {nota.titulo}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <Label>Facturas (puedes adjuntar varias: imagen o PDF)</Label>
+        <Label>{isUpdate ? "Adjuntar nuevas facturas (opcional)" : "Facturas (imagen o PDF)"}</Label>
         <Input
           type="file"
           accept="image/*,application/pdf"
           multiple
           onChange={(e) => setFiles(Array.from(e.target.files || []))}
-          required
+          required={!isUpdate}
         />
         {files.length > 0 && (
           <p className="text-sm text-muted-foreground mt-2">{files.length} archivo(s) seleccionado(s)</p>
         )}
       </div>
 
-      <Button type="submit" disabled={loading}>{loading ? "Guardando..." : "Guardar evento"}</Button>
+      <Button type="submit" disabled={loading}>
+        {loading ? "Guardando..." : isUpdate ? "Actualizar evento" : "Guardar evento"}
+      </Button>
     </form>
   );
 }

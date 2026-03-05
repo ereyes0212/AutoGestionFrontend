@@ -15,6 +15,7 @@ export type EventoFactura = {
   titulo: string;
   descripcion?: string | null;
   fechaEvento: string;
+  fechaEventoLabel: string;
   totalFacturas: number;
   archivos: FacturaArchivo[];
   createAt: string;

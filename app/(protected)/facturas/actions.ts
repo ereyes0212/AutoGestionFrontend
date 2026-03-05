@@ -13,6 +13,34 @@ type FiltrosFactura = {
   empleadoId?: string;
 };
 
+function formatFecha(fechaIso: string) {
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(fechaIso));
+}
+
+async function mapFiles(files: EventoFacturaFormInput["files"], eventoId: string) {
+  return Promise.all(
+    files.map(async (file) => {
+      const buffer = Buffer.from(file.fileBase64, "base64");
+      const fileId = randomUUID();
+      const safeName = file.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const key = `${eventoId}/${fileId.slice(0, 4)}-${safeName}`;
+      const objectKey = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
+
+      return {
+        id: fileId,
+        archivoKey: objectKey,
+        archivoNombre: file.fileName,
+        archivoTipo: file.fileType,
+        archivoUrl: objectKey,
+      };
+    }),
+  );
+}
+
 export async function getEventosFactura(filtros?: FiltrosFactura): Promise<EventoFactura[]> {
   const session = await getSession();
   if (!session?.IdEmpleado) return [];
@@ -53,6 +81,7 @@ export async function getEventosFactura(filtros?: FiltrosFactura): Promise<Event
     titulo: row.titulo,
     descripcion: row.descripcion,
     fechaEvento: row.fechaEvento.toISOString(),
+    fechaEventoLabel: formatFecha(row.fechaEvento.toISOString()),
     totalFacturas: row._count.archivos,
     archivos: row.archivos,
     createAt: row.createAt.toISOString(),
@@ -90,6 +119,7 @@ export async function getEventoFacturaById(id: string): Promise<EventoFactura | 
     titulo: row.titulo,
     descripcion: row.descripcion,
     fechaEvento: row.fechaEvento.toISOString(),
+    fechaEventoLabel: formatFecha(row.fechaEvento.toISOString()),
     totalFacturas: row._count.archivos,
     archivos: row.archivos,
     createAt: row.createAt.toISOString(),
@@ -125,23 +155,7 @@ export async function postEventoFactura(data: EventoFacturaFormInput) {
   if (!data.files?.length) throw new Error("Debes adjuntar al menos una factura");
 
   const eventoId = randomUUID();
-  const archivos = await Promise.all(
-    data.files.map(async (file) => {
-      const buffer = Buffer.from(file.fileBase64, "base64");
-      const fileId = randomUUID();
-      const safeName = file.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const key = `${eventoId}/${fileId.slice(0, 4)}-${safeName}`;
-      const objectKey = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
-
-      return {
-        id: fileId,
-        archivoKey: objectKey,
-        archivoNombre: file.fileName,
-        archivoTipo: file.fileType,
-        archivoUrl: objectKey,
-      };
-    })
-  );
+  const archivos = await mapFiles(data.files, eventoId);
 
   await prisma.eventoFactura.create({
     data: {
@@ -160,4 +174,42 @@ export async function postEventoFactura(data: EventoFacturaFormInput) {
   });
 
   revalidatePath("/facturas");
+}
+
+export async function updateEventoFactura(id: string, data: EventoFacturaFormInput) {
+  const session = await getSession();
+  if (!session?.IdEmpleado) throw new Error("Sesión inválida");
+  if (!session.Permiso.includes("crear_facturas")) throw new Error("No tienes permiso para actualizar facturas");
+
+  const evento = await prisma.eventoFactura.findUnique({ where: { id }, select: { id: true, empleadoId: true } });
+  if (!evento) throw new Error("Evento no encontrado");
+
+  const puedeVerTodas = session.Permiso.includes("ver_facturas_jefe");
+  if (!puedeVerTodas && evento.empleadoId !== session.IdEmpleado) {
+    throw new Error("No tienes permiso para editar este evento");
+  }
+
+  const archivos = data.files?.length ? await mapFiles(data.files, id) : [];
+
+  await prisma.eventoFactura.update({
+    where: { id },
+    data: {
+      notaId: data.notaId || null,
+      titulo: data.titulo,
+      descripcion: data.descripcion || null,
+      fechaEvento: new Date(data.fechaEvento),
+      ...(archivos.length
+        ? {
+            archivos: {
+              createMany: {
+                data: archivos,
+              },
+            },
+          }
+        : {}),
+    },
+  });
+
+  revalidatePath("/facturas");
+  revalidatePath(`/facturas/${id}/detalle`);
 }
