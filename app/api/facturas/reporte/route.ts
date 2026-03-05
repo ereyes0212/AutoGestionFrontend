@@ -1,6 +1,7 @@
 import { getSession } from "@/auth";
 import { getEventosFactura } from "@/app/(protected)/facturas/actions";
 import { downloadBufferFromS3 } from "@/lib/aws/s3";
+import { prisma } from "@/lib/prisma";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 const PAGE_MARGIN = 40;
@@ -34,6 +35,20 @@ type PDFFontLike = {
   widthOfTextAtSize: (text: string, size: number) => number;
 };
 
+
+async function getEmpleadoFiltroLabel(empleadoId: string | undefined, empleadoNombreDesdeEventos?: string) {
+  if (!empleadoId) return "todos";
+  if (empleadoNombreDesdeEventos) return empleadoNombreDesdeEventos;
+
+  const empleado = await prisma.empleados.findUnique({
+    where: { id: empleadoId },
+    select: { nombre: true, apellido: true },
+  });
+
+  if (!empleado) return empleadoId;
+  return `${empleado.nombre} ${empleado.apellido}`;
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -47,6 +62,7 @@ export async function GET(request: Request) {
     const empleadoId = searchParams.get("empleadoId") || undefined;
 
     const eventos = await getEventosFactura({ desde, hasta, empleadoId });
+    const empleadoFiltroLabel = await getEmpleadoFiltroLabel(empleadoId, eventos[0]?.empleadoNombre);
 
     const pdfDoc = await PDFDocument.create();
     const titleFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -72,7 +88,7 @@ export async function GET(request: Request) {
     drawLine("Reporte de eventos de facturas", TITLE_SIZE, rgb(0, 0, 0), titleFont);
     drawLine(`Generado: ${new Date().toLocaleString("es-NI")}`, SUBTITLE_SIZE, rgb(0.35, 0.35, 0.35));
     drawLine(
-      `Filtros: desde ${desde || "(sin filtro)"} | hasta ${hasta || "(sin filtro)"} | empleado ${empleadoId || "todos"}`,
+      `Filtros: desde ${desde || "(sin filtro)"} | hasta ${hasta || "(sin filtro)"} | empleado ${empleadoFiltroLabel}`,
       SUBTITLE_SIZE,
       rgb(0.35, 0.35, 0.35),
     );
