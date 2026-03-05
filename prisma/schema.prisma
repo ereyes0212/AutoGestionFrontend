@@ -81,9 +81,43 @@ model Empleados {
   NotasAprobadas   Nota[]             @relation("NotasAprobador")
   PushSubscription PushSubscription[]
   TareaEmpleado    TareaEmpleado[]
+  EventoFactura    EventoFactura[]
 
   @@index([jefe_id])
   @@index([puesto_id])
+}
+
+model EventoFactura {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  empleadoId  String   @db.VarChar(36)
+  notaId      String?  @db.VarChar(36)
+  titulo      String   @db.VarChar(200)
+  descripcion String?  @db.LongText
+  fechaEvento DateTime @db.DateTime(6)
+  createAt    DateTime @default(now()) @db.DateTime(6)
+  updateAt    DateTime @updatedAt @db.DateTime(6)
+
+  empleado Empleados             @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+  nota     Nota?                 @relation(fields: [notaId], references: [id], onDelete: SetNull)
+  archivos EventoFacturaArchivo[]
+
+  @@index([empleadoId])
+  @@index([notaId])
+  @@index([fechaEvento])
+}
+
+model EventoFacturaArchivo {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  eventoFacturaId String   @db.VarChar(36)
+  archivoUrl     String   @db.VarChar(600)
+  archivoKey     String   @db.VarChar(400)
+  archivoNombre  String   @db.VarChar(250)
+  archivoTipo    String   @db.VarChar(120)
+  createAt       DateTime @default(now()) @db.DateTime(6)
+
+  evento EventoFactura @relation(fields: [eventoFacturaId], references: [id], onDelete: Cascade)
+
+  @@index([eventoFacturaId])
 }
 
 model Permiso {
@@ -465,6 +499,7 @@ model Nota {
   creador   Empleados  @relation("NotasCreadas", fields: [creadorEmpleadoId], references: [id])
   asignado  Empleados? @relation("NotasAsignadas", fields: [asignadoEmpleadoId], references: [id])
   aprobador Empleados? @relation("NotasAprobador", fields: [aprobadorEmpleadoId], references: [id])
+  EventoFactura EventoFactura[]
 
   @@index([creadorEmpleadoId])
   @@index([asignadoEmpleadoId])

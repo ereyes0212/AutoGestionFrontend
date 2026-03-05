@@ -15,7 +15,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, MessageCircleMore, Package, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, MessageCircleMore, Package, ReceiptText, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
 import Link from "next/link";
 import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
@@ -110,6 +110,13 @@ const items = [
     url: "/redaccion",
     icon: LucideFilePen,
     permiso: "ver_notas",
+  },
+
+  {
+    title: "Facturas",
+    url: "/facturas",
+    icon: ReceiptText,
+    permiso: "ver_facturas",
   },
   {
     title: "Mensajes",
