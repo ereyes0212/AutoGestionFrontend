@@ -1,48 +1,47 @@
-import { createHash, createHmac } from "crypto";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-type S3Config = {
-  region: string;
-  bucket: string;
-  endpoint?: string;
-};
-
-type S3Credentials = {
-  accessKeyId: string;
-  secretAccessKey: string;
-};
-
-function hmac(key: Buffer | string, data: string) {
-  return createHmac("sha256", key).update(data, "utf8").digest();
+function isDevelopmentEnvironment() {
+  return process.env.NODE_ENV !== "production";
 }
 
-function sha256Hex(data: string | Buffer) {
-  return createHash("sha256").update(data).digest("hex");
-}
-
-export function getS3ConfigFromEnv(): S3Config {
+export function getS3Client() {
   const region = process.env.AWS_REGION;
-  const bucket = process.env.AWS_PRIVATE_BUCKET;
-  const endpoint = process.env.AWS_PRIVATE_PREFIX;
 
-  if (!region || !bucket) {
-    throw new Error("Faltan AWS_S3_REGION o AWS_S3_BUCKET");
+  if (!region) {
+    throw new Error("Falta la variable de entorno AWS_REGION");
   }
 
-  return { region, bucket, endpoint: endpoint || undefined };
+  if (isDevelopmentEnvironment()) {
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error(
+        "En desarrollo debes configurar AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY para conectar a S3.",
+      );
+    }
+
+    return new S3Client({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+
+  return new S3Client({ region });
 }
 
-export function getS3CredentialsFromEnv(): S3Credentials {
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+export function getPrivatePdfBucketConfig() {
+  const bucket = process.env.AWS_PRIVATE_PDF_BUCKET ?? process.env.AWS_PRIVATE_BUCKET;
+  const prefix = process.env.AWS_PRIVATE_PDF_PREFIX ?? process.env.AWS_PRIVATE_PREFIX ?? "";
 
-  if (!accessKeyId || !secretAccessKey) {
-    if (process.env.NODE_ENV !== "production") {
-      throw new Error("En desarrollo define AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY");
-    }
-    throw new Error("No hay credenciales de AWS en variables de entorno");
+  if (!bucket) {
+    throw new Error("Falta la variable de entorno AWS_PRIVATE_PDF_BUCKET");
   }
 
-  return { accessKeyId, secretAccessKey };
+  return { bucket, prefix };
 }
 
 export function buildS3PublicUrl(bucket: string, key: string) {
@@ -52,7 +51,7 @@ export function buildS3PublicUrl(bucket: string, key: string) {
   const endpoint = process.env.AWS_S3_ENDPOINT;
   if (endpoint) return `${endpoint.replace(/\/$/, "")}/${bucket}/${key}`;
 
-  const region = process.env.AWS_S3_REGION;
+  const region = process.env.AWS_REGION;
   return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
@@ -65,51 +64,19 @@ export async function uploadBufferToS3({
   contentType: string;
   body: Buffer;
 }) {
-  const { bucket, endpoint, region } = getS3ConfigFromEnv();
-  const { accessKeyId, secretAccessKey } = getS3CredentialsFromEnv();
+  const client = getS3Client();
+  const { bucket, prefix } = getPrivatePdfBucketConfig();
 
-  const host = endpoint ? new URL(endpoint).host : `${bucket}.s3.${region}.amazonaws.com`;
-  const protocol = endpoint ? new URL(endpoint).protocol : "https:";
-  const pathPrefix = endpoint ? `/${bucket}` : "";
-  const canonicalUri = `${pathPrefix}/${encodeURIComponent(key).replace(/%2F/g, "/")}`;
-  const url = `${protocol}//${host}${canonicalUri}`;
+  const objectKey = prefix ? `${prefix.replace(/\/$/, "")}/${key}` : key;
 
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
-  const dateStamp = amzDate.slice(0, 8);
-  const payloadHash = sha256Hex(body);
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: objectKey,
+      Body: body,
+      ContentType: contentType,
+    }),
+  );
 
-  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
-  const canonicalRequest = `PUT\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-
-  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${sha256Hex(canonicalRequest)}`;
-
-  const kDate = hmac(`AWS4${secretAccessKey}`, dateStamp);
-  const kRegion = hmac(kDate, region);
-  const kService = hmac(kRegion, "s3");
-  const kSigning = hmac(kService, "aws4_request");
-  const signature = createHmac("sha256", kSigning).update(stringToSign, "utf8").digest("hex");
-
-  const authorization = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-  const response = await fetch(url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": contentType,
-      "x-amz-date": amzDate,
-      "x-amz-content-sha256": payloadHash,
-      Authorization: authorization,
-      "Content-Length": String(body.byteLength),
-    },
-    body: body as unknown as BodyInit,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Error subiendo archivo a S3: ${response.status} ${text}`);
-  }
-
-  return buildS3PublicUrl(bucket, key);
+  return buildS3PublicUrl(bucket, objectKey);
 }
