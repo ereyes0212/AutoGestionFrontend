@@ -21,14 +21,20 @@ export type EventoFactura = {
   createAt: string;
 };
 
+export type FacturaFilePayload = {
+  fileBase64: string;
+  fileName: string;
+  fileType: string;
+};
+
 export type EventoFacturaFormInput = {
   titulo: string;
   descripcion?: string;
   fechaEvento: string;
   notaId?: string;
-  files: {
-    fileBase64: string;
-    fileName: string;
-    fileType: string;
+  files: FacturaFilePayload[];
+  replacements?: {
+    archivoId: string;
+    file: FacturaFilePayload;
   }[];
 };

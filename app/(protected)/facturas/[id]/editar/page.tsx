@@ -35,6 +35,11 @@ export default async function EditFacturaPage({ params }: { params: { id: string
           fechaEvento: evento.fechaEvento,
           notaId: evento.notaId,
         }}
+        existingArchivos={evento.archivos.map((archivo) => ({
+          id: archivo.id,
+          archivoNombre: archivo.archivoNombre,
+          archivoTipo: archivo.archivoTipo,
+        }))}
       />
     </div>
   );

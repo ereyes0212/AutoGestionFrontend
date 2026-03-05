@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { postEventoFactura, updateEventoFactura } from "../actions";
 
 type NotaOption = { id: string; titulo: string };
+type ExistingArchivo = { id: string; archivoNombre: string; archivoTipo: string };
 
 type Props = {
   notas: NotaOption[];
@@ -22,9 +23,16 @@ type Props = {
     fechaEvento: string;
     notaId?: string | null;
   };
+  existingArchivos?: ExistingArchivo[];
 };
 
-export default function FormEventoFactura({ notas, isUpdate = false, eventoId, initialData }: Props) {
+export default function FormEventoFactura({
+  notas,
+  isUpdate = false,
+  eventoId,
+  initialData,
+  existingArchivos = [],
+}: Props) {
   const [titulo, setTitulo] = useState(initialData?.titulo ?? "");
   const [descripcion, setDescripcion] = useState(initialData?.descripcion ?? "");
   const [fechaEvento, setFechaEvento] = useState(
@@ -32,6 +40,7 @@ export default function FormEventoFactura({ notas, isUpdate = false, eventoId, i
   );
   const [notaId, setNotaId] = useState<string>(initialData?.notaId ?? "none");
   const [files, setFiles] = useState<File[]>([]);
+  const [replacementFiles, setReplacementFiles] = useState<Record<string, File | undefined>>({});
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -62,12 +71,26 @@ export default function FormEventoFactura({ notas, isUpdate = false, eventoId, i
         })),
       );
 
+      const replacements = await Promise.all(
+        Object.entries(replacementFiles)
+          .filter(([, file]) => !!file)
+          .map(async ([archivoId, file]) => ({
+            archivoId,
+            file: {
+              fileBase64: await toBase64(file as File),
+              fileName: (file as File).name,
+              fileType: (file as File).type || "application/octet-stream",
+            },
+          })),
+      );
+
       const payload = {
         titulo,
         descripcion,
         fechaEvento,
         notaId: notaId === "none" ? "" : notaId,
         files: encodedFiles,
+        replacements,
       };
 
       if (isUpdate) {
@@ -84,7 +107,7 @@ export default function FormEventoFactura({ notas, isUpdate = false, eventoId, i
           : "El evento y sus facturas fueron registrados correctamente.",
       });
 
-      router.push("/facturas");
+      router.push(`/facturas${isUpdate && eventoId ? `/${eventoId}/detalle` : ""}`);
       router.refresh();
     } catch (error) {
       toast({ title: "Error", description: `No se pudo guardar: ${error}` });
@@ -128,8 +151,41 @@ export default function FormEventoFactura({ notas, isUpdate = false, eventoId, i
         </Select>
       </div>
 
+      {isUpdate && existingArchivos.length > 0 && (
+        <div className="space-y-3">
+          <Label>Archivos actuales (puedes reemplazar cada uno)</Label>
+          <div className="space-y-3">
+            {existingArchivos.map((archivo) => (
+              <div key={archivo.id} className="border rounded p-3 space-y-2">
+                <p className="text-sm font-medium break-all">{archivo.archivoNombre}</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {archivo.archivoTipo.startsWith("image/") ? (
+                  <img
+                    src={`/api/facturas/archivo/${archivo.id}`}
+                    alt={archivo.archivoNombre}
+                    className="h-28 object-contain rounded border"
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground">PDF actual cargado</p>
+                )}
+                <Input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) =>
+                    setReplacementFiles((prev) => ({
+                      ...prev,
+                      [archivo.id]: e.target.files?.[0],
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
-        <Label>{isUpdate ? "Adjuntar nuevas facturas (opcional)" : "Facturas (imagen o PDF)"}</Label>
+        <Label>{isUpdate ? "Agregar nuevas facturas (opcional)" : "Facturas (imagen o PDF)"}</Label>
         <Input
           type="file"
           accept="image/*,application/pdf"
@@ -138,7 +194,7 @@ export default function FormEventoFactura({ notas, isUpdate = false, eventoId, i
           required={!isUpdate}
         />
         {files.length > 0 && (
-          <p className="text-sm text-muted-foreground mt-2">{files.length} archivo(s) seleccionado(s)</p>
+          <p className="text-sm text-muted-foreground mt-2">{files.length} archivo(s) nuevo(s) seleccionado(s)</p>
         )}
       </div>
 

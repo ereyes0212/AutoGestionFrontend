@@ -5,7 +5,7 @@ import { uploadBufferToS3 } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { EventoFactura, EventoFacturaFormInput } from "./types";
+import { EventoFactura, EventoFacturaFormInput, FacturaFilePayload } from "./types";
 
 type FiltrosFactura = {
   desde?: string;
@@ -21,24 +21,24 @@ function formatFecha(fechaIso: string) {
   }).format(new Date(fechaIso));
 }
 
-async function mapFiles(files: EventoFacturaFormInput["files"], eventoId: string) {
-  return Promise.all(
-    files.map(async (file) => {
-      const buffer = Buffer.from(file.fileBase64, "base64");
-      const fileId = randomUUID();
-      const safeName = file.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const key = `${eventoId}/${fileId.slice(0, 4)}-${safeName}`;
-      const objectKey = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
+async function uploadFileWithGeneratedKey(file: FacturaFilePayload, eventoId: string) {
+  const buffer = Buffer.from(file.fileBase64, "base64");
+  const fileId = randomUUID();
+  const safeName = file.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `${eventoId}/${fileId.slice(0, 4)}-${safeName}`;
+  const objectKey = await uploadBufferToS3({ key, contentType: file.fileType, body: buffer });
 
-      return {
-        id: fileId,
-        archivoKey: objectKey,
-        archivoNombre: file.fileName,
-        archivoTipo: file.fileType,
-        archivoUrl: objectKey,
-      };
-    }),
-  );
+  return {
+    id: fileId,
+    archivoKey: objectKey,
+    archivoNombre: file.fileName,
+    archivoTipo: file.fileType,
+    archivoUrl: objectKey,
+  };
+}
+
+async function mapFiles(files: EventoFacturaFormInput["files"], eventoId: string) {
+  return Promise.all(files.map((file) => uploadFileWithGeneratedKey(file, eventoId)));
 }
 
 export async function getEventosFactura(filtros?: FiltrosFactura): Promise<EventoFactura[]> {
@@ -191,6 +191,33 @@ export async function updateEventoFactura(id: string, data: EventoFacturaFormInp
 
   const archivos = data.files?.length ? await mapFiles(data.files, id) : [];
 
+  if (data.replacements?.length) {
+    const actuales = await prisma.eventoFacturaArchivo.findMany({
+      where: { eventoFacturaId: id },
+      select: { id: true, archivoKey: true },
+    });
+    const keyById = new Map(actuales.map((a) => [a.id, a.archivoKey]));
+
+    for (const replacement of data.replacements) {
+      const currentKey = keyById.get(replacement.archivoId);
+      if (!currentKey) continue;
+
+      await uploadBufferToS3({
+        key: currentKey,
+        contentType: replacement.file.fileType,
+        body: Buffer.from(replacement.file.fileBase64, "base64"),
+      });
+
+      await prisma.eventoFacturaArchivo.update({
+        where: { id: replacement.archivoId },
+        data: {
+          archivoNombre: replacement.file.fileName,
+          archivoTipo: replacement.file.fileType,
+        },
+      });
+    }
+  }
+
   await prisma.eventoFactura.update({
     where: { id },
     data: {
@@ -212,4 +239,5 @@ export async function updateEventoFactura(id: string, data: EventoFacturaFormInp
 
   revalidatePath("/facturas");
   revalidatePath(`/facturas/${id}/detalle`);
+  revalidatePath(`/facturas/${id}/editar`);
 }
