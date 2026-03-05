@@ -24,8 +24,15 @@ export default function FiltrosFacturas({ empleados }: { empleados: { id: string
     router.push(`/facturas?${params.toString()}`);
   };
 
+  const imprimir = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    const query = params.toString();
+    const url = query ? `/api/facturas/reporte?${query}` : "/api/facturas/reporte";
+    window.open(url, "_blank");
+  };
+
   return (
-    <form action={aplicar} className="grid grid-cols-1 md:grid-cols-4 gap-3 border rounded-md p-3">
+    <form action={aplicar} className="grid grid-cols-1 md:grid-cols-5 gap-3 border rounded-md p-3">
       <div>
         <Label>Desde</Label>
         <Input name="desde" type="date" defaultValue={searchParams.get("desde") || ""} />
@@ -49,6 +56,11 @@ export default function FiltrosFacturas({ empleados }: { empleados: { id: string
       </div>
       <div className="flex items-end">
         <Button type="submit" className="w-full">Filtrar</Button>
+      </div>
+      <div className="flex items-end">
+        <Button type="button" variant="secondary" className="w-full" onClick={imprimir}>
+          Imprimir PDF
+        </Button>
       </div>
     </form>
   );
