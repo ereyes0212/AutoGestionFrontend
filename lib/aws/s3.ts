@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 type UploadBufferToS3Input = {
   key: string;
@@ -65,6 +65,18 @@ export async function uploadBufferToS3({ key, contentType, body }: UploadBufferT
   );
 
   return objectKey;
+}
+
+export async function deleteObjectFromS3(key: string) {
+  const client = getS3Client();
+  const { bucket } = getPrivatePdfBucketConfig();
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }),
+  );
 }
 
 export async function downloadBufferFromS3(key: string) {

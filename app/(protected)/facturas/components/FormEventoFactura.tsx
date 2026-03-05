@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { postEventoFactura, updateEventoFactura } from "../actions";
 
-type NotaOption = { id: string; titulo: string };
+type NotaOption = { id: string; titulo: string; createAt: Date | string };
 type ExistingArchivo = { id: string; archivoNombre: string; archivoTipo: string };
 
 type Props = {
@@ -26,6 +27,10 @@ type Props = {
   existingArchivos?: ExistingArchivo[];
 };
 
+function formatDay(value: Date | string) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+
 export default function FormEventoFactura({
   notas,
   isUpdate = false,
@@ -38,12 +43,19 @@ export default function FormEventoFactura({
   const [fechaEvento, setFechaEvento] = useState(
     initialData?.fechaEvento ? initialData.fechaEvento.slice(0, 16) : "",
   );
+  const [notaDia, setNotaDia] = useState("");
   const [notaId, setNotaId] = useState<string>(initialData?.notaId ?? "none");
   const [files, setFiles] = useState<File[]>([]);
   const [replacementFiles, setReplacementFiles] = useState<Record<string, File | undefined>>({});
+  const [deleteArchivoIds, setDeleteArchivoIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const notasFiltradas = useMemo(() => {
+    if (!notaDia) return notas;
+    return notas.filter((nota) => formatDay(nota.createAt) === notaDia);
+  }, [notaDia, notas]);
 
   const toBase64 = (f: File) =>
     new Promise<string>((resolve, reject) => {
@@ -73,7 +85,7 @@ export default function FormEventoFactura({
 
       const replacements = await Promise.all(
         Object.entries(replacementFiles)
-          .filter(([, file]) => !!file)
+          .filter(([archivoId, file]) => !!file && !deleteArchivoIds.includes(archivoId))
           .map(async ([archivoId, file]) => ({
             archivoId,
             file: {
@@ -91,6 +103,7 @@ export default function FormEventoFactura({
         notaId: notaId === "none" ? "" : notaId,
         files: encodedFiles,
         replacements,
+        deleteArchivoIds,
       };
 
       if (isUpdate) {
@@ -134,26 +147,32 @@ export default function FormEventoFactura({
         <Textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Detalle del evento" />
       </div>
 
-      <div>
-        <Label>Vincular con nota (opcional)</Label>
-        <Select value={notaId || "none"} onValueChange={setNotaId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona una nota" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Sin nota</SelectItem>
-            {notas.map((nota) => (
-              <SelectItem key={nota.id} value={nota.id}>
-                {nota.titulo}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Día de la nota</Label>
+          <Input type="date" value={notaDia} onChange={(e) => setNotaDia(e.target.value)} />
+        </div>
+        <div>
+          <Label>Vincular con nota (opcional)</Label>
+          <Select value={notaId || "none"} onValueChange={setNotaId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona una nota" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Sin nota</SelectItem>
+              {notasFiltradas.map((nota) => (
+                <SelectItem key={nota.id} value={nota.id}>
+                  {nota.titulo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isUpdate && existingArchivos.length > 0 && (
         <div className="space-y-3">
-          <Label>Archivos actuales (puedes reemplazar cada uno)</Label>
+          <Label>Archivos actuales (puedes reemplazar o eliminar)</Label>
           <div className="space-y-3">
             {existingArchivos.map((archivo) => (
               <div key={archivo.id} className="border rounded p-3 space-y-2">
@@ -168,9 +187,24 @@ export default function FormEventoFactura({
                 ) : (
                   <p className="text-xs text-muted-foreground">PDF actual cargado</p>
                 )}
+
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id={`delete-${archivo.id}`}
+                    checked={deleteArchivoIds.includes(archivo.id)}
+                    onCheckedChange={(checked) => {
+                      setDeleteArchivoIds((prev) =>
+                        checked ? [...prev, archivo.id] : prev.filter((id) => id !== archivo.id),
+                      );
+                    }}
+                  />
+                  <Label htmlFor={`delete-${archivo.id}`}>Eliminar archivo</Label>
+                </div>
+
                 <Input
                   type="file"
                   accept="image/*,application/pdf"
+                  disabled={deleteArchivoIds.includes(archivo.id)}
                   onChange={(e) =>
                     setReplacementFiles((prev) => ({
                       ...prev,

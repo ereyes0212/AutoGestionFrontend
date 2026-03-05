@@ -1,7 +1,7 @@
 "use server";
 
 import { getSession } from "@/auth";
-import { uploadBufferToS3 } from "@/lib/aws/s3";
+import { deleteObjectFromS3, uploadBufferToS3 } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
@@ -133,7 +133,7 @@ export async function getNotasEmpleadoActual() {
   return prisma.nota.findMany({
     where: { creadorEmpleadoId: session.IdEmpleado },
     orderBy: { createAt: "desc" },
-    select: { id: true, titulo: true },
+    select: { id: true, titulo: true, createAt: true },
   });
 }
 
@@ -183,21 +183,19 @@ export async function updateEventoFactura(id: string, data: EventoFacturaFormInp
 
   const evento = await prisma.eventoFactura.findUnique({ where: { id }, select: { id: true, empleadoId: true } });
   if (!evento) throw new Error("Evento no encontrado");
-
-  const puedeVerTodas = session.Permiso.includes("ver_facturas_jefe");
-  if (!puedeVerTodas && evento.empleadoId !== session.IdEmpleado) {
-    throw new Error("No tienes permiso para editar este evento");
+  if (evento.empleadoId !== session.IdEmpleado) {
+    throw new Error("Solo el creador del evento puede editarlo");
   }
 
   const archivos = data.files?.length ? await mapFiles(data.files, id) : [];
 
-  if (data.replacements?.length) {
-    const actuales = await prisma.eventoFacturaArchivo.findMany({
-      where: { eventoFacturaId: id },
-      select: { id: true, archivoKey: true },
-    });
-    const keyById = new Map(actuales.map((a) => [a.id, a.archivoKey]));
+  const actuales = await prisma.eventoFacturaArchivo.findMany({
+    where: { eventoFacturaId: id },
+    select: { id: true, archivoKey: true },
+  });
+  const keyById = new Map(actuales.map((a) => [a.id, a.archivoKey]));
 
+  if (data.replacements?.length) {
     for (const replacement of data.replacements) {
       const currentKey = keyById.get(replacement.archivoId);
       if (!currentKey) continue;
@@ -215,6 +213,15 @@ export async function updateEventoFactura(id: string, data: EventoFacturaFormInp
           archivoTipo: replacement.file.fileType,
         },
       });
+    }
+  }
+
+  if (data.deleteArchivoIds?.length) {
+    for (const archivoId of data.deleteArchivoIds) {
+      const key = keyById.get(archivoId);
+      if (!key) continue;
+      await deleteObjectFromS3(key);
+      await prisma.eventoFacturaArchivo.delete({ where: { id: archivoId } });
     }
   }
 

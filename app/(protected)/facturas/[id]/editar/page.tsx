@@ -1,4 +1,4 @@
-import { getSessionPermisos } from "@/auth";
+import { getSession, getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
@@ -7,8 +7,8 @@ import { getEventoFacturaById, getNotasEmpleadoActual } from "../../actions";
 import FormEventoFactura from "../../components/FormEventoFactura";
 
 export default async function EditFacturaPage({ params }: { params: { id: string } }) {
-  const permisos = await getSessionPermisos();
-  if (!permisos?.includes("crear_facturas")) {
+  const [permisos, session] = await Promise.all([getSessionPermisos(), getSession()]);
+  if (!permisos?.includes("crear_facturas") || !session?.IdEmpleado) {
     return <NoAcceso />;
   }
 
@@ -18,12 +18,16 @@ export default async function EditFacturaPage({ params }: { params: { id: string
     redirect("/facturas");
   }
 
+  if (evento.empleadoId !== session.IdEmpleado) {
+    return <NoAcceso />;
+  }
+
   return (
     <div className="container mx-auto py-2 space-y-4">
       <HeaderComponent
         Icon={Pencil}
         screenName="Editar evento de factura"
-        description="Actualiza los datos del evento y adjunta nuevas facturas si lo necesitas."
+        description="Actualiza los datos del evento, reemplaza, elimina o agrega nuevas facturas."
       />
       <FormEventoFactura
         notas={notas}

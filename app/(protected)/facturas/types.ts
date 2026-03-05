@@ -37,4 +37,5 @@ export type EventoFacturaFormInput = {
     archivoId: string;
     file: FacturaFilePayload;
   }[];
+  deleteArchivoIds?: string[];
 };
