@@ -1,5 +1,6 @@
 "use client";
 
+import { FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,10 @@ export default function FiltrosFacturas({ empleados }: { empleados: { id: string
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const aplicar = (formData: FormData) => {
+  const aplicar = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
     const params = new URLSearchParams(searchParams.toString());
     ["desde", "hasta", "empleadoId"].forEach((k) => params.delete(k));
 
@@ -21,7 +25,8 @@ export default function FiltrosFacturas({ empleados }: { empleados: { id: string
     if (hasta) params.set("hasta", hasta);
     if (empleadoId && empleadoId !== "all") params.set("empleadoId", empleadoId);
 
-    router.push(`/facturas?${params.toString()}`);
+    const query = params.toString();
+    router.push(query ? `/facturas?${query}` : "/facturas");
   };
 
   const imprimir = () => {
@@ -32,7 +37,7 @@ export default function FiltrosFacturas({ empleados }: { empleados: { id: string
   };
 
   return (
-    <form action={aplicar} className="grid grid-cols-1 md:grid-cols-5 gap-3 border rounded-md p-3">
+    <form onSubmit={aplicar} className="grid grid-cols-1 md:grid-cols-5 gap-3 border rounded-md p-3">
       <div>
         <Label>Desde</Label>
         <Input name="desde" type="date" defaultValue={searchParams.get("desde") || ""} />

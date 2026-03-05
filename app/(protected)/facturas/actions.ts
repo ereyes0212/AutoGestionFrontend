@@ -21,6 +21,15 @@ function formatFecha(fechaIso: string) {
   }).format(new Date(fechaIso));
 }
 
+function buildFechaWhere(filtros?: Pick<FiltrosFactura, "desde" | "hasta">) {
+  if (!filtros?.desde && !filtros?.hasta) return undefined;
+
+  const fechaWhere: { gte?: Date; lte?: Date } = {};
+  if (filtros?.desde) fechaWhere.gte = new Date(`${filtros.desde}T00:00:00`);
+  if (filtros?.hasta) fechaWhere.lte = new Date(`${filtros.hasta}T23:59:59`);
+  return fechaWhere;
+}
+
 async function uploadFileWithGeneratedKey(file: FacturaFilePayload, eventoId: string) {
   const buffer = Buffer.from(file.fileBase64, "base64");
   const fileId = randomUUID();
@@ -52,11 +61,8 @@ export async function getEventosFactura(filtros?: FiltrosFactura): Promise<Event
   if (!puedeVerTodas) where.empleadoId = session.IdEmpleado;
   else if (filtros?.empleadoId) where.empleadoId = filtros.empleadoId;
 
-  if (filtros?.desde || filtros?.hasta) {
-    where.fechaEvento = {};
-    if (filtros.desde) where.fechaEvento.gte = new Date(`${filtros.desde}T00:00:00`);
-    if (filtros.hasta) where.fechaEvento.lte = new Date(`${filtros.hasta}T23:59:59`);
-  }
+  const fechaWhere = buildFechaWhere(filtros);
+  if (fechaWhere) where.fechaEvento = fechaWhere;
 
   const rows = await prisma.eventoFactura.findMany({
     where,
@@ -137,15 +143,27 @@ export async function getNotasEmpleadoActual() {
   });
 }
 
-export async function getEmpleadosParaFiltro() {
+export async function getEmpleadosParaFiltro(filtros?: Pick<FiltrosFactura, "desde" | "hasta">) {
   const session = await getSession();
   if (!session?.Permiso.includes("ver_facturas_jefe")) return [];
 
-  return prisma.empleados.findMany({
-    where: { activo: true },
-    orderBy: [{ nombre: "asc" }, { apellido: "asc" }],
-    select: { id: true, nombre: true, apellido: true },
+  const fechaWhere = buildFechaWhere(filtros);
+  const eventos = await prisma.eventoFactura.findMany({
+    where: {
+      ...(fechaWhere ? { fechaEvento: fechaWhere } : {}),
+      empleado: { activo: true },
+    },
+    select: {
+      empleado: {
+        select: { id: true, nombre: true, apellido: true },
+      },
+    },
+    distinct: ["empleadoId"],
   });
+
+  return eventos
+    .map((evento) => evento.empleado)
+    .sort((a, b) => `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`));
 }
 
 export async function postEventoFactura(data: EventoFacturaFormInput) {
