@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic"; // Esto fuerza que la ruta siempre sea dinámica
-import { getNotasAgrupadasHoySimple } from "@/app/(protected)/redaccion/actions";
+import { getNotasAgrupadasHoySimple } from "@/app/(protected)/redaccion/report-data";
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
