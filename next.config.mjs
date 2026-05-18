@@ -2,12 +2,15 @@ import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  productionBrowserSourceMaps: false,
   images: {
     domains: ['res.cloudinary.com'],
   },
   experimental: {
     preloadEntriesOnStart: false,
     optimizePackageImports: ['lucide-react', 'date-fns'],
+    cpus: 2,
   },
   typescript: {
     ignoreBuildErrors: true,

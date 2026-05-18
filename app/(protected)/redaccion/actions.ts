@@ -4,8 +4,9 @@
 import broadcaster from "@/app/api/notes/broadcaster";
 import { getSession, getSessionPermisos } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import webpush from '@/lib/webpush';
+import { sendWebPushNotification } from '@/lib/webpush';
 import { Nota } from "./types";
+import { getNotasAgrupadasHoySimple as getNotasAgrupadasHoySimpleData } from './report-data';
 // Crear una nueva nota
 export async function createNota({
     creadorEmpleadoId,
@@ -96,7 +97,7 @@ export async function createNota({
     // enviar notificaciones push (manejar errores 410/404)
     for (const s of subs) {
         try {
-            await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
+            await sendWebPushNotification(s.subscription, JSON.stringify(payload));
         } catch (err: any) {
             if (err?.statusCode === 410 || err?.statusCode === 404) {
                 await prisma.pushSubscription.delete({ where: { id: s.id } });
@@ -259,7 +260,7 @@ export async function aprobarNota(
 
             for (const s of subs) {
                 try {
-                    await webpush.sendNotification(s.subscription as any, JSON.stringify(payload));
+                    await sendWebPushNotification(s.subscription, JSON.stringify(payload));
                 } catch (err: any) {
                     if (err?.statusCode === 410 || err?.statusCode === 404) {
                         await prisma.pushSubscription.delete({ where: { id: s.id } });
@@ -458,131 +459,6 @@ export async function deleteNota(id: string): Promise<boolean> {
     }
 }
 
-
-
-type SimpleRow = {
-    titulo: string;
-    createAtAdjusted: string; // ISO
-};
-
-export async function getNotasAgrupadasHoySimple(fecha?: string | Date): Promise<{
-    meta: {
-        nowServer: string;
-        queryStartIso: string;
-        queryEndIso: string;
-        startLocalIso: string;
-        endLocalIso: string;
-        threshold14LocalIso: string;
-        totalRaw: number;
-        totalAfterFilter: number;
-    };
-    manana: SimpleRow[];
-    tarde: SimpleRow[];
-}> {
-    const SHIFT_MS = 6 * 60 * 60 * 1000; // 6 horas
-
-    // Si se proporciona una fecha, usarla; si no, usar la fecha actual
-    let fechaBase: Date;
-    if (fecha) {
-        // Si es string en formato 'YYYY-MM-DD', interpretarlo como día local de HN
-        if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-            const [y, mm, dd] = fecha.split('-').map(Number);
-            // Crear fecha local (sin hora, solo día) y luego aplicar shift para obtener fecha base
-            // Usamos Date.UTC para evitar problemas de zona horaria del servidor
-            // El día seleccionado en HN empieza a las 06:00 UTC del mismo día
-            fechaBase = new Date(Date.UTC(y, mm - 1, dd, 6, 0, 0));
-        } else {
-            // Si es Date o string parseable, normalizarlo
-            const d = fecha instanceof Date ? fecha : new Date(fecha);
-            if (isNaN(d.getTime())) {
-                throw new Error('Fecha inválida: ' + fecha);
-            }
-            // Trasladar -6h para obtener fecha local HN, luego extraer YMD y crear UTC a las 06:00
-            const shifted = new Date(d.getTime() - SHIFT_MS);
-            const y = shifted.getUTCFullYear();
-            const mo = shifted.getUTCMonth();
-            const day = shifted.getUTCDate();
-            fechaBase = new Date(Date.UTC(y, mo, day, 6, 0, 0));
-        }
-    } else {
-        fechaBase = new Date();
-    }
-
-    const now = new Date();
-    // fechaBase representa el inicio del día seleccionado en UTC (06:00 UTC = 00:00 HN)
-    // El día seleccionado en HN va desde fechaBase hasta fechaBase + 24h - 1ms
-    // Cuando ajustamos con -6h para obtener la fecha "shifted":
-    // - Inicio del día ajustado: fechaBase - 6h = 00:00 UTC del día seleccionado
-    // - Fin del día ajustado: (fechaBase + 24h - 1ms) - 6h = 23:59:59.999 UTC del día seleccionado
-    const startShifted = new Date(fechaBase.getTime() - SHIFT_MS); // 00:00 UTC del día seleccionado
-    const endOfDayUTC = new Date(fechaBase.getTime() + 24 * 60 * 60 * 1000 - 1); // 05:59:59.999 UTC del día siguiente
-    const endShifted = new Date(endOfDayUTC.getTime() - SHIFT_MS); // 23:59:59.999 UTC del día seleccionado
-
-    const startForQuery = new Date(startShifted.getTime() + SHIFT_MS);
-    const endForQuery = new Date(endShifted.getTime() + SHIFT_MS);
-
-    // margen +/- SHIFT_MS para no perder notas en la frontera
-    const queryStart = new Date(startForQuery.getTime() - SHIFT_MS); // === startShifted
-    const queryEnd = new Date(endForQuery.getTime() + SHIFT_MS);
-
-    // Traemos solo lo necesario para reducir carga
-    const notasRaw = await prisma.nota.findMany({
-        where: {
-            createAt: { gte: queryStart, lte: queryEnd },
-            estado: "FINALIZADA",
-        },
-        orderBy: { createAt: "asc" },
-        select: {
-            titulo: true,
-            createAt: true,
-        },
-    });
-
-    // Ajustamos createAt (-6h), filtramos por día local y construimos rows simples
-    const notasAjustadas = notasRaw
-        .map((n) => {
-            const original = n.createAt ? new Date(n.createAt) : null;
-            const createAtAdjusted = original ? new Date(original.getTime() - SHIFT_MS) : null;
-            return {
-                titulo: n.titulo ?? "Sin título",
-                createAtAdjusted, // Date | null
-            };
-        })
-        .filter((r) => r.createAtAdjusted !== null)
-        .filter((r) => {
-            const dt = r.createAtAdjusted as Date;
-            return dt >= startShifted && dt <= endShifted;
-        }) as { titulo: string; createAtAdjusted: Date }[];
-
-    // umbral 14:00 (hora local ajustada)
-    const threshold14 = new Date(startShifted);
-    threshold14.setHours(14, 0, 0, 0);
-
-    const manana: SimpleRow[] = [];
-    const tarde: SimpleRow[] = [];
-
-    for (const r of notasAjustadas) {
-        const iso = (r.createAtAdjusted as Date).toISOString();
-        const row: SimpleRow = { titulo: r.titulo, createAtAdjusted: iso };
-        if ((r.createAtAdjusted as Date) < threshold14) {
-            manana.push(row);
-        } else {
-            tarde.push(row);
-        }
-    }
-
-    return {
-        meta: {
-            nowServer: now.toISOString(),
-            queryStartIso: queryStart.toISOString(),
-            queryEndIso: queryEnd.toISOString(),
-            startLocalIso: startShifted.toISOString(),
-            endLocalIso: endShifted.toISOString(),
-            threshold14LocalIso: threshold14.toISOString(),
-            totalRaw: notasRaw.length,
-            totalAfterFilter: notasAjustadas.length,
-        },
-        manana,
-        tarde,
-    };
+export async function getNotasAgrupadasHoySimple(fecha?: string | Date) {
+    return getNotasAgrupadasHoySimpleData(fecha);
 }
