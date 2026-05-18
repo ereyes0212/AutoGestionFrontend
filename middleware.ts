@@ -1,15 +1,12 @@
-// middleware.ts
-import { getSession } from "@/auth";
+import { decryptSessionToken } from "@/lib/session";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function middleware(req: NextRequest) {
     const { pathname, search } = req.nextUrl;
+    const token = req.cookies.get("session")?.value;
+    const session = token ? await decryptSessionToken(token) : null;
 
-    // Recupera la sesión
-    const session = await getSession();
-
-    // Si no hay sesión, manda al login
     if (!session) {
         const loginUrl = new URL("/", req.url);
         loginUrl.searchParams.set("redirect", pathname + search);
@@ -20,7 +17,6 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL("/reset-password", req.url));
     }
 
-    // En cualquier otro caso, deja pasar
     return NextResponse.next();
 }
 
@@ -35,7 +31,6 @@ export const config = {
         "/usuarios/:path*",
         "/solicitudes/:path*",
         "/voucher-pago/:path*",
-        // incluye reset-password para que no lo intercepte el middleware
         "/reset-password",
     ],
 };

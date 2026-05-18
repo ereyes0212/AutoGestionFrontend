@@ -3,27 +3,17 @@
 "use server";
 
 import { Prisma } from '@/lib/generated/prisma';
-import { prisma } from '@/lib/prisma';
-import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { TSchemaResetPassword, schemaResetPassword } from "./app/(public)/reset-password/schema";
 import { schemaSignIn, type TSchemaSignIn } from "./lib/shemas";
 
 const key = new TextEncoder().encode(process.env.AUTH_SECRET!);
 
-// 1) Extendemos JWTPayload para nuestro payload
-export interface UsuarioSesion extends JWTPayload {
-    IdUser: string;
-    User: string;
-    Rol: string;
-    IdRol: string;
-    IdEmpleado: string;
-    Permiso: string[];
-    DebeCambiar: boolean;
-    Puesto: string;
-    PuestoId: string;
-}
+// 1) Tipo de sesión compartido
+import { decryptSessionToken, type UsuarioSesion } from "@/lib/session";
+
+export type { UsuarioSesion };
 
 // 2) Función para generar el JWT
 export async function encrypt(payload: UsuarioSesion) {
@@ -36,36 +26,7 @@ export async function encrypt(payload: UsuarioSesion) {
 }
 
 // 3) Función para verificar y extraer el payload
-export const decrypt = async (token: string): Promise<UsuarioSesion | null> => {
-    try {
-        const { payload } = await jwtVerify<JWTPayload>(token, key, {
-            algorithms: ["HS256"],
-        });
-
-        const session: UsuarioSesion = {
-            IdUser: payload.IdUser as string,
-            User: payload.User as string,
-            Rol: payload.Rol as string,
-            IdRol: payload.IdRol as string,
-            IdEmpleado: payload.IdEmpleado as string,
-            Permiso: (payload.Permiso as string[]) || [],
-            DebeCambiar: payload.DebeCambiar === true || payload.DebeCambiar === "True",
-            Puesto: payload.Puesto as string,
-            PuestoId: payload.PuestoId as string,
-            iss: payload.iss as string,
-            aud: payload.aud as string,
-        };
-
-        return session;
-    } catch (err: any) {
-        if (err.name === "JWTExpired") {
-            console.log("Token expirado");
-            return null;
-        }
-        console.error("Error al decodificar token:", err);
-        return null;
-    }
-};
+export const decrypt = decryptSessionToken;
 
 export interface LoginResult {
     success?: string;
@@ -172,6 +133,7 @@ export async function getADAuthentication(
     password: string
 ): Promise<string | null> {
     try {
+        const { prisma } = await import("@/lib/prisma");
         const user: UsuarioConRol | null = await prisma.usuarios.findFirst({
             where: { usuario: username },
             include: {
@@ -180,6 +142,7 @@ export async function getADAuthentication(
             },
         });
 
+        const bcrypt = (await import("bcryptjs")).default;
         if (!user || !(await bcrypt.compare(password, user.contrasena))) return null;
 
         const permisos = user.rol.permisos.map(rp => rp.permiso.nombre);
@@ -213,6 +176,7 @@ export async function changePassword(
     newPassword: string
 ): Promise<string | null> {
     try {
+        const { prisma } = await import("@/lib/prisma");
         const existing = await prisma.usuarios.findFirst({
             where: { usuario: username },
             include: {
@@ -223,6 +187,7 @@ export async function changePassword(
 
         if (!existing) return null;
 
+        const bcrypt = (await import("bcryptjs")).default;
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
         const updated = await prisma.usuarios.update({
