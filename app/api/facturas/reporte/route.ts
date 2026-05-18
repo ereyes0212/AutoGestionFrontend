@@ -1,8 +1,10 @@
 import { getSession } from "@/auth";
-import { getEventosFactura } from "@/app/(protected)/facturas/actions";
 import { downloadBufferFromS3 } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const PAGE_MARGIN = 40;
 const TITLE_SIZE = 16;
@@ -49,6 +51,45 @@ async function getEmpleadoFiltroLabel(empleadoId: string | undefined, empleadoNo
   return `${empleado.nombre} ${empleado.apellido}`;
 }
 
+async function getEventosFacturaReporte(desde?: string, hasta?: string, empleadoId?: string) {
+  const session = await getSession();
+  if (!session?.IdEmpleado) return [];
+
+  const puedeVerTodas = session.Permiso.includes("ver_facturas_jefe");
+  const where: { empleadoId?: string; fechaEvento?: { gte?: Date; lte?: Date } } = {};
+
+  if (!puedeVerTodas) where.empleadoId = session.IdEmpleado;
+  else if (empleadoId) where.empleadoId = empleadoId;
+
+  if (desde || hasta) {
+    where.fechaEvento = {};
+    if (desde) where.fechaEvento.gte = new Date(`${desde}T00:00:00`);
+    if (hasta) where.fechaEvento.lte = new Date(`${hasta}T23:59:59`);
+  }
+
+  const rows = await prisma.eventoFactura.findMany({
+    where,
+    orderBy: { fechaEvento: "desc" },
+    include: {
+      empleado: true,
+      nota: { select: { titulo: true } },
+      archivos: {
+        select: { archivoNombre: true, archivoTipo: true, archivoKey: true },
+        orderBy: { createAt: "desc" },
+      },
+    },
+  });
+
+  return rows.map((row) => ({
+    titulo: row.titulo,
+    descripcion: row.descripcion,
+    empleadoNombre: `${row.empleado.nombre} ${row.empleado.apellido}`,
+    fechaEventoLabel: row.fechaEvento.toISOString(),
+    notaTitulo: row.nota?.titulo ?? null,
+    archivos: row.archivos,
+  }));
+}
+
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -61,7 +102,7 @@ export async function GET(request: Request) {
     const hasta = searchParams.get("hasta") || undefined;
     const empleadoId = searchParams.get("empleadoId") || undefined;
 
-    const eventos = await getEventosFactura({ desde, hasta, empleadoId });
+    const eventos = await getEventosFacturaReporte(desde, hasta, empleadoId);
     const empleadoFiltroLabel = await getEmpleadoFiltroLabel(empleadoId, eventos[0]?.empleadoNombre);
 
     const pdfDoc = await PDFDocument.create();
