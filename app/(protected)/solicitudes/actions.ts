@@ -22,6 +22,36 @@ import {
 
 const PUESTO_GERENTE_RH = "Gerente Recursos Humanos";
 
+export async function isCurrentUserGerenteRH(): Promise<boolean> {
+  const session = await getSession();
+  return session?.Puesto === PUESTO_GERENTE_RH;
+}
+
+export async function canUserPrintSolicitud(solicitudId: string): Promise<boolean> {
+  const session = await getSession();
+  const idEmp = session?.IdEmpleado;
+  if (!idEmp) return false;
+
+  if (session.Puesto === PUESTO_GERENTE_RH) return true;
+
+  const solicitud = await prisma.solicitudVacacion.findUnique({
+    where: { Id: solicitudId },
+    select: { EmpleadoId: true, Aprobado: true },
+  });
+  if (!solicitud) return false;
+
+  if (solicitud.EmpleadoId === idEmp && solicitud.Aprobado === true) return true;
+
+  const aprobacion = await prisma.solicitudVacacionAprobacion.findFirst({
+    where: {
+      SolicitudVacacionId: solicitudId,
+      EmpleadoAprobadorId: idEmp,
+    },
+  });
+
+  return !!aprobacion;
+}
+
 /**
  * Obtiene correos de Recursos Humanos: variable de entorno HR_EMAIL
  * y empleados activos con puesto "Gerente Recursos Humanos".
@@ -62,6 +92,81 @@ function calcularDiasSolicitados(fechaInicio: Date, fechaFin: Date): number {
   return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
+const solicitudVacacionInclude = {
+  Empleados: true,
+  Puesto: true,
+  SolicitudVacacionAprobacion: {
+    orderBy: { Nivel: "asc" as const },
+    include: {
+      Empleados: true,
+      ConfiguracionAprobacion: { include: { Puesto: true } },
+    },
+  },
+};
+
+function mapSolicitudVacacionToPermiso(r: {
+  Id: string;
+  EmpleadoId: string;
+  FechaSolicitud: Date;
+  FechaInicio: Date;
+  FechaFin: Date;
+  Aprobado: boolean | null;
+  Descripcion: string | null;
+  Empleados: { nombre: string; apellido: string };
+  Puesto: { Id: string; Nombre: string };
+  SolicitudVacacionAprobacion: Array<{
+    Id: string;
+    Nivel: number;
+    Estado: string;
+    Comentarios: string | null;
+    FechaDecision: Date | null;
+    EmpleadoAprobadorId: string | null;
+    Empleados: { nombre: string; apellido: string } | null;
+    ConfiguracionAprobacion: { puesto_id: string | null };
+  }>;
+  TipoSolicitud?: string;
+}): SolicitudPermiso {
+  const fechaSolicitudStr = r.FechaSolicitud.toISOString();
+  const fechaInicioStr = r.FechaInicio.toISOString();
+  const fechaFinStr = r.FechaFin.toISOString();
+  const diasSolicitados = calcularDiasSolicitados(r.FechaInicio, r.FechaFin);
+
+  const aprobaciones: Aprobacion[] = r.SolicitudVacacionAprobacion.map((a) => ({
+    id: a.Id,
+    nivel: a.Nivel,
+    aprobado:
+      a.Estado === "Aprobado" ? true : a.Estado === "Rechazado" ? false : null,
+    comentario: a.Comentarios ?? null,
+    fechaAprobacion: a.FechaDecision?.toISOString() ?? null,
+    empleadoId: a.EmpleadoAprobadorId ?? null,
+    nombreEmpleado: a.Empleados
+      ? `${a.Empleados.nombre} ${a.Empleados.apellido}`
+      : null,
+    puestoId: a.ConfiguracionAprobacion.puesto_id ?? null,
+    fechaSolicitud: fechaSolicitudStr,
+    fechaInicio: fechaInicioStr,
+    fechaFin: fechaFinStr,
+    diasSolicitados,
+    descripcion: r.Descripcion ?? null,
+  }));
+
+  return {
+    id: r.Id,
+    empleadoId: r.EmpleadoId,
+    nombreEmpleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
+    puestoId: r.Puesto.Id,
+    puesto: r.Puesto.Nombre,
+    tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
+    fechaSolicitud: fechaSolicitudStr,
+    fechaInicio: fechaInicioStr,
+    fechaFin: fechaFinStr,
+    diasSolicitados,
+    aprobado: r.Aprobado ?? null,
+    descripcion: r.Descripcion ?? "",
+    aprobaciones,
+  };
+}
+
 /**
  * Obtiene todas las solicitudes de vacaciones del empleado autenticado,
  * junto con su historial de aprobaciones.
@@ -77,59 +182,22 @@ export async function getSolicitudesByEmpleado(): Promise<SolicitudPermiso[]> {
   const records = await prisma.solicitudVacacion.findMany({
     where: { EmpleadoId: idEmp },
     orderBy: { FechaSolicitud: "desc" },
-    include: {
-      Empleados: true,
-      Puesto: true,
-      SolicitudVacacionAprobacion: {
-        orderBy: { Nivel: "asc" },
-        include: {
-          Empleados: true,
-          ConfiguracionAprobacion: { include: { Puesto: true } },
-        },
-      },
-    },
+    include: solicitudVacacionInclude,
   });
-  return records.map(r => {
-    const fechaSolicitudStr = r.FechaSolicitud.toISOString();
-    const fechaInicioStr = r.FechaInicio.toISOString();
-    const fechaFinStr = r.FechaFin.toISOString();
-    const diasSolicitados = calcularDiasSolicitados(r.FechaInicio, r.FechaFin);
+  return records.map(mapSolicitudVacacionToPermiso);
+}
 
-    const aprobaciones: Aprobacion[] = r.SolicitudVacacionAprobacion.map(a => ({
-      id: a.Id,
-      nivel: a.Nivel,
-      aprobado:
-        a.Estado === "Aprobado" ? true : a.Estado === "Rechazado" ? false : null,
-      comentario: a.Comentarios ?? null,
-      fechaAprobacion: a.FechaDecision?.toISOString() ?? null,
-      empleadoId: a.EmpleadoAprobadorId ?? null,
-      nombreEmpleado: a.Empleados
-        ? `${a.Empleados.nombre} ${a.Empleados.apellido}`
-        : null,
-      puestoId: a.ConfiguracionAprobacion.puesto_id ?? null,
-      fechaSolicitud: fechaSolicitudStr,
-      fechaInicio: fechaInicioStr,
-      fechaFin: fechaFinStr,
-      diasSolicitados,
-      descripcion: r.Descripcion ?? null,
-    }));
+/**
+ * Obtiene todas las solicitudes para el Gerente de Recursos Humanos.
+ */
+export async function getAllSolicitudesForRH(): Promise<SolicitudPermiso[]> {
+  if (!(await isCurrentUserGerenteRH())) return [];
 
-    return {
-      id: r.Id,
-      empleadoId: r.EmpleadoId,
-      nombreEmpleado: `${r.Empleados.nombre} ${r.Empleados.apellido}`,
-      puestoId: r.Puesto.Id,
-      puesto: r.Puesto.Nombre,
-      tipoSolicitud: (r as any).TipoSolicitud ?? "VACACION",
-      fechaSolicitud: fechaSolicitudStr,
-      fechaInicio: fechaInicioStr,
-      fechaFin: fechaFinStr,
-      diasSolicitados,
-      aprobado: r.Aprobado ?? null,
-      descripcion: r.Descripcion ?? "",
-      aprobaciones,
-    };
+  const records = await prisma.solicitudVacacion.findMany({
+    orderBy: { FechaSolicitud: "desc" },
+    include: solicitudVacacionInclude,
   });
+  return records.map(mapSolicitudVacacionToPermiso);
 }
 
 /**

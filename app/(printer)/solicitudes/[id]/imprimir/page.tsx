@@ -1,4 +1,4 @@
-import { getSolicitudesById } from "@/app/(protected)/solicitudes/actions";
+import { canUserPrintSolicitud, getSolicitudesById } from "@/app/(protected)/solicitudes/actions";
 import { getSession } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Inbox } from "lucide-react";
@@ -19,12 +19,22 @@ export default async function ImprimirPage({
 }) {
     const solicitud = await getSolicitudesById(params.id);
     const usuario = await getSession();
+    const puedeImprimir = await canUserPrintSolicitud(params.id);
 
     if (!solicitud) {
         return (
             <div style={{ textAlign: "center", marginTop: "2rem" }}>
                 <Inbox size={50} color="red" />
                 <p>No se encuentra la solicitud</p>
+            </div>
+        );
+    }
+
+    if (!puedeImprimir) {
+        return (
+            <div style={{ textAlign: "center", marginTop: "2rem" }}>
+                <Inbox size={50} color="red" />
+                <p>No tienes permiso para imprimir esta solicitud</p>
             </div>
         );
     }

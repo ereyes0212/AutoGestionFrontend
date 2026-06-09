@@ -4,7 +4,7 @@ import NoAcceso from "@/components/noAccess";
 import { Button } from "@/components/ui/button";
 import { File } from "lucide-react";
 import Link from "next/link";
-import { getSolicitudesAprobaciones, getSolicitudesAprobacionesHistorico, getSolicitudesByEmpleado } from "./actions";
+import { getSolicitudesAprobaciones, getSolicitudesAprobacionesHistorico, getSolicitudesByEmpleado, isCurrentUserGerenteRH } from "./actions";
 import { columns } from "./components/columns";
 import { DataTable } from "./components/data-table";
 import SolicitudesListMobile from "./components/employee-list-mobile";
@@ -19,6 +19,7 @@ export default async function Empleados() {
 
   const aprobacionesPendientes = await getSolicitudesAprobaciones();
   const aprobacionesPendientesHistorico = await getSolicitudesAprobacionesHistorico();
+  const esGerenteRH = await isCurrentUserGerenteRH();
 
   return (
     <div className="container mx-auto py-2 relative">
@@ -28,7 +29,14 @@ export default async function Empleados() {
         screenName="Solicitudes"
       />
 
-      <div className="my-4 flex justify-between">
+      <div className="my-4 flex flex-wrap gap-2 justify-between">
+        {esGerenteRH && (
+          <Link href="/solicitudes/rh" className="w-full md:w-auto">
+            <Button variant="secondary">
+              Solicitudes de Recursos Humanos
+            </Button>
+          </Link>
+        )}
         {aprobacionesPendientes.length > 0 && (
           <Link href={`/solicitudes/aprobacion`} className="w-full md:w-auto">
             <Button>
