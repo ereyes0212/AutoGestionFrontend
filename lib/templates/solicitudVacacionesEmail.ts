@@ -27,6 +27,33 @@ export function solicitudCreadaTemplate(data: SolicitudData): string {
   `;
 }
 
+export function solicitudNotificacionRHTemplate(data: SolicitudData): string {
+  const { empleadoNombre, fechaInicio, fechaFin, descripcion } = data;
+  const tipoLabel =
+    data.tipoSolicitud === "DIACOMPENSATORIO"
+      ? "Día compensatorio"
+      : data.tipoSolicitud === "MIXTO"
+        ? "Mixto"
+        : "Vacación";
+
+  return `
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height:1.6;">
+        <p>Estimado/a equipo de Recursos Humanos,</p>
+        <p>Se ha registrado una nueva solicitud de permiso:</p>
+        <ul>
+          <li><strong>Empleado:</strong> ${empleadoNombre}</li>
+          <li><strong>Tipo:</strong> ${tipoLabel}</li>
+          <li><strong>Periodo:</strong> ${fechaInicio.toLocaleDateString()} - ${fechaFin.toLocaleDateString()}</li>
+          <li><strong>Descripción:</strong> ${descripcion}</li>
+        </ul>
+        <p>Puede revisarla en el sistema de autogestión de empleados.</p>
+        <p>Saludos,<br/>Sistema de Autogestión de Empleados</p>
+      </body>
+    </html>
+  `;
+}
+
 export function solicitudParaAprobadorTemplate(data: SolicitudData & { nivel: number; linkRevisar: string }): string {
   const { empleadoNombre, fechaInicio, fechaFin, descripcion, nivel, linkRevisar } = data;
   return `

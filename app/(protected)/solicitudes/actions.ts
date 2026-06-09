@@ -5,7 +5,12 @@ import { getSession } from "@/auth";
 import { TipoSolicitudVacacion } from "@/lib/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { EmailService } from "@/lib/sendEmail";
-import { solicitudCreadaTemplate, SolicitudData, solicitudParaAprobadorTemplate } from "@/lib/templates/solicitudVacacionesEmail";
+import {
+  solicitudCreadaTemplate,
+  SolicitudData,
+  solicitudNotificacionRHTemplate,
+  solicitudParaAprobadorTemplate,
+} from "@/lib/templates/solicitudVacacionesEmail";
 import { randomUUID } from "crypto";
 import {
   Aprobacion,
@@ -14,6 +19,40 @@ import {
   SolicitudHistoricoUpdateInput,
   SolicitudPermiso
 } from "./type";
+
+const PUESTO_GERENTE_RH = "Gerente Recursos Humanos";
+
+/**
+ * Obtiene correos de Recursos Humanos: variable de entorno HR_EMAIL
+ * y empleados activos con puesto "Gerente Recursos Humanos".
+ */
+async function getHrEmails(): Promise<string[]> {
+  const emails = new Set<string>();
+
+  const hrEmailEnv = process.env.HR_EMAIL;
+  if (hrEmailEnv) {
+    hrEmailEnv
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean)
+      .forEach((e) => emails.add(e));
+  }
+
+  const hrEmpleados = await prisma.empleados.findMany({
+    where: {
+      activo: true,
+      correo: { not: "" },
+      Puesto: { Nombre: PUESTO_GERENTE_RH },
+    },
+    select: { correo: true },
+  });
+
+  for (const empleado of hrEmpleados) {
+    if (empleado.correo) emails.add(empleado.correo);
+  }
+
+  return Array.from(emails);
+}
 
 /**
  * Calcula los días solicitados (incluyendo ambos extremos).
@@ -614,21 +653,39 @@ export async function postSolicitud({
     });
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/";
+  const linkRevisar = `${baseUrl.replace(/\/?$/, "/")}solicitudes/aprobacion`;
+
+  const correosNotificados = new Set<string>();
+  if (r.Empleados?.correo) correosNotificados.add(r.Empleados.correo);
+
   // 5.2️⃣ Emails a aprobadores
-  const frontendBase = process.env.FRONTEND_URL || "";
   await Promise.all(
     r.SolicitudVacacionAprobacion.map(async (ap: { Empleados?: { correo?: string | null } | null; Nivel: number }) => {
       const mail = ap.Empleados?.correo;
       if (!mail) return;
+      correosNotificados.add(mail);
       const nivel = ap.Nivel;
-      const linkRevisar = `${baseUrl}solicitudes/aprobacion`;
       await emailService.sendMail({
         to: mail,
         subject: `Revisión requerida: solicitud de vacaciones nivel ${nivel}`,
         html: solicitudParaAprobadorTemplate({ ...dto, nivel, linkRevisar }),
       });
     })
+  );
+
+  // 5.3️⃣ Notificación a Recursos Humanos
+  const hrEmails = await getHrEmails();
+  await Promise.all(
+    hrEmails
+      .filter((mail) => !correosNotificados.has(mail))
+      .map((mail) =>
+        emailService.sendMail({
+          to: mail,
+          subject: `Nueva solicitud de permiso: ${dto.empleadoNombre}`,
+          html: solicitudNotificacionRHTemplate(dto),
+        })
+      )
   );
 
   // 6️⃣ Mapear a DTO de salida
