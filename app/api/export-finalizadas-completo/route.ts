@@ -1,11 +1,34 @@
 export const dynamic = "force-dynamic"; // Esto fuerza que la ruta siempre sea dinámica
 import { getNotasAgrupadasHoySimple } from "@/app/(protected)/redaccion/report-data";
 import { NextResponse } from "next/server";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
 
-// Función para limpiar caracteres incompatibles
-function cleanText(text: string) {
-    return text.replace(/[\u202F\u00A0]/g, " ");
+// Función para limpiar caracteres incompatibles con la fuente que se usará en pdf-lib.
+// Si un carácter no puede codificarse, se omite para que el PDF no falle al generarse.
+function cleanText(text: string, font: PDFFont) {
+    const replacements: Record<string, string> = {
+        "\u00A0": " ",
+        "\u202F": " ",
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201C": '\"',
+        "\u201D": '\"',
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2026": "...",
+    };
+
+    return Array.from(String(text ?? ""))
+        .map((char) => replacements[char] ?? char)
+        .filter((char) => {
+            try {
+                font.encodeText(char);
+                return true;
+            } catch {
+                return false;
+            }
+        })
+        .join("");
 }
 
 export async function GET(request: Request) {
@@ -111,7 +134,7 @@ export async function GET(request: Request) {
             const rowSpacing = 12;
 
             notas.forEach((nota) => {
-                const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título"), bodyFont, 11, maxTitleWidth);
+                const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título", bodyFont), bodyFont, 11, maxTitleWidth);
                 const rowHeight = titleLines.length * 12;
 
                 if (y - rowHeight < 60) {
@@ -130,7 +153,7 @@ export async function GET(request: Request) {
 
                 // Dibujar título
                 titleLines.forEach((line, i) => {
-                    currentPage.drawText(cleanText(line), {
+                    currentPage.drawText(cleanText(line, bodyFont), {
                         x: 65, // desplazado a la derecha de la viñeta
                         y: y - 14 * i,
                         size: 11,
