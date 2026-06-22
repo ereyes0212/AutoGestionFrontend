@@ -1,11 +1,34 @@
 export const dynamic = "force-dynamic"; // Esto fuerza que la ruta siempre sea dinámica
 import { getNotasFinalizadasHoy } from "@/app/(protected)/redaccion/actions";
 import { NextResponse } from "next/server";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
 
-// Función para limpiar caracteres incompatibles
-function cleanText(text: string) {
-    return text.replace(/[\u202F\u00A0]/g, " ");
+// Función para limpiar caracteres incompatibles con la fuente que se usará en pdf-lib.
+// Si un carácter no puede codificarse, se omite para que el PDF no falle al generarse.
+function cleanText(text: string, font: PDFFont) {
+    const replacements: Record<string, string> = {
+        "\u00A0": " ",
+        "\u202F": " ",
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201C": '\"',
+        "\u201D": '\"',
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2026": "...",
+    };
+
+    return Array.from(String(text ?? ""))
+        .map((char) => replacements[char] ?? char)
+        .filter((char) => {
+            try {
+                font.encodeText(char);
+                return true;
+            } catch {
+                return false;
+            }
+        })
+        .join("");
 }
 
 export async function GET() {
@@ -84,7 +107,7 @@ export async function GET() {
 
         for (let index = 0; index < finalizadas.length; index++) {
             const nota = finalizadas[index];
-            const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título"), bodyFont, 10, maxTitleWidth);
+            const titleLines = wrapText(cleanText(nota.titulo ?? "Sin título", bodyFont), bodyFont, 10, maxTitleWidth);
             const rowHeight = titleLines.length * 12 + rowPadding * 2;
 
             if (y - rowHeight < 60) {
@@ -127,11 +150,11 @@ export async function GET() {
 
             // Título con wrap
             titleLines.forEach((line, i) => {
-                currentPage.drawText(cleanText(line), { x: 85, y: y - 14 * i, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
+                currentPage.drawText(cleanText(line, bodyFont), { x: 85, y: y - 14 * i, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
             });
 
             // Empleado asignado
-            currentPage.drawText(cleanText(nota.empleadoAsignado ?? "No asignado"), { x: 480, y: y, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
+            currentPage.drawText(cleanText(nota.empleadoAsignado ?? "No asignado", bodyFont), { x: 480, y: y, size: 10, font: bodyFont, color: rgb(0.2, 0.2, 0.2) });
 
             y -= rowHeight + rowSpacing;
         }
