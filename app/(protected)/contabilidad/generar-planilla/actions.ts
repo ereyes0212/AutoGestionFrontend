@@ -52,8 +52,6 @@ export async function previewPayrollImport(
   // 🔥 SOLO EMPLEADOS REALES (IGNORA ENCABEZADOS / TOTALES / TEXTO)
   const validRows = rows.filter((row) => {
     const dni = normalizeDni(row.dni ?? "");
-
-    // solo números válidos de 13 dígitos
     return /^\d{13}$/.test(dni);
   });
 
