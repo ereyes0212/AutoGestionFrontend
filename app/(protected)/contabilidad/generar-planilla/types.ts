@@ -42,4 +42,43 @@ export interface VoucherDto {
     observaciones: string;
     empleadoNombre: string;
     detalles: DetalleVoucherDto[];
+    dni?: string;
+    puesto?: string;
+    oficina?: string;
+    metodoPago?: string;
+    retencionFuenteISR?: number;
+    retencionIHSS?: number;
+    retencionRAP?: number;
+    impuestoPersonalMunicipal?: number;
+    deduccionAnticipoSalario?: number;
+    totalDeducciones?: number;
+    reembolsos?: number;
+    retroactivoSM?: number;
+    bonos?: number;
+    feriados?: number;
+}
+
+export interface PayrollImportRow extends VoucherDto {
+    rowNumber: number;
+    dni: string;
+    puesto: string;
+    oficina: string;
+    metodoPago: string;
+    retencionFuenteISR: number;
+    retencionIHSS: number;
+    retencionRAP: number;
+    impuestoPersonalMunicipal: number;
+    deduccionAnticipoSalario: number;
+    totalDeducciones: number;
+    reembolsos: number;
+    retroactivoSM: number;
+    bonos: number;
+    feriados: number;
+    estado: "VALIDO" | "ERROR";
+    errores: string[];
+    empleadoPuesto?: string;
+}
+
+export interface PayrollImportPreview {
+    rows: PayrollImportRow[];
 }

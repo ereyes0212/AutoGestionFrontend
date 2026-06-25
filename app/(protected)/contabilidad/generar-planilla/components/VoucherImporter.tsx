@@ -14,28 +14,58 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AlertCircle, CalendarIcon, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-    AjusteTemplate,
-    DetalleVoucherDto,
     VoucherDto,
+    PayrollImportRow,
     VoucherTemplateResponse,
 } from "../types";
 
 // Importamos las acciones del servidor
-import { getTemplate, saveVouchers, sendVoucherEmails } from "../actions";
+import { getTemplate, previewPayrollImport, saveVouchers, sendVoucherEmails } from "../actions";
 
 type RowData = Record<string, string | number | null>;
 
+const columnAliases: Record<string, string[]> = {
+    no: ["No.", "No", "N°"],
+    empleadoNombre: ["Nombre de Empleado", "Empleado", "NombreCompleto"],
+    dni: ["DNI", "Identidad", "Número Identificación", "Numero Identificacion"],
+    puesto: ["Puesto"],
+    oficina: ["Oficina"],
+    diasTrabajados: ["Días Trabajados", "Dias Trabajados", "DiasTrabajados"],
+    salarioDiario: ["Salario Diario", "SalarioDiario"],
+    salarioMensual: ["Salario Mensual", "SalarioMensual"],
+    retencionFuenteISR: ["Retención en la Fuente ISR", "Retencion en la Fuente ISR"],
+    retencionIHSS: ["Retención IHSS", "Retencion IHSS"],
+    retencionRAP: ["Retención RAP", "Retencion RAP"],
+    impuestoPersonalMunicipal: ["Impuesto Personal Municipal"],
+    deduccionAnticipoSalario: ["Deducción por Anticipo de Salario", "Deduccion por Anticipo de Salario"],
+    totalDeducciones: ["Total Deducciones"],
+    reembolsos: ["Reembolsos"],
+    retroactivoSM: ["Retroactivo SM"],
+    bonos: ["Bonos"],
+    feriados: ["Feriados"],
+    netoPagar: ["Neto a Pagar", "NetoPagar"],
+    metodoPago: ["Método de Pago", "Metodo de Pago"],
+};
+
+function getValue(row: RowData, key: string) {
+    const aliases = columnAliases[key] ?? [key];
+    return aliases.map((alias) => row[alias]).find((value) => value !== undefined && value !== null && value !== "");
+}
+
+function toNumber(value: unknown) {
+    if (typeof value === "number") return value;
+    if (!value) return 0;
+    return Number(String(value).replace(/,/g, "")) || 0;
+}
+
 export function VoucherImporter() {
-    const router = useRouter();
     const { toast } = useToast();
 
     // Estados para archivos + template
-    const [data, setData] = useState<RowData[]>([]);
-    const [ajustes, setAjustes] = useState<AjusteTemplate[]>([]);
+    const [data, setData] = useState<PayrollImportRow[]>([]);
     const [fechaPago, setFechaPago] = useState<string>("");
 
     // IDs de vouchers recién guardados
@@ -49,9 +79,7 @@ export function VoucherImporter() {
 
     // Cargar el template (ajustes) al iniciar
     useEffect(() => {
-        getTemplate().then((json: VoucherTemplateResponse) => {
-            setAjustes(json.ajustes);
-        });
+        getTemplate().then((_json: VoucherTemplateResponse) => undefined);
     }, []);
 
     // Manejar selección de archivo Excel
@@ -65,7 +93,32 @@ export function VoucherImporter() {
             const wb = XLSX.read(bstr, { type: "binary" });
             const ws = wb.Sheets[wb.SheetNames[0]];
             const json = XLSX.utils.sheet_to_json<RowData>(ws, { raw: false });
-            setData(json);
+            const parsed = json.map((row) => ({
+                empleadoNombre: String(getValue(row, "empleadoNombre") ?? ""),
+                dni: String(getValue(row, "dni") ?? ""),
+                puesto: String(getValue(row, "puesto") ?? ""),
+                oficina: String(getValue(row, "oficina") ?? ""),
+                fechaPago,
+                diasTrabajados: toNumber(getValue(row, "diasTrabajados")),
+                salarioDiario: toNumber(getValue(row, "salarioDiario")),
+                salarioMensual: toNumber(getValue(row, "salarioMensual")),
+                retencionFuenteISR: toNumber(getValue(row, "retencionFuenteISR")),
+                retencionIHSS: toNumber(getValue(row, "retencionIHSS")),
+                retencionRAP: toNumber(getValue(row, "retencionRAP")),
+                impuestoPersonalMunicipal: toNumber(getValue(row, "impuestoPersonalMunicipal")),
+                deduccionAnticipoSalario: toNumber(getValue(row, "deduccionAnticipoSalario")),
+                totalDeducciones: toNumber(getValue(row, "totalDeducciones")),
+                reembolsos: toNumber(getValue(row, "reembolsos")),
+                retroactivoSM: toNumber(getValue(row, "retroactivoSM")),
+                bonos: toNumber(getValue(row, "bonos")),
+                feriados: toNumber(getValue(row, "feriados")),
+                netoPagar: toNumber(getValue(row, "netoPagar")),
+                metodoPago: String(getValue(row, "metodoPago") ?? ""),
+                observaciones: `Oficina: ${String(getValue(row, "oficina") ?? "")}`,
+            }));
+            const preview = await previewPayrollImport(parsed);
+            setData(preview.rows);
+            setVoucherIds([]);
         };
         reader.readAsBinaryString(file);
     };
@@ -83,37 +136,11 @@ export function VoucherImporter() {
 
         setIsSaving(true);
         try {
-            // Mapear filas a VoucherDto
-            const vouchers: VoucherDto[] = data.map((row) => {
-                const v: VoucherDto = {
-                    empleadoNombre: (row["NombreCompleto"] as string) || "",
-                    empleadoId: row["EmpleadoId"] as string,
-                    fechaPago,
-                    diasTrabajados: Number(row["DiasTrabajados"] || 0),
-                    salarioDiario: Number(row["SalarioDiario"] || 0),
-                    salarioMensual: Number(row["SalarioMensual"] || 0),
-                    netoPagar: Number(row["NetoPagar"] || 0),
-                    observaciones: (row["Observaciones"] as string) || "",
-                    detalles: [],
-                };
-
-                // Agregar cada ajuste (deducción o bono)
-                ajustes.forEach((a) => {
-                    const monto = Number(row[a.nombre] || 0);
-                    if (monto > 0) {
-                        const det: DetalleVoucherDto = {
-                            ajusteTipoId: a.id,
-                            ajusteTipoNombre: a.nombre,
-                            categoria: a.categoria,
-                            montoPorDefecto: a.montoPorDefecto.toString(),
-                            monto: monto.toString(),
-                        };
-                        v.detalles.push(det);
-                    }
-                });
-
-                return v;
-            });
+            const invalidRows = data.filter((row) => row.estado === "ERROR");
+            if (invalidRows.length > 0) {
+                throw new Error("La planilla contiene empleados sin validar.");
+            }
+            const vouchers: VoucherDto[] = data.map((row) => ({ ...row, fechaPago }));
 
             // Llamamos a la acción saveVouchers, que retorna los IDs
             const createdIds = await saveVouchers(vouchers);
@@ -176,8 +203,11 @@ export function VoucherImporter() {
         }
     };
 
-    // Columnas de la tabla (nombres de propiedades del XLSX)
-    const columns = data[0] ? Object.keys(data[0]) : [];
+    const columns = [
+        "rowNumber", "estado", "empleadoNombre", "dni", "puesto", "oficina", "diasTrabajados",
+        "salarioDiario", "salarioMensual", "totalDeducciones", "reembolsos", "retroactivoSM",
+        "bonos", "feriados", "netoPagar", "metodoPago", "errores",
+    ] as const;
 
     return (
         <div className="space-y-4">
@@ -246,7 +276,11 @@ export function VoucherImporter() {
                             {data.map((row, i) => (
                                 <TableRow key={i}>
                                     {columns.map((col) => (
-                                        <TableCell key={col}>{row[col]?.toString() ?? ""}</TableCell>
+                                        <TableCell key={col}>
+                                            {col === "estado" ? (
+                                                row.estado === "VALIDO" ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-red-600" />
+                                            ) : Array.isArray(row[col]) ? row[col].join(", ") : row[col]?.toString() ?? ""}
+                                        </TableCell>
                                     ))}
                                 </TableRow>
                             ))}
