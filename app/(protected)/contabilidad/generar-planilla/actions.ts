@@ -1,4 +1,3 @@
-// app/contabilidad/generar-planilla/actions.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -14,22 +13,14 @@ type PayrollAdjustment = {
   monto: number;
 };
 
-const normalizeDni = (value: string) => (value ?? "").replace(/-/g, "").replace(/\s/g, "");
-
-/**
- * 🔥 SOLO filas reales de empleados
- * evita encabezados, totales y textos del Excel
- */
-const isValidDni = (dni: string) => {
-  const clean = normalizeDni(dni);
-
-  // DNI hondureño típico: 13 dígitos
-  return /^\d{13}$/.test(clean);
-};
+const normalizeDni = (value: string) => (value ?? "").replace(/-/g, "");
 
 async function getOrCreateAjusteTipo(adjustment: PayrollAdjustment) {
   const existing = await prisma.ajusteTipo.findFirst({
-    where: { nombre: adjustment.nombre, categoria: adjustment.categoria },
+    where: {
+      nombre: adjustment.nombre,
+      categoria: adjustment.categoria,
+    },
   });
 
   if (existing) return existing;
@@ -46,18 +37,19 @@ async function getOrCreateAjusteTipo(adjustment: PayrollAdjustment) {
   });
 }
 
-const buildAdjustments = (v: VoucherDto): PayrollAdjustment[] => [
-  { nombre: "Retención en la Fuente ISR", categoria: "DEDUCCION", monto: v.retencionFuenteISR ?? 0 },
-  { nombre: "Retención IHSS", categoria: "DEDUCCION", monto: v.retencionIHSS ?? 0 },
-  { nombre: "Retención RAP", categoria: "DEDUCCION", monto: v.retencionRAP ?? 0 },
-  { nombre: "Impuesto Personal Municipal", categoria: "DEDUCCION", monto: v.impuestoPersonalMunicipal ?? 0 },
-  { nombre: "Deducción por Anticipo de Salario", categoria: "DEDUCCION", monto: v.deduccionAnticipoSalario ?? 0 },
+const buildAdjustments = (v: VoucherDto): PayrollAdjustment[] =>
+  [
+    { nombre: "Retención en la Fuente ISR", categoria: "DEDUCCION" as const, monto: v.retencionFuenteISR ?? 0 },
+    { nombre: "Retención IHSS", categoria: "DEDUCCION" as const, monto: v.retencionIHSS ?? 0 },
+    { nombre: "Retención RAP", categoria: "DEDUCCION" as const, monto: v.retencionRAP ?? 0 },
+    { nombre: "Impuesto Personal Municipal", categoria: "DEDUCCION" as const, monto: v.impuestoPersonalMunicipal ?? 0 },
+    { nombre: "Deducción por Anticipo de Salario", categoria: "DEDUCCION" as const, monto: v.deduccionAnticipoSalario ?? 0 },
 
-  { nombre: "Reembolsos", categoria: "BONO", monto: v.reembolsos ?? 0 },
-  { nombre: "Retroactivo SM", categoria: "BONO", monto: v.retroactivoSM ?? 0 },
-  { nombre: "Bonos", categoria: "BONO", monto: v.bonos ?? 0 },
-  { nombre: "Feriados", categoria: "BONO", monto: v.feriados ?? 0 },
-] as const;
+    { nombre: "Reembolsos", categoria: "BONO" as const, monto: v.reembolsos ?? 0 },
+    { nombre: "Retroactivo SM", categoria: "BONO" as const, monto: v.retroactivoSM ?? 0 },
+    { nombre: "Bonos", categoria: "BONO" as const, monto: v.bonos ?? 0 },
+    { nombre: "Feriados", categoria: "BONO" as const, monto: v.feriados ?? 0 },
+  ].filter((item): item is PayrollAdjustment => Number(item.monto) > 0);
 
 export async function previewPayrollImport(
   rows: Omit<VoucherDto, "empleadoId" | "detalles">[]
@@ -71,16 +63,8 @@ export async function previewPayrollImport(
     empleados.map((e) => [normalizeDni(e.numeroIdentificacion), e])
   );
 
-  /**
-   * 🔥 FILTRADO DE EXCEL:
-   * elimina encabezados, totales y filas inválidas
-   */
-  const validRows = rows.filter((row) => {
-    return isValidDni(row.dni ?? "");
-  });
-
   return {
-    rows: validRows.map((row, index) => {
+    rows: rows.map((row, index) => {
       const empleado = byDni.get(normalizeDni(row.dni ?? ""));
 
       return {
