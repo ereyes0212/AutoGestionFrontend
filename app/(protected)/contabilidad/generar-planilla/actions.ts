@@ -49,10 +49,37 @@ export async function previewPayrollImport(
     empleados.map((e) => [normalizeDni(e.numeroIdentificacion), e])
   );
 
-  // 🔥 SOLO EMPLEADOS REALES (IGNORA ENCABEZADOS / TOTALES / TEXTO)
-  const validRows = rows.filter((row) => {
+  /**
+   * 🔥 1. Detectar inicio real de datos
+   * buscamos la primera fila con DNI válido
+   */
+  const startIndex = rows.findIndex((row) => {
     const dni = normalizeDni(row.dni ?? "");
-    return /^\d{13}$/.test(dni);
+    return /^\d{4,}-?\d{4,}-?\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
+  });
+
+  const cleanStart = startIndex === -1 ? rows : rows.slice(startIndex);
+
+  /**
+   * 🔥 2. Filtrar filas reales (elimina headers, totales, basura)
+   */
+  const validRows = cleanStart.filter((row) => {
+    const dni = normalizeDni(row.dni ?? "");
+
+    if (!dni) return false;
+
+    // elimina texto tipo "GRAN TOTAL"
+    if ((row as any)?.nombre?.toString()?.toUpperCase?.().includes("GRAN TOTAL")) {
+      return false;
+    }
+
+    // solo acepta DNIs con números y guiones (Honduras)
+    const looksLikeDni =
+      /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
+
+    if (!looksLikeDni) return false;
+
+    return true;
   });
 
   return {
