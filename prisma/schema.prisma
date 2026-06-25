@@ -388,9 +388,20 @@ model VoucherPagos {
   diasTrabajados Int
   salarioDiario  Decimal  @db.Decimal(10, 2)
   salarioMensual Decimal  @db.Decimal(10, 2)
-  netoPagar      Decimal  @db.Decimal(10, 2)
-  observaciones  String   @db.LongText
-  createAt       DateTime @default(now())
+  netoPagar                   Decimal  @db.Decimal(10, 2)
+  observaciones               String   @db.LongText
+  retencionFuenteISR          Decimal  @default(0) @db.Decimal(10, 2)
+  retencionIHSS               Decimal  @default(0) @db.Decimal(10, 2)
+  retencionRAP                Decimal  @default(0) @db.Decimal(10, 2)
+  impuestoPersonalMunicipal   Decimal  @default(0) @db.Decimal(10, 2)
+  deduccionAnticipoSalario    Decimal  @default(0) @db.Decimal(10, 2)
+  totalDeducciones            Decimal  @default(0) @db.Decimal(10, 2)
+  reembolsos                  Decimal  @default(0) @db.Decimal(10, 2)
+  retroactivoSM               Decimal  @default(0) @db.Decimal(10, 2)
+  bonos                       Decimal  @default(0) @db.Decimal(10, 2)
+  feriados                    Decimal  @default(0) @db.Decimal(10, 2)
+  metodoPago                  String   @default("") @db.VarChar(100)
+  createAt                    DateTime @default(now())
   updateAt       DateTime @updatedAt
 
   // Relaciones
