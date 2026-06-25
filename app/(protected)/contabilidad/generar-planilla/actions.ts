@@ -49,50 +49,69 @@ export async function previewPayrollImport(
     empleados.map((e) => [normalizeDni(e.numeroIdentificacion), e])
   );
 
-  /**
-   * 🔥 1. Detectar inicio real de datos
-   * buscamos la primera fila con DNI válido
-   */
+  // 🔥 DEBUG 1: LO QUE VIENE DEL EXCEL
+  console.log("📥 ROWS RAW (SIN PROCESAR):");
+  console.log("Total filas:", rows.length);
+  console.log(JSON.stringify(rows, null, 2));
+
   const startIndex = rows.findIndex((row) => {
     const dni = normalizeDni(row.dni ?? "");
-    return /^\d{4,}-?\d{4,}-?\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
+    return /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
   });
+
+  console.log("📍 startIndex detectado:", startIndex);
 
   const cleanStart = startIndex === -1 ? rows : rows.slice(startIndex);
 
-  /**
-   * 🔥 2. Filtrar filas reales (elimina headers, totales, basura)
-   */
+  console.log("🧹 CLEAN START (después de cortar encabezados):");
+  console.log("Total filas:", cleanStart.length);
+  console.log(JSON.stringify(cleanStart, null, 2));
+
   const validRows = cleanStart.filter((row) => {
     const dni = normalizeDni(row.dni ?? "");
 
-    if (!dni) return false;
+    const isDni =
+      /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
 
-    // elimina texto tipo "GRAN TOTAL"
-    if ((row as any)?.nombre?.toString()?.toUpperCase?.().includes("GRAN TOTAL")) {
+    if (!isDni) {
+      console.log("❌ FILA DESCARTADA (no es DNI válido):", row);
+    }
+
+    if (
+      (row as any)?.nombre
+        ?.toString?.()
+        ?.toUpperCase?.()
+        ?.includes("GRAN TOTAL")
+    ) {
+      console.log("❌ FILA DESCARTADA (GRAN TOTAL):", row);
       return false;
     }
 
-    // solo acepta DNIs con números y guiones (Honduras)
-    const looksLikeDni =
-      /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
-
-    if (!looksLikeDni) return false;
-
-    return true;
+    return isDni;
   });
+
+  // 🔥 DEBUG 2: LO QUE QUEDÓ DESPUÉS DEL FILTRO
+  console.log("✅ VALID ROWS (FINAL FILTRADO):");
+  console.log("Total válidas:", validRows.length);
+  console.log(JSON.stringify(validRows, null, 2));
 
   return {
     rows: validRows.map((row, index) => {
-      const empleado = byDni.get(normalizeDni(row.dni ?? ""));
+      const dni = String(row.dni ?? ""); // 🔥 FIX CLAVE
+      const empleado = byDni.get(normalizeDni(dni));
 
       return {
         ...row,
+
         rowNumber: index + 1,
-        dni: row.dni ?? "",
+
+        // 🔥 FIX TYPESCRIPT
+        dni,
+
         puesto: row.puesto ?? "",
         oficina: row.oficina ?? "",
         metodoPago: row.metodoPago ?? "",
+
         retencionFuenteISR: row.retencionFuenteISR ?? 0,
         retencionIHSS: row.retencionIHSS ?? 0,
         retencionRAP: row.retencionRAP ?? 0,
@@ -103,15 +122,20 @@ export async function previewPayrollImport(
         retroactivoSM: row.retroactivoSM ?? 0,
         bonos: row.bonos ?? 0,
         feriados: row.feriados ?? 0,
+
         empleadoId: empleado?.id ?? "",
         empleadoNombre: empleado
           ? `${empleado.nombre} ${empleado.apellido}`
-          : row.empleadoNombre,
+          : row.empleadoNombre ?? "",
+
         empleadoPuesto: empleado?.Puesto?.Nombre ?? row.puesto ?? "",
+
         estado: empleado ? "VALIDO" : "ERROR",
+
         errores: empleado
           ? []
-          : [`No se encontró un empleado activo con DNI ${row.dni || "vacío"}`],
+          : [`No se encontró un empleado activo con DNI ${dni || "vacío"}`],
+
         detalles: [],
       };
     }),
