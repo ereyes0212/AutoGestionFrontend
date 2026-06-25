@@ -49,79 +49,111 @@ export async function previewPayrollImport(
     empleados.map((e) => [normalizeDni(e.numeroIdentificacion), e])
   );
 
-  // 🔥 DEBUG 1: LO QUE VIENE DEL EXCEL
-  console.log("📥 ROWS RAW (SIN PROCESAR):");
+  console.log("📥 ROWS RAW:");
   console.log("Total filas:", rows.length);
-  console.log(JSON.stringify(rows, null, 2));
 
-  const startIndex = rows.findIndex((row) => {
-    const dni = normalizeDni(row.dni ?? "");
-    return /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
-  });
+  // =========================
+  // 🔥 FIX: normalizar Excel (corrimiento de columnas)
+  // =========================
+  const normalizeRow = (row: any) => {
+    const values = Object.values(row as Record<string, any>);
+    const shifted = values.slice(1); // 👈 elimina columna A fantasma
 
-  console.log("📍 startIndex detectado:", startIndex);
+    return {
+      empleadoNombre: String(shifted[1] ?? ""),
+      dni: String(shifted[2] ?? ""),
+      puesto: String(shifted[3] ?? ""),
+      oficina: String(shifted[4] ?? ""),
+      diasTrabajados: Number(shifted[5] ?? 0),
+      salarioDiario: Number(shifted[6] ?? 0),
+      salarioMensual: Number(shifted[7] ?? 0),
 
-  const cleanStart = startIndex === -1 ? rows : rows.slice(startIndex);
+      retencionFuenteISR: parseMoney(shifted[8]),
+      retencionIHSS: parseMoney(shifted[9]),
+      retencionRAP: parseMoney(shifted[10]),
+      impuestoPersonalMunicipal: parseMoney(shifted[11]),
+      deduccionAnticipoSalario: parseMoney(shifted[12]),
+      totalDeducciones: parseMoney(shifted[13]),
+      reembolsos: parseMoney(shifted[14]),
+      retroactivoSM: parseMoney(shifted[15]),
+      bonos: parseMoney(shifted[16]),
+      feriados: parseMoney(shifted[17]),
+      netoPagar: parseMoney(shifted[18]),
+      metodoPago: String(shifted[19] ?? ""),
+    };
+  };
 
-  console.log("🧹 CLEAN START (después de cortar encabezados):");
-  console.log("Total filas:", cleanStart.length);
-  console.log(JSON.stringify(cleanStart, null, 2));
+  const parseMoney = (v: any) => {
+    if (!v) return 0;
+    if (typeof v === "number") return v;
+    return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
+  };
 
-  const validRows = cleanStart.filter((row) => {
-    const dni = normalizeDni(row.dni ?? "");
+  // =========================
+  // 🔥 DEBUG RAW NORMALIZADO
+  // =========================
+  const normalizedRows = rows.map(normalizeRow);
+
+  console.log("🧾 ROWS NORMALIZADAS:");
+  console.log(JSON.stringify(normalizedRows, null, 2));
+
+  // =========================
+  // 🔥 DETECCIÓN INTELIGENTE DE INICIO
+  // =========================
+  let started = false;
+  const validRows: any[] = [];
+
+  for (const [i, row] of normalizedRows.entries()) {
+    const dni = normalizeDni(row.dni);
 
     const isDni =
-      /^\d{4,}-\d{4,}-\d{4,}$/.test(dni) || /^\d{13}$/.test(dni);
+      /^\d{13}$/.test(dni) || /^\d{4,}-\d{4,}-\d{4,}$/.test(dni);
+
+    console.log(`🔎 fila ${i} → dni: ${dni} | válido: ${isDni}`);
+
+    // 🚀 detectar primera fila real
+    if (!started) {
+      if (isDni) {
+        console.log("🚀 INICIO DETECTADO EN FILA:", i);
+        started = true;
+      } else {
+        continue;
+      }
+    }
+
+    // 🛑 cortar al llegar a totales
+    if (
+      String(row.empleadoNombre ?? "")
+        .toUpperCase()
+        .includes("GRAN TOTAL")
+    ) {
+      console.log("🛑 FIN DETECTADO (GRAN TOTAL)");
+      break;
+    }
 
     if (!isDni) {
-      console.log("❌ FILA DESCARTADA (no es DNI válido):", row);
+      console.log("❌ fila ignorada:", row);
+      continue;
     }
 
-    if (
-      (row as any)?.nombre
-        ?.toString?.()
-        ?.toUpperCase?.()
-        ?.includes("GRAN TOTAL")
-    ) {
-      console.log("❌ FILA DESCARTADA (GRAN TOTAL):", row);
-      return false;
-    }
+    validRows.push(row);
+  }
 
-    return isDni;
-  });
+  console.log("✅ VALID ROWS FINAL:", validRows.length);
 
-  // 🔥 DEBUG 2: LO QUE QUEDÓ DESPUÉS DEL FILTRO
-  console.log("✅ VALID ROWS (FINAL FILTRADO):");
-  console.log("Total válidas:", validRows.length);
-  console.log(JSON.stringify(validRows, null, 2));
-
+  // =========================
+  // 🔥 MAPEO FINAL
+  // =========================
   return {
     rows: validRows.map((row, index) => {
-      const dni = String(row.dni ?? ""); // 🔥 FIX CLAVE
+      const dni = String(row.dni ?? "");
       const empleado = byDni.get(normalizeDni(dni));
 
       return {
         ...row,
-
         rowNumber: index + 1,
 
-        // 🔥 FIX TYPESCRIPT
         dni,
-
-        puesto: row.puesto ?? "",
-        oficina: row.oficina ?? "",
-        metodoPago: row.metodoPago ?? "",
-
-        retencionFuenteISR: row.retencionFuenteISR ?? 0,
-        retencionIHSS: row.retencionIHSS ?? 0,
-        retencionRAP: row.retencionRAP ?? 0,
-        impuestoPersonalMunicipal: row.impuestoPersonalMunicipal ?? 0,
-        deduccionAnticipoSalario: row.deduccionAnticipoSalario ?? 0,
-        totalDeducciones: row.totalDeducciones ?? 0,
-        reembolsos: row.reembolsos ?? 0,
-        retroactivoSM: row.retroactivoSM ?? 0,
-        bonos: row.bonos ?? 0,
-        feriados: row.feriados ?? 0,
 
         empleadoId: empleado?.id ?? "",
         empleadoNombre: empleado
@@ -134,14 +166,13 @@ export async function previewPayrollImport(
 
         errores: empleado
           ? []
-          : [`No se encontró un empleado activo con DNI ${dni || "vacío"}`],
+          : [`No se encontró empleado con DNI ${dni}`],
 
         detalles: [],
       };
     }),
   };
 }
-
 export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
   try {
     const createdIds: string[] = [];
