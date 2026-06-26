@@ -38,7 +38,7 @@ const buildAdjustments = (v: VoucherDto): PayrollAdjustment[] => [
 ].filter((item): item is PayrollAdjustment => Number(item.monto) > 0);
 
 export async function previewPayrollImport(
-  rows: Omit<VoucherDto, "empleadoId" | "detalles">[]
+  rows: any[]
 ): Promise<PayrollImportPreview> {
   const empleados = await prisma.empleados.findMany({
     where: { activo: true },
@@ -51,24 +51,31 @@ export async function previewPayrollImport(
 
   console.log("📥 ROWS RAW:");
   console.log("Total filas:", rows.length);
-  console.log(JSON.stringify(rows, null, 2));
 
-  // =========================
-  // 🔥 NORMALIZACIÓN SEGURA
-  // =========================
+  const parseMoney = (v: any) => {
+    if (!v) return 0;
+    if (typeof v === "number") return v;
+    return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
+  };
+
+  /**
+   * 🔥 FIX REAL: el row del Excel viene como ARRAY, no objeto confiable
+   * y empieza en columna B → por eso shift(1)
+   */
   const normalizeRow = (row: any) => {
-    const values = Object.values(row);
+    const values = Array.isArray(row)
+      ? row
+      : Object.values(row ?? {});
 
-    // 👇 DEBUG de cómo viene realmente Excel
     console.log("🧪 RAW ROW VALUES:", values);
 
-    const shifted = values.slice(1); // elimina columna basura
+    const shifted = values.slice(1); // 👈 CLAVE: elimina columna A fantasma
 
-    const parsed = {
-      empleadoNombre: String(shifted[1] ?? ""),
-      dni: String(shifted[2] ?? ""),
-      puesto: String(shifted[3] ?? ""),
-      oficina: String(shifted[4] ?? ""),
+    const normalized = {
+      empleadoNombre: String(shifted[1] ?? "").trim(),
+      dni: String(shifted[2] ?? "").trim(),
+      puesto: String(shifted[3] ?? "").trim(),
+      oficina: String(shifted[4] ?? "").trim(),
       diasTrabajados: Number(shifted[5] ?? 0),
       salarioDiario: Number(shifted[6] ?? 0),
       salarioMensual: Number(shifted[7] ?? 0),
@@ -84,95 +91,75 @@ export async function previewPayrollImport(
       bonos: parseMoney(shifted[16]),
       feriados: parseMoney(shifted[17]),
       netoPagar: parseMoney(shifted[18]),
-      metodoPago: String(shifted[19] ?? ""),
+      metodoPago: String(shifted[19] ?? "").trim(),
     };
 
-    console.log("🧾 ROW NORMALIZADA:", parsed);
+    console.log("🧾 ROW NORMALIZADA:", normalized);
 
-    return parsed;
+    return normalized;
   };
 
-  const parseMoney = (v: any) => {
-    if (!v) return 0;
-    if (typeof v === "number") return v;
-    return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
-  };
-
-  // =========================
-  // 🔥 NORMALIZAR TODO
-  // =========================
   const normalizedRows = rows.map(normalizeRow);
 
   console.log("🧾 TOTAL NORMALIZADAS:", normalizedRows.length);
 
-  // =========================
-  // 🔥 DETECCIÓN REAL
-  // =========================
+  let started = false;
   const validRows: any[] = [];
 
-  let started = false;
+  for (const [i, row] of normalizedRows.entries()) {
+    const dni = normalizeDni(row.dni);
 
-  normalizedRows.forEach((row, i) => {
-    const dniRaw = String(row.dni ?? "");
+    const digits = dni.replace(/\D/g, "");
 
-    // 🔥 MÁS ROBUSTO: solo dígitos
-    const dniDigits = dniRaw.replace(/\D/g, "");
+    const isDni =
+      /^\d{13}$/.test(digits) || /^\d{4,}-\d{4,}-\d{4,}$/.test(dni);
 
-    const isValid = dniDigits.length >= 13;
+    console.log(
+      `🔎 fila ${i} → dni: ${dni} | digits: ${digits} | válido: ${isDni}`
+    );
 
-    console.log(`🔎 fila ${i} → dni: ${dniRaw} | digits: ${dniDigits} | válido: ${isValid}`);
-
-    // 🚀 detectar inicio real
-    if (!started && isValid) {
-      console.log("🚀 INICIO DETECTADO EN FILA:", i);
-      started = true;
+    if (!started) {
+      if (isDni) {
+        console.log("🚀 INICIO DETECTADO EN FILA:", i);
+        started = true;
+      } else {
+        continue;
+      }
     }
 
-    if (!started) return;
-
-    // 🛑 fin por totales
     if (String(row.empleadoNombre).toUpperCase().includes("GRAN TOTAL")) {
       console.log("🛑 FIN DETECTADO (GRAN TOTAL)");
-      return;
+      break;
     }
 
-    if (!isValid) {
-      console.log("❌ fila ignorada:", row);
-      return;
-    }
+    if (!isDni) continue;
 
-    validRows.push({
-      ...row,
-      dni: dniDigits, // 🔥 normalizado final
-    });
-  });
+    validRows.push(row);
+  }
 
   console.log("✅ VALID ROWS FINAL:", validRows.length);
 
-  // =========================
-  // 🔥 MAPEO FINAL
-  // =========================
   return {
     rows: validRows.map((row, index) => {
-      const empleado = byDni.get(row.dni);
+      const dni = String(row.dni ?? "");
+      const empleado = byDni.get(normalizeDni(dni));
 
       return {
         ...row,
-
         rowNumber: index + 1,
 
         empleadoId: empleado?.id ?? "",
         empleadoNombre: empleado
           ? `${empleado.nombre} ${empleado.apellido}`
-          : row.empleadoNombre ?? "",
+          : row.empleadoNombre,
 
-        empleadoPuesto: empleado?.Puesto?.Nombre ?? row.puesto ?? "",
+        empleadoPuesto: empleado?.Puesto?.Nombre ?? row.puesto,
 
         estado: empleado ? "VALIDO" : "ERROR",
 
         errores: empleado
           ? []
-          : [`No se encontró empleado con DNI ${row.dni}`],
+          : [`No se encontró empleado con DNI ${dni}`],
 
         detalles: [],
       };
