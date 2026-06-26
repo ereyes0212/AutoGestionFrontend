@@ -1,4 +1,3 @@
-// app/contabilidad/generar-planilla/actions.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -10,7 +9,9 @@ type PayrollAdjustment = { nombre: string; categoria: "DEDUCCION" | "BONO"; mont
 const normalizeDni = (value: string) => value.replace(/-/g, "");
 
 async function getOrCreateAjusteTipo(adjustment: PayrollAdjustment) {
-  const existing = await prisma.ajusteTipo.findFirst({ where: { nombre: adjustment.nombre, categoria: adjustment.categoria } });
+  const existing = await prisma.ajusteTipo.findFirst({
+    where: { nombre: adjustment.nombre, categoria: adjustment.categoria },
+  });
   if (existing) return existing;
 
   return prisma.ajusteTipo.create({
@@ -25,20 +26,87 @@ async function getOrCreateAjusteTipo(adjustment: PayrollAdjustment) {
   });
 }
 
-const buildAdjustments = (v: VoucherDto): PayrollAdjustment[] => [
-  { nombre: "Retención en la Fuente ISR", categoria: "DEDUCCION", monto: v.retencionFuenteISR ?? 0 },
-  { nombre: "Retención IHSS", categoria: "DEDUCCION", monto: v.retencionIHSS ?? 0 },
-  { nombre: "Retención RAP", categoria: "DEDUCCION", monto: v.retencionRAP ?? 0 },
-  { nombre: "Impuesto Personal Municipal", categoria: "DEDUCCION", monto: v.impuestoPersonalMunicipal ?? 0 },
-  { nombre: "Deducción por Anticipo de Salario", categoria: "DEDUCCION", monto: v.deduccionAnticipoSalario ?? 0 },
-  { nombre: "Reembolsos", categoria: "BONO", monto: v.reembolsos ?? 0 },
-  { nombre: "Retroactivo SM", categoria: "BONO", monto: v.retroactivoSM ?? 0 },
-  { nombre: "Bonos", categoria: "BONO", monto: v.bonos ?? 0 },
-  { nombre: "Feriados", categoria: "BONO", monto: v.feriados ?? 0 },
-].filter((item): item is PayrollAdjustment => Number(item.monto) > 0);
+const buildAdjustments = (v: VoucherDto): PayrollAdjustment[] =>
+  [
+    { nombre: "Retención en la Fuente ISR", categoria: "DEDUCCION", monto: v.retencionFuenteISR ?? 0 },
+    { nombre: "Retención IHSS", categoria: "DEDUCCION", monto: v.retencionIHSS ?? 0 },
+    { nombre: "Retención RAP", categoria: "DEDUCCION", monto: v.retencionRAP ?? 0 },
+    { nombre: "Impuesto Personal Municipal", categoria: "DEDUCCION", monto: v.impuestoPersonalMunicipal ?? 0 },
+    { nombre: "Deducción por Anticipo de Salario", categoria: "DEDUCCION", monto: v.deduccionAnticipoSalario ?? 0 },
+    { nombre: "Reembolsos", categoria: "BONO", monto: v.reembolsos ?? 0 },
+    { nombre: "Retroactivo SM", categoria: "BONO", monto: v.retroactivoSM ?? 0 },
+    { nombre: "Bonos", categoria: "BONO", monto: v.bonos ?? 0 },
+    { nombre: "Feriados", categoria: "BONO", monto: v.feriados ?? 0 },
+  ].filter((item): item is PayrollAdjustment => Number(item.monto) > 0);
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+
+const parseMoney = (v: any): number => {
+  if (!v && v !== 0) return 0;
+  if (typeof v === "number") return v;
+  return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
+};
+
+/**
+ * Lee un valor del array por índice de columna Excel (base 1).
+ * Col A = 1, Col B = 2, Col C = 3 … etc.
+ *
+ * Estructura real del Excel:
+ *   B(2)  N° correlativo
+ *   C(3)  Nombre empleado
+ *   D(4)  DNI              ← clave para buscar al empleado
+ *   E(5)  Puesto
+ *   F(6)  Oficina
+ *   G(7)  Días trabajados
+ *   H(8)  Salario diario
+ *   I(9)  Salario mensual
+ *   J(10) Retención ISR
+ *   K(11) Retención IHSS
+ *   L(12) Retención RAP
+ *   M(13) Impuesto Personal Municipal
+ *   N(14) Deducción anticipo salario
+ *   O(15) Total deducciones
+ *   P(16) Reembolsos
+ *   Q(17) Retroactivo SM
+ *   R(18) Bonos
+ *   S(19) Feriados
+ *   T(20) Neto a pagar
+ *   U(21) Método de pago
+ */
+const normalizeRow = (row: any) => {
+  // Aceptamos tanto arrays como objetos (por si cambia el cliente)
+  const values: any[] = Array.isArray(row) ? row : Object.values(row ?? {});
+
+  // col(n) lee la columna Excel n (base 1) → índice JS n-1
+  const col = (n: number) => values[n - 1] ?? null;
+
+  return {
+    empleadoNombre: String(col(3) ?? "").trim(),
+    dni: String(col(4) ?? "").trim(),   // ← DNI en col D
+    puesto: String(col(5) ?? "").trim(),
+    oficina: String(col(6) ?? "").trim(),
+    diasTrabajados: Number(col(7) ?? 0),
+    salarioDiario: parseMoney(col(8)),
+    salarioMensual: parseMoney(col(9)),
+    retencionFuenteISR: parseMoney(col(10)),
+    retencionIHSS: parseMoney(col(11)),
+    retencionRAP: parseMoney(col(12)),
+    impuestoPersonalMunicipal: parseMoney(col(13)),
+    deduccionAnticipoSalario: parseMoney(col(14)),
+    totalDeducciones: parseMoney(col(15)),
+    reembolsos: parseMoney(col(16)),
+    retroactivoSM: parseMoney(col(17)),
+    bonos: parseMoney(col(18)),
+    feriados: parseMoney(col(19)),
+    netoPagar: parseMoney(col(20)),
+    metodoPago: String(col(21) ?? "").trim(),
+  };
+};
+
+// ─── PREVIEW ─────────────────────────────────────────────────────────────────
 
 export async function previewPayrollImport(
-  rows: any[]
+  rows: any[]   // arrays crudos de SheetJS (header:1, defval:null)
 ): Promise<PayrollImportPreview> {
   const empleados = await prisma.empleados.findMany({
     where: { activo: true },
@@ -49,142 +117,93 @@ export async function previewPayrollImport(
     empleados.map((e) => [normalizeDni(e.numeroIdentificacion), e])
   );
 
-  console.log("📥 ROWS RAW:");
-  console.log("Total filas:", rows.length);
+  console.log("📥 Total filas recibidas:", rows.length);
 
-  const parseMoney = (v: any) => {
-    if (!v) return 0;
-    if (typeof v === "number") return v;
-    return Number(String(v).replace(/[^\d.-]/g, "")) || 0;
-  };
-
-  /**
-   * 🔥 FIX REAL: el row del Excel viene como ARRAY, no objeto confiable
-   * y empieza en columna B → por eso shift(1)
-   */
-  const normalizeRow = (row: any) => {
-    const values = Array.isArray(row)
-      ? row
-      : Object.values(row ?? {});
-
-    console.log("🧪 RAW ROW VALUES:", values);
-
-    const shifted = values.slice(1); // 👈 CLAVE: elimina columna A fantasma
-
-    const normalized = {
-      empleadoNombre: String(shifted[1] ?? "").trim(),
-      dni: String(shifted[2] ?? "").trim(),
-      puesto: String(shifted[3] ?? "").trim(),
-      oficina: String(shifted[4] ?? "").trim(),
-      diasTrabajados: Number(shifted[5] ?? 0),
-      salarioDiario: Number(shifted[6] ?? 0),
-      salarioMensual: Number(shifted[7] ?? 0),
-
-      retencionFuenteISR: parseMoney(shifted[8]),
-      retencionIHSS: parseMoney(shifted[9]),
-      retencionRAP: parseMoney(shifted[10]),
-      impuestoPersonalMunicipal: parseMoney(shifted[11]),
-      deduccionAnticipoSalario: parseMoney(shifted[12]),
-      totalDeducciones: parseMoney(shifted[13]),
-      reembolsos: parseMoney(shifted[14]),
-      retroactivoSM: parseMoney(shifted[15]),
-      bonos: parseMoney(shifted[16]),
-      feriados: parseMoney(shifted[17]),
-      netoPagar: parseMoney(shifted[18]),
-      metodoPago: String(shifted[19] ?? "").trim(),
-    };
-
-    console.log("🧾 ROW NORMALIZADA:", normalized);
-
-    return normalized;
-  };
-
-  const normalizedRows = rows.map(normalizeRow);
-
-  console.log("🧾 TOTAL NORMALIZADAS:", normalizedRows.length);
-
+  const validRows: ReturnType<typeof normalizeRow>[] = [];
   let started = false;
-  const validRows: any[] = [];
 
-  for (const [i, row] of normalizedRows.entries()) {
-    const dni = normalizeDni(row.dni);
+  for (const [i, rawRow] of rows.entries()) {
+    const row = normalizeRow(rawRow);
+    const dniRaw = row.dni;
+    const dniClean = normalizeDni(dniRaw);
+    const digits = dniClean.replace(/\D/g, "");
 
-    const digits = dni.replace(/\D/g, "");
-
+    // DNI hondureño: 13 dígitos o formato NNNN-NNNN-NNNNN
     const isDni =
-      /^\d{13}$/.test(digits) || /^\d{4,}-\d{4,}-\d{4,}$/.test(dni);
+      /^\d{13}$/.test(digits) ||
+      /^\d{4}-\d{4}-\d{5}$/.test(dniRaw);
 
-    console.log(
-      `🔎 fila ${i} → dni: ${dni} | digits: ${digits} | válido: ${isDni}`
-    );
+    console.log(`🔎 fila ${i + 1} → dni: "${dniRaw}" | válido: ${isDni}`);
 
     if (!started) {
       if (isDni) {
-        console.log("🚀 INICIO DETECTADO EN FILA:", i);
         started = true;
+        console.log("🚀 Primera fila de datos detectada:", i + 1);
       } else {
-        continue;
+        continue; // todavía estamos en filas de título/cabecera
       }
     }
 
-    if (String(row.empleadoNombre).toUpperCase().includes("GRAN TOTAL")) {
-      console.log("🛑 FIN DETECTADO (GRAN TOTAL)");
+    // Fin de datos: fila "GRAN TOTAL"
+    if (row.empleadoNombre.toUpperCase().includes("GRAN TOTAL")) {
+      console.log("🛑 Fin detectado (GRAN TOTAL) en fila", i + 1);
       break;
     }
 
-    if (!isDni) continue;
+    if (!isDni) continue; // fila vacía o subtotal intermedio
 
     validRows.push(row);
   }
 
-  console.log("✅ VALID ROWS FINAL:", validRows.length);
+  console.log("✅ Filas válidas:", validRows.length);
 
   return {
     rows: validRows.map((row, index) => {
-      const dni = String(row.dni ?? "");
-      const empleado = byDni.get(normalizeDni(dni));
-
+      const empleado = byDni.get(normalizeDni(row.dni));
       return {
         ...row,
         rowNumber: index + 1,
-
         empleadoId: empleado?.id ?? "",
         empleadoNombre: empleado
           ? `${empleado.nombre} ${empleado.apellido}`
           : row.empleadoNombre,
-
         empleadoPuesto: empleado?.Puesto?.Nombre ?? row.puesto,
-
-        estado: empleado ? "VALIDO" : "ERROR",
-
-        errores: empleado
-          ? []
-          : [`No se encontró empleado con DNI ${dni}`],
-
+        estado: empleado ? "VALIDO" as const : "ERROR" as const,
+        errores: empleado ? [] : [`No se encontró empleado con DNI ${row.dni}`],
         detalles: [],
+        fechaPago: "",          // ← se asigna en el cliente al guardar
+        observaciones: `Oficina: ${row.oficina}`,  // ← se genera aquí
       };
     }),
   };
 }
+
+// ─── SAVE ────────────────────────────────────────────────────────────────────
+
 export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
   try {
     const createdIds: string[] = [];
 
     for (const v of vouchers) {
-      if (!v.empleadoId) throw new Error(`El empleado ${v.empleadoNombre} no tiene empleadoId.`);
+      if (!v.empleadoId)
+        throw new Error(`El empleado ${v.empleadoNombre} no tiene empleadoId.`);
+
       const voucherId = randomUUID();
+
       const detalles = v.detalles?.length
         ? v.detalles
-        : await Promise.all(buildAdjustments(v).map(async (a) => {
-          const ajuste = await getOrCreateAjusteTipo(a);
-          return {
-            ajusteTipoId: ajuste.id,
-            ajusteTipoNombre: ajuste.nombre,
-            categoria: ajuste.categoria,
-            montoPorDefecto: ajuste.montoPorDefecto.toString(),
-            monto: a.monto.toString(),
-          };
-        }));
+        : await Promise.all(
+          buildAdjustments(v).map(async (a) => {
+            const ajuste = await getOrCreateAjusteTipo(a);
+            return {
+              ajusteTipoId: ajuste.id,
+              ajusteTipoNombre: ajuste.nombre,
+              categoria: ajuste.categoria,
+              montoPorDefecto: ajuste.montoPorDefecto.toString(),
+              monto: a.monto.toString(),
+            };
+          })
+        );
 
       await prisma.voucherPagos.create({
         data: {
@@ -201,7 +220,11 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
           retencionRAP: v.retencionRAP ?? 0,
           impuestoPersonalMunicipal: v.impuestoPersonalMunicipal ?? 0,
           deduccionAnticipoSalario: v.deduccionAnticipoSalario ?? 0,
-          totalDeducciones: v.totalDeducciones ?? detalles.filter((d) => d.categoria === "DEDUCCION").reduce((s, d) => s + Number(d.monto), 0),
+          totalDeducciones:
+            v.totalDeducciones ??
+            detalles
+              .filter((d) => d.categoria === "DEDUCCION")
+              .reduce((s, d) => s + Number(d.monto), 0),
           reembolsos: v.reembolsos ?? 0,
           retroactivoSM: v.retroactivoSM ?? 0,
           bonos: v.bonos ?? 0,
@@ -209,7 +232,11 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
           metodoPago: v.metodoPago ?? "",
           DetalleVoucherPagos: {
             createMany: {
-              data: detalles.map((d) => ({ id: randomUUID(), ajusteTipoId: d.ajusteTipoId, monto: Number(d.monto) })),
+              data: detalles.map((d) => ({
+                id: randomUUID(),
+                ajusteTipoId: d.ajusteTipoId,
+                monto: Number(d.monto),
+              })),
             },
           },
         },
@@ -224,16 +251,12 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
     throw error;
   }
 }
-/**
- * Dado un arreglo de voucherIds, envía los correos correspondientes
- * y retorna un objeto con dos arreglos: `sent` (IDs enviados con éxito)
- * y `failed` (IDs que fallaron).
- * Ahora se incluye `AjusteTipo` en lugar de `TipoDeducciones`.
- */
-export async function sendVoucherEmails(voucherIds: string[]): Promise<{
-  sent: string[];
-  failed: string[];
-}> {
+
+// ─── SEND EMAILS ─────────────────────────────────────────────────────────────
+
+export async function sendVoucherEmails(
+  voucherIds: string[]
+): Promise<{ sent: string[]; failed: string[] }> {
   const { EmailService } = await import("@/lib/sendEmail");
   const { generateVoucherEmailHtml } = await import("@/lib/templates/voucherEmail");
 
@@ -242,7 +265,6 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
 
   for (const id of voucherIds) {
     try {
-      // 1) Obtener datos del voucher junto con detalles y el correo del empleado
       const voucher = await prisma.voucherPagos.findUnique({
         where: { id },
         include: {
@@ -260,24 +282,17 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
         },
       });
 
-      if (!voucher) {
+      if (!voucher || !voucher.Empleados?.correo) {
         failed.push(id);
         continue;
       }
 
-      const empleadoCorreo = voucher.Empleados?.correo;
-      if (!empleadoCorreo) {
-        failed.push(id);
-        continue;
-      }
-
-      // 2) Mapear a VoucherDto
       const detalles = voucher.DetalleVoucherPagos.map((d) => ({
         ajusteTipoId: d.AjusteTipo.id,
         ajusteTipoNombre: d.AjusteTipo.nombre,
-        categoria: d.AjusteTipo.categoria,           // "DEDUCCION" o "BONO"
+        categoria: d.AjusteTipo.categoria,
         montoPorDefecto: d.AjusteTipo.montoPorDefecto.toString(),
-        monto: d.monto.toString(),                    // monto real aplicado
+        monto: d.monto.toString(),
       }));
 
       const vDto: VoucherDto = {
@@ -292,11 +307,9 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
         detalles,
       };
 
-      // 3) Generar el HTML y enviar el correo
       const html = generateVoucherEmailHtml(vDto);
-      const emailService = new EmailService();
-      await emailService.sendMail({
-        to: empleadoCorreo,
+      await new EmailService().sendMail({
+        to: voucher.Empleados.correo,
         subject: "Tu recibo de pago",
         html,
       });
@@ -311,52 +324,40 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{
   return { sent, failed };
 }
 
-/**
- * Obtiene el template inicial para el formulario:
- * - Empleados activos
- * - Ajustes (bonos/deducciones) activos, incluyendo su montoPorDefecto
- */
+// ─── TEMPLATE ────────────────────────────────────────────────────────────────
+
 export async function getTemplate(): Promise<VoucherTemplateResponse> {
   try {
-    // 1) Empleados activos
     const empleados = await prisma.empleados.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
     });
 
-    const empleadosMapped = empleados.map((e) => ({
-      empleadoId: e.id,
-      nombreCompleto: `${e.nombre} ${e.apellido}`,
-      diasTrabajados: 0,
-      salarioDiario: 0,
-      salarioMensual: 0,
-      netoPagar: 0,
-    }));
-
-    // 2) Ajustes activos (antes TipoDeducciones)
     const ajustes = await prisma.ajusteTipo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
     });
 
-    const ajustesMapped: AjusteTemplate[] = ajustes.map((a) => ({
-      id: a.id,
-      nombre: a.nombre,
-      descripcion: a.descripcion ?? "",
-      categoria: a.categoria,               // "DEDUCCION" o "BONO"
-      montoPorDefecto: a.montoPorDefecto.toNumber(), // convertir Decimal a number
-      activo: a.activo,
-    }));
-
     return {
-      empleados: empleadosMapped,
-      ajustes: ajustesMapped,
+      empleados: empleados.map((e) => ({
+        empleadoId: e.id,
+        nombreCompleto: `${e.nombre} ${e.apellido}`,
+        diasTrabajados: 0,
+        salarioDiario: 0,
+        salarioMensual: 0,
+        netoPagar: 0,
+      })),
+      ajustes: ajustes.map((a): AjusteTemplate => ({
+        id: a.id,
+        nombre: a.nombre,
+        descripcion: a.descripcion ?? "",
+        categoria: a.categoria,
+        montoPorDefecto: a.montoPorDefecto.toNumber(),
+        activo: a.activo,
+      })),
     };
   } catch (error) {
     console.error("Error al obtener el template:", error);
-    return {
-      empleados: [],
-      ajustes: [],
-    };
+    return { empleados: [], ajustes: [] };
   }
 }
