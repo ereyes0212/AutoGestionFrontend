@@ -270,26 +270,6 @@ export type VoucherEmailJob = {
   enviadoAt: Date | null;
 };
 
-async function ensureVoucherEmailQueueTable() {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS VoucherEmailQueue (
-      id VARCHAR(36) NOT NULL PRIMARY KEY,
-      voucherPagoId VARCHAR(36) NOT NULL,
-      estado VARCHAR(20) NOT NULL DEFAULT 'PENDIENTE',
-      destinatario LONGTEXT NOT NULL,
-      empleadoNombre VARCHAR(220) NOT NULL,
-      asunto VARCHAR(180) NOT NULL,
-      errorMensaje LONGTEXT NULL,
-      intentos INT NOT NULL DEFAULT 0,
-      createdAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-      updateAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-      enviadoAt DATETIME(6) NULL,
-      INDEX IX_VoucherEmailQueue_Estado (estado),
-      INDEX IX_VoucherEmailQueue_VoucherPagoId (voucherPagoId)
-    )
-  `);
-}
-
 async function buildVoucherDtoForEmail(id: string): Promise<{ dto: VoucherDto; to: string } | null> {
   const voucher = await prisma.voucherPagos.findUnique({
     where: { id },
@@ -334,18 +314,17 @@ async function sendVoucherEmailJob(jobId: string) {
   const { EmailService } = await import("@/lib/sendEmail");
   const { generateVoucherEmailHtml } = await import("@/lib/templates/voucherEmail");
 
-  await ensureVoucherEmailQueueTable();
-  const jobs = await prisma.$queryRaw<VoucherEmailJob[]>`
-    SELECT * FROM VoucherEmailQueue WHERE id = ${jobId} LIMIT 1
-  `;
-  const job = jobs[0];
+  const job = await prisma.voucherEmailQueue.findUnique({ where: { id: jobId } });
   if (!job) return;
 
-  await prisma.$executeRaw`
-    UPDATE VoucherEmailQueue
-    SET estado = 'ENVIANDO', intentos = intentos + 1, errorMensaje = NULL
-    WHERE id = ${jobId}
-  `;
+  await prisma.voucherEmailQueue.update({
+    where: { id: jobId },
+    data: {
+      estado: "ENVIANDO",
+      intentos: { increment: 1 },
+      errorMensaje: null,
+    },
+  });
 
   try {
     const data = await buildVoucherDtoForEmail(job.voucherPagoId);
@@ -354,19 +333,23 @@ async function sendVoucherEmailJob(jobId: string) {
     const html = generateVoucherEmailHtml(data.dto);
     await new EmailService().sendMail({ to: data.to, subject: job.asunto, html });
 
-    await prisma.$executeRaw`
-      UPDATE VoucherEmailQueue
-      SET estado = 'ENVIADO', destinatario = ${data.to}, empleadoNombre = ${data.dto.empleadoNombre}, enviadoAt = NOW(6), errorMensaje = NULL
-      WHERE id = ${jobId}
-    `;
+    await prisma.voucherEmailQueue.update({
+      where: { id: jobId },
+      data: {
+        estado: "ENVIADO",
+        destinatario: data.to,
+        empleadoNombre: data.dto.empleadoNombre,
+        enviadoAt: new Date(),
+        errorMensaje: null,
+      },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido enviando el correo.";
     console.error(`Error enviando email para trabajo ${jobId}:`, error);
-    await prisma.$executeRaw`
-      UPDATE VoucherEmailQueue
-      SET estado = 'ERROR', errorMensaje = ${message}
-      WHERE id = ${jobId}
-    `;
+    await prisma.voucherEmailQueue.update({
+      where: { id: jobId },
+      data: { estado: "ERROR", errorMensaje: message },
+    });
   }
 }
 
@@ -379,8 +362,6 @@ function runVoucherEmailJobsInBackground(jobIds: string[]) {
 }
 
 export async function sendVoucherEmails(voucherIds: string[]): Promise<{ queued: string[]; failed: string[] }> {
-  await ensureVoucherEmailQueueTable();
-
   const queued: string[] = [];
   const failed: string[] = [];
 
@@ -392,12 +373,17 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{ queued:
         continue;
       }
 
-      const jobId = randomUUID();
-      await prisma.$executeRaw`
-        INSERT INTO VoucherEmailQueue (id, voucherPagoId, estado, destinatario, empleadoNombre, asunto)
-        VALUES (${jobId}, ${id}, 'PENDIENTE', ${data.to}, ${data.dto.empleadoNombre}, 'Tu recibo de pago')
-      `;
-      queued.push(jobId);
+      const job = await prisma.voucherEmailQueue.create({
+        data: {
+          id: randomUUID(),
+          voucherPagoId: id,
+          estado: "PENDIENTE",
+          destinatario: data.to,
+          empleadoNombre: data.dto.empleadoNombre,
+          asunto: "Tu recibo de pago",
+        },
+      });
+      queued.push(job.id);
     } catch (error) {
       console.error(`Error creando trabajo de email para voucher ${id}:`, error);
       failed.push(id);
@@ -409,21 +395,23 @@ export async function sendVoucherEmails(voucherIds: string[]): Promise<{ queued:
 }
 
 export async function getVoucherEmailJobs(): Promise<VoucherEmailJob[]> {
-  await ensureVoucherEmailQueueTable();
-  return prisma.$queryRaw<VoucherEmailJob[]>`
-    SELECT * FROM VoucherEmailQueue
-    ORDER BY createdAt DESC
-    LIMIT 200
-  `;
+  return prisma.voucherEmailQueue.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
 }
 
 export async function retryVoucherEmail(jobId: string): Promise<void> {
-  await ensureVoucherEmailQueueTable();
-  await prisma.$executeRaw`
-    UPDATE VoucherEmailQueue
-    SET estado = 'PENDIENTE', errorMensaje = NULL, enviadoAt = NULL
-    WHERE id = ${jobId} AND estado = 'ERROR'
-  `;
+  const job = await prisma.voucherEmailQueue.findFirst({
+    where: { id: jobId, estado: "ERROR" },
+    select: { id: true },
+  });
+  if (!job) return;
+
+  await prisma.voucherEmailQueue.update({
+    where: { id: jobId },
+    data: { estado: "PENDIENTE", errorMensaje: null, enviadoAt: null },
+  });
   runVoucherEmailJobsInBackground([jobId]);
 }
 
