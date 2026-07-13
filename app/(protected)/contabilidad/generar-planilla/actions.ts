@@ -254,74 +254,165 @@ export async function saveVouchers(vouchers: VoucherDto[]): Promise<string[]> {
 
 // ─── SEND EMAILS ─────────────────────────────────────────────────────────────
 
-export async function sendVoucherEmails(
-  voucherIds: string[]
-): Promise<{ sent: string[]; failed: string[] }> {
+type VoucherEmailStatus = "PENDIENTE" | "ENVIANDO" | "ENVIADO" | "ERROR";
+
+export type VoucherEmailJob = {
+  id: string;
+  voucherPagoId: string;
+  estado: VoucherEmailStatus;
+  destinatario: string;
+  empleadoNombre: string;
+  asunto: string;
+  errorMensaje: string | null;
+  intentos: number;
+  createdAt: Date;
+  updateAt: Date;
+  enviadoAt: Date | null;
+};
+
+async function buildVoucherDtoForEmail(id: string): Promise<{ dto: VoucherDto; to: string } | null> {
+  const voucher = await prisma.voucherPagos.findUnique({
+    where: { id },
+    include: {
+      DetalleVoucherPagos: {
+        select: {
+          AjusteTipo: { select: { id: true, nombre: true, categoria: true, montoPorDefecto: true } },
+          monto: true,
+        },
+      },
+      Empleados: { select: { correo: true, nombre: true, apellido: true } },
+    },
+  });
+
+  if (!voucher || !voucher.Empleados?.correo) return null;
+
+  const detalles = voucher.DetalleVoucherPagos.map((d) => ({
+    ajusteTipoId: d.AjusteTipo.id,
+    ajusteTipoNombre: d.AjusteTipo.nombre,
+    categoria: d.AjusteTipo.categoria,
+    montoPorDefecto: d.AjusteTipo.montoPorDefecto.toString(),
+    monto: d.monto.toString(),
+  }));
+
+  return {
+    to: voucher.Empleados.correo,
+    dto: {
+      empleadoId: voucher.empleadoId,
+      empleadoNombre: `${voucher.Empleados.nombre} ${voucher.Empleados.apellido}`,
+      fechaPago: voucher.fechaPago.toISOString(),
+      diasTrabajados: voucher.diasTrabajados,
+      salarioDiario: Number(voucher.salarioDiario),
+      salarioMensual: Number(voucher.salarioMensual),
+      netoPagar: Number(voucher.netoPagar),
+      observaciones: voucher.observaciones || "",
+      detalles,
+    },
+  };
+}
+
+async function sendVoucherEmailJob(jobId: string) {
   const { EmailService } = await import("@/lib/sendEmail");
   const { generateVoucherEmailHtml } = await import("@/lib/templates/voucherEmail");
 
-  const sent: string[] = [];
+  const job = await prisma.voucherEmailQueue.findUnique({ where: { id: jobId } });
+  if (!job) return;
+
+  await prisma.voucherEmailQueue.update({
+    where: { id: jobId },
+    data: {
+      estado: "ENVIANDO",
+      intentos: { increment: 1 },
+      errorMensaje: null,
+    },
+  });
+
+  try {
+    const data = await buildVoucherDtoForEmail(job.voucherPagoId);
+    if (!data) throw new Error("No se encontró el voucher o el empleado no tiene correo configurado.");
+
+    const html = generateVoucherEmailHtml(data.dto);
+    await new EmailService().sendMail({ to: data.to, subject: job.asunto, html });
+
+    await prisma.voucherEmailQueue.update({
+      where: { id: jobId },
+      data: {
+        estado: "ENVIADO",
+        destinatario: data.to,
+        empleadoNombre: data.dto.empleadoNombre,
+        enviadoAt: new Date(),
+        errorMensaje: null,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido enviando el correo.";
+    console.error(`Error enviando email para trabajo ${jobId}:`, error);
+    await prisma.voucherEmailQueue.update({
+      where: { id: jobId },
+      data: { estado: "ERROR", errorMensaje: message },
+    });
+  }
+}
+
+function runVoucherEmailJobsInBackground(jobIds: string[]) {
+  void (async () => {
+    for (const jobId of jobIds) {
+      await sendVoucherEmailJob(jobId);
+    }
+  })();
+}
+
+export async function sendVoucherEmails(voucherIds: string[]): Promise<{ queued: string[]; failed: string[] }> {
+  const queued: string[] = [];
   const failed: string[] = [];
 
   for (const id of voucherIds) {
     try {
-      const voucher = await prisma.voucherPagos.findUnique({
-        where: { id },
-        include: {
-          DetalleVoucherPagos: {
-            select: {
-              AjusteTipo: {
-                select: { id: true, nombre: true, categoria: true, montoPorDefecto: true },
-              },
-              monto: true,
-            },
-          },
-          Empleados: {
-            select: { correo: true, nombre: true, apellido: true },
-          },
-        },
-      });
-
-      if (!voucher || !voucher.Empleados?.correo) {
+      const data = await buildVoucherDtoForEmail(id);
+      if (!data) {
         failed.push(id);
         continue;
       }
 
-      const detalles = voucher.DetalleVoucherPagos.map((d) => ({
-        ajusteTipoId: d.AjusteTipo.id,
-        ajusteTipoNombre: d.AjusteTipo.nombre,
-        categoria: d.AjusteTipo.categoria,
-        montoPorDefecto: d.AjusteTipo.montoPorDefecto.toString(),
-        monto: d.monto.toString(),
-      }));
-
-      const vDto: VoucherDto = {
-        empleadoId: voucher.empleadoId,
-        empleadoNombre: `${voucher.Empleados.nombre} ${voucher.Empleados.apellido}`,
-        fechaPago: voucher.fechaPago.toISOString(),
-        diasTrabajados: voucher.diasTrabajados,
-        salarioDiario: Number(voucher.salarioDiario),
-        salarioMensual: Number(voucher.salarioMensual),
-        netoPagar: Number(voucher.netoPagar),
-        observaciones: voucher.observaciones || "",
-        detalles,
-      };
-
-      const html = generateVoucherEmailHtml(vDto);
-      await new EmailService().sendMail({
-        to: voucher.Empleados.correo,
-        subject: "Tu recibo de pago",
-        html,
+      const job = await prisma.voucherEmailQueue.create({
+        data: {
+          id: randomUUID(),
+          voucherPagoId: id,
+          estado: "PENDIENTE",
+          destinatario: data.to,
+          empleadoNombre: data.dto.empleadoNombre,
+          asunto: "Tu recibo de pago",
+        },
       });
-
-      sent.push(id);
+      queued.push(job.id);
     } catch (error) {
-      console.error(`Error enviando email para voucher ${id}:`, error);
+      console.error(`Error creando trabajo de email para voucher ${id}:`, error);
       failed.push(id);
     }
   }
 
-  return { sent, failed };
+  runVoucherEmailJobsInBackground(queued);
+  return { queued, failed };
+}
+
+export async function getVoucherEmailJobs(): Promise<VoucherEmailJob[]> {
+  return prisma.voucherEmailQueue.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+}
+
+export async function retryVoucherEmail(jobId: string): Promise<void> {
+  const job = await prisma.voucherEmailQueue.findFirst({
+    where: { id: jobId, estado: "ERROR" },
+    select: { id: true },
+  });
+  if (!job) return;
+
+  await prisma.voucherEmailQueue.update({
+    where: { id: jobId },
+    data: { estado: "PENDIENTE", errorMensaje: null, enviadoAt: null },
+  });
+  runVoucherEmailJobsInBackground([jobId]);
 }
 
 // ─── TEMPLATE ────────────────────────────────────────────────────────────────
