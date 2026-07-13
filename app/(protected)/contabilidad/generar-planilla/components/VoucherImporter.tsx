@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { AlertCircle, CalendarIcon, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CalendarIcon, CheckCircle2, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getTemplate, previewPayrollImport, saveVouchers, sendVoucherEmails } from "../actions";
 import { PayrollImportRow, VoucherDto, VoucherTemplateResponse } from "../types";
@@ -111,11 +112,11 @@ export function VoucherImporter() {
 
         setIsSending(true);
         try {
-            const { sent, failed } = await sendVoucherEmails(voucherIds);
-            if (sent.length > 0) {
+            const { queued, failed } = await sendVoucherEmails(voucherIds);
+            if (queued.length > 0) {
                 toast({
-                    title: "Correos enviados",
-                    description: `${sent.length} correo(s) enviados correctamente.`,
+                    title: "Correos en proceso",
+                    description: `${queued.length} correo(s) quedaron enviándose en el servidor. Puede revisar el estado en la pantalla de envíos.`,
                 });
             }
             if (failed.length > 0) {
@@ -196,7 +197,14 @@ export function VoucherImporter() {
                     disabled={isSending || voucherIds.length === 0}
                     className="w-full sm:w-auto"
                 >
-                    {isSending ? "Enviando correos..." : "Enviar Emails"}
+                    {isSending ? "Preparando envío..." : "Enviar Emails"}
+                </Button>
+
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href="/contabilidad/generar-planilla/emails">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Ver envíos
+                    </Link>
                 </Button>
             </div>
 
