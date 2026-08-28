@@ -20,7 +20,7 @@ export async function encrypt(payload: UsuarioSesion) {
     return await new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
-        .setExpirationTime("6h") // <-- expiración de 6 horas
+        .setExpirationTime("12h") // <-- expiración de 12 horas
         // .setExpirationTime("10s") // <-- expiración de 10 segundos (para pruebas)
         .sign(key);
 }
@@ -57,8 +57,8 @@ export const login = async (
         return { error: "Usuario o contraseña inválidos" };
     }
 
-    // Guardamos cookie por 6 horas
-    const expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
+    // Guardamos cookie por 12 horas
+    const expires = new Date(Date.now() + 12 * 60 * 60 * 1000);
     // const expires = new Date(Date.now() + 10 * 1000);
 
     cookies().set("session", tokenAD, { expires, httpOnly: true, path: "/" });
@@ -84,8 +84,8 @@ export const resetPassword = async (
         return { error: "Error al cambiar la contraseña" };
     }
 
-    // Guardamos cookie por 6 horas
-    const expires = new Date(Date.now() + 6 * 60 * 60 * 1000);
+    // Guardamos cookie por 12 horas
+    const expires = new Date(Date.now() + 12 * 60 * 60 * 1000);
     // const expires = new Date(Date.now() + 10 * 1000);
     cookies().set("session", tokenAD, { expires, httpOnly: true, path: "/" });
 

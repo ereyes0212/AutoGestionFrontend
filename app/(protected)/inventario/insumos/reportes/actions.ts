@@ -6,6 +6,10 @@ import {
   cantidadMovimientoLabel,
   contenidoEmpaqueLabel,
   equivalenciaEmpaques,
+  finDiaHn,
+  formatDiaHn,
+  formatFechaHn,
+  inicioDiaHn,
 } from "../utils";
 import {
   ReporteDetalleInsumo,
@@ -18,34 +22,24 @@ import {
 /** Tope de filas de detalle que se listan en un reporte */
 const MAX_MOVIMIENTOS_REPORTE = 2000;
 
-function formatFecha(fecha: Date) {
-  return new Intl.DateTimeFormat("es-HN", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(fecha);
-}
-
-function formatDia(fecha: Date) {
-  return new Intl.DateTimeFormat("es-HN", { dateStyle: "short" }).format(fecha);
-}
+/** Fechas del reporte siempre en hora de Honduras (UTC-6) */
+const formatFecha = formatFechaHn;
 
 function construirRango(desde?: string, hasta?: string) {
   if (!desde && !hasta) return undefined;
 
   const rango: { gte?: Date; lte?: Date } = {};
-  if (desde) rango.gte = new Date(`${desde}T00:00:00`);
-  if (hasta) rango.lte = new Date(`${hasta}T23:59:59`);
+  if (desde) rango.gte = inicioDiaHn(desde);
+  if (hasta) rango.lte = finDiaHn(hasta);
   return rango;
 }
 
 function periodoLabel(desde?: string, hasta?: string) {
   if (desde && hasta) {
-    return `Del ${formatDia(new Date(`${desde}T00:00:00`))} al ${formatDia(
-      new Date(`${hasta}T00:00:00`)
-    )}`;
+    return `Del ${formatDiaHn(inicioDiaHn(desde))} al ${formatDiaHn(inicioDiaHn(hasta))}`;
   }
-  if (desde) return `Desde el ${formatDia(new Date(`${desde}T00:00:00`))}`;
-  if (hasta) return `Hasta el ${formatDia(new Date(`${hasta}T00:00:00`))}`;
+  if (desde) return `Desde el ${formatDiaHn(inicioDiaHn(desde))}`;
+  if (hasta) return `Hasta el ${formatDiaHn(inicioDiaHn(hasta))}`;
   return "Histórico completo";
 }
 

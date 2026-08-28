@@ -6,6 +6,41 @@
  * 2 cajas de 6 unidades se mueven 12 unidades.
  */
 
+/**
+ * Honduras es UTC-6 todo el año (no aplica horario de verano desde 2006),
+ * así que las fechas se muestran y se filtran siempre en esa zona sin
+ * depender de la zona horaria del servidor.
+ */
+export const ZONA_HONDURAS = "America/Tegucigalpa";
+const OFFSET_HONDURAS = "-06:00";
+
+/** "28/08/26, 10:15" en hora de Honduras */
+export function formatFechaHn(fecha: Date) {
+  return new Intl.DateTimeFormat("es-HN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: ZONA_HONDURAS,
+  }).format(fecha);
+}
+
+/** "28/08/26" en hora de Honduras */
+export function formatDiaHn(fecha: Date) {
+  return new Intl.DateTimeFormat("es-HN", {
+    dateStyle: "short",
+    timeZone: ZONA_HONDURAS,
+  }).format(fecha);
+}
+
+/** Inicio del día hondureño para un YYYY-MM-DD */
+export function inicioDiaHn(dia: string) {
+  return new Date(`${dia}T00:00:00${OFFSET_HONDURAS}`);
+}
+
+/** Fin del día hondureño para un YYYY-MM-DD */
+export function finDiaHn(dia: string) {
+  return new Date(`${dia}T23:59:59.999${OFFSET_HONDURAS}`);
+}
+
 export function pluralizar(nombre: string, cantidad: number) {
   const limpio = nombre.trim();
   if (!limpio || cantidad === 1) return limpio;

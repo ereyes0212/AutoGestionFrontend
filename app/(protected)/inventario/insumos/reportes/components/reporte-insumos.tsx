@@ -3,7 +3,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,6 +26,7 @@ import { useState } from "react";
 import { Insumo } from "../../types";
 import { generarReporteInsumos } from "../actions";
 import { ReporteInsumos, ReporteMovimiento, TipoReporteInsumo } from "../types";
+import RangoFechas from "./rango-fechas";
 
 interface ReporteInsumosProps {
   insumos: Insumo[];
@@ -338,13 +338,15 @@ export default function ReporteInsumosComponent({ insumos }: ReporteInsumosProps
             )}
 
             <div className="space-y-1">
-              <Label>Desde</Label>
-              <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
-            </div>
-
-            <div className="space-y-1">
-              <Label>Hasta</Label>
-              <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+              <Label>Período</Label>
+              <RangoFechas
+                desde={desde}
+                hasta={hasta}
+                onChange={(nuevoDesde, nuevoHasta) => {
+                  setDesde(nuevoDesde);
+                  setHasta(nuevoHasta);
+                }}
+              />
             </div>
 
             <div className="flex items-end">

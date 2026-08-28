@@ -4,17 +4,16 @@ import { getPrivateInsumosBucketConfig, uploadBufferToS3 } from "@/lib/aws/s3";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { MovimientoParaFirma } from "../../../(protected)/inventario/insumos/types";
-import { cantidadMovimientoLabel } from "../../../(protected)/inventario/insumos/utils";
+import {
+  cantidadMovimientoLabel,
+  formatFechaHn,
+} from "../../../(protected)/inventario/insumos/utils";
 
 /** Tamaño máximo permitido para la imagen de la firma (2 MB) */
 const MAX_FIRMA_BYTES = 2 * 1024 * 1024;
 
-function formatFecha(fecha: Date) {
-  return new Intl.DateTimeFormat("es-HN", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(fecha);
-}
+/** Hora de Honduras (UTC-6), igual que en el resto del módulo */
+const formatFecha = formatFechaHn;
 
 /**
  * Datos del movimiento asociado al enlace de firma. No requiere sesión:

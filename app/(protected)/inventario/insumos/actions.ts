@@ -11,17 +11,20 @@ import {
   RegistrarMovimientoInput,
   RegistrarMovimientoResultado,
 } from "./types";
-import { cantidadMovimientoLabel, contenidoEmpaqueLabel, equivalenciaEmpaques } from "./utils";
+import {
+  cantidadMovimientoLabel,
+  contenidoEmpaqueLabel,
+  equivalenciaEmpaques,
+  finDiaHn,
+  formatFechaHn,
+  inicioDiaHn,
+} from "./utils";
 
 /** Horas de vigencia del enlace de firma */
 const HORAS_VIGENCIA_FIRMA = 48;
 
-function formatFecha(fecha: Date) {
-  return new Intl.DateTimeFormat("es-HN", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(fecha);
-}
+/** Fechas de los movimientos siempre en hora de Honduras (UTC-6) */
+const formatFecha = formatFechaHn;
 
 /**
  * Arma el enlace público que se le comparte al empleado para que firme
@@ -419,8 +422,8 @@ export async function getMovimientos(filtros?: {
   if (filtros?.tipo) where.tipo = filtros.tipo;
   if (filtros?.desde || filtros?.hasta) {
     where.fecha = {};
-    if (filtros.desde) where.fecha.gte = new Date(`${filtros.desde}T00:00:00`);
-    if (filtros.hasta) where.fecha.lte = new Date(`${filtros.hasta}T23:59:59`);
+    if (filtros.desde) where.fecha.gte = inicioDiaHn(filtros.desde);
+    if (filtros.hasta) where.fecha.lte = finDiaHn(filtros.hasta);
   }
 
   const records = await prisma.movimientoInsumo.findMany({
