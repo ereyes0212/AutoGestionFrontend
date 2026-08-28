@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import {
+  CancelarMovimientoResultado,
   Insumo,
   MovimientoInsumo,
   RegistrarMovimientoInput,
@@ -55,14 +56,27 @@ type MovimientoRecord = {
   firmaTokenExpiraAt: Date | null;
   firmaKey: string | null;
   firmaFecha: Date | null;
+  cancelado: boolean;
+  canceladoAt: Date | null;
+  motivoCancelacion: string | null;
   insumo: {
     nombre: string;
     unidad: { nombre: string };
     unidadEmpaque: { nombre: string } | null;
   };
   usuario: { usuario: string; Empleados: { nombre: string; apellido: string } | null };
+  canceladoPor: { usuario: string; Empleados: { nombre: string; apellido: string } | null } | null;
   empleadoSolicitante: { nombre: string; apellido: string } | null;
 };
+
+function nombreUsuario(
+  usuario: { usuario: string; Empleados: { nombre: string; apellido: string } | null } | null
+) {
+  if (!usuario) return null;
+  return usuario.Empleados
+    ? `${usuario.Empleados.nombre} ${usuario.Empleados.apellido}`
+    : usuario.usuario;
+}
 
 const movimientoInclude = {
   insumo: {
@@ -78,11 +92,18 @@ const movimientoInclude = {
       Empleados: { select: { nombre: true, apellido: true } },
     },
   },
+  canceladoPor: {
+    select: {
+      usuario: true,
+      Empleados: { select: { nombre: true, apellido: true } },
+    },
+  },
   empleadoSolicitante: { select: { nombre: true, apellido: true } },
 } as const;
 
 async function mapMovimiento(r: MovimientoRecord): Promise<MovimientoInsumo> {
   const firmaPendiente =
+    !r.cancelado &&
     !r.firmaKey &&
     !!r.firmaToken &&
     (!r.firmaTokenExpiraAt || r.firmaTokenExpiraAt.getTime() > Date.now());
@@ -108,9 +129,7 @@ async function mapMovimiento(r: MovimientoRecord): Promise<MovimientoInsumo> {
     fecha: r.fecha.toISOString(),
     fechaLabel: formatFecha(r.fecha),
     observaciones: r.observaciones ?? "",
-    registradoPor: r.usuario.Empleados
-      ? `${r.usuario.Empleados.nombre} ${r.usuario.Empleados.apellido}`
-      : r.usuario.usuario,
+    registradoPor: nombreUsuario(r.usuario) ?? "-",
     empleadoSolicitanteId: r.empleadoSolicitanteId,
     solicitadoPor: r.empleadoSolicitante
       ? `${r.empleadoSolicitante.nombre} ${r.empleadoSolicitante.apellido}`
@@ -118,6 +137,10 @@ async function mapMovimiento(r: MovimientoRecord): Promise<MovimientoInsumo> {
     firmado: !!r.firmaKey,
     firmaFechaLabel: r.firmaFecha ? formatFecha(r.firmaFecha) : null,
     firmaUrl: firmaPendiente ? await buildFirmaUrl(r.firmaToken!) : null,
+    cancelado: r.cancelado,
+    canceladoPor: nombreUsuario(r.canceladoPor),
+    canceladoFechaLabel: r.canceladoAt ? formatFecha(r.canceladoAt) : null,
+    motivoCancelacion: r.motivoCancelacion ?? "",
   };
 }
 
@@ -386,6 +409,92 @@ export async function registrarMovimiento(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error al registrar el movimiento",
+    };
+  }
+}
+
+/**
+ * Cancela un movimiento y revierte su efecto en el stock: una entrada
+ * cancelada resta lo que había sumado y una salida cancelada devuelve el
+ * producto. El movimiento queda en el historial marcado como cancelado y
+ * su enlace de firma pendiente deja de servir.
+ */
+export async function cancelarMovimiento(
+  movimientoId: string,
+  motivo?: string
+): Promise<CancelarMovimientoResultado> {
+  const session = await getSession();
+  if (!session?.IdUser) {
+    return { success: false, error: "No autorizado" };
+  }
+
+  if (!session.Permiso.includes("crear_movimiento_insumo")) {
+    return { success: false, error: "No tiene permiso para cancelar movimientos" };
+  }
+
+  try {
+    const { stockResultante, insumoId } = await prisma.$transaction(async (tx) => {
+      const movimiento = await tx.movimientoInsumo.findUnique({
+        where: { id: movimientoId },
+        select: { id: true, insumoId: true, tipo: true, cantidad: true, cancelado: true },
+      });
+
+      if (!movimiento) {
+        throw new Error("El movimiento no existe");
+      }
+
+      if (movimiento.cancelado) {
+        throw new Error("El movimiento ya fue cancelado");
+      }
+
+      const insumo = await tx.insumo.findUnique({ where: { id: movimiento.insumoId } });
+      if (!insumo) {
+        throw new Error("El insumo no existe");
+      }
+
+      // Se revierte el efecto original del movimiento
+      const nuevoStock =
+        movimiento.tipo === "ENTRADA"
+          ? insumo.stockActual - movimiento.cantidad
+          : insumo.stockActual + movimiento.cantidad;
+
+      if (nuevoStock < 0) {
+        throw new Error(
+          `No se puede cancelar: el stock quedaría negativo. Disponible: ${insumo.stockActual}`
+        );
+      }
+
+      await tx.insumo.update({
+        where: { id: insumo.id },
+        data: { stockActual: nuevoStock },
+      });
+
+      await tx.movimientoInsumo.update({
+        where: { id: movimiento.id },
+        data: {
+          cancelado: true,
+          canceladoAt: new Date(),
+          canceladoPorId: session.IdUser,
+          motivoCancelacion: motivo?.trim() || null,
+          // El enlace de firma pendiente deja de ser válido
+          firmaToken: null,
+          firmaTokenExpiraAt: null,
+        },
+      });
+
+      return { stockResultante: nuevoStock, insumoId: insumo.id };
+    });
+
+    revalidatePath("/inventario/insumos");
+    revalidatePath(`/inventario/insumos/${insumoId}`);
+    revalidatePath("/inventario/insumos/movimientos");
+
+    return { success: true, stockResultante };
+  } catch (error) {
+    console.error("Error al cancelar el movimiento de insumo:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error al cancelar el movimiento",
     };
   }
 }

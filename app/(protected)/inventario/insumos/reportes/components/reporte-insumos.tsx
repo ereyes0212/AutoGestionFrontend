@@ -25,7 +25,12 @@ import { FileDown, FileSpreadsheet, Loader2, Search } from "lucide-react";
 import { useState } from "react";
 import { Insumo } from "../../types";
 import { generarReporteInsumos } from "../actions";
-import { ReporteInsumos, ReporteMovimiento, TipoReporteInsumo } from "../types";
+import {
+  ContenidoReporte,
+  ReporteInsumos,
+  ReporteMovimiento,
+  TipoReporteInsumo,
+} from "../types";
 import RangoFechas from "./rango-fechas";
 
 interface ReporteInsumosProps {
@@ -68,6 +73,7 @@ async function cargarFirmas(movimientos: ReporteMovimiento[]) {
 export default function ReporteInsumosComponent({ insumos }: ReporteInsumosProps) {
   const { toast } = useToast();
   const [tipo, setTipo] = useState<TipoReporteInsumo>("GENERAL");
+  const [contenido, setContenido] = useState<ContenidoReporte>("TODOS");
   const [insumoId, setInsumoId] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -79,6 +85,7 @@ export default function ReporteInsumosComponent({ insumos }: ReporteInsumosProps
     setCargando(true);
     const resultado = await generarReporteInsumos({
       tipo,
+      contenido,
       insumoId: tipo === "PRODUCTO" ? insumoId : undefined,
       desde: desde || undefined,
       hasta: hasta || undefined,
@@ -315,6 +322,27 @@ export default function ReporteInsumosComponent({ insumos }: ReporteInsumosProps
                   <SelectItem value="GENERAL">General (existencias)</SelectItem>
                   <SelectItem value="FECHA">Por fecha</SelectItem>
                   <SelectItem value="PRODUCTO">Por producto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Registros</Label>
+              <Select
+                value={contenido}
+                onValueChange={(valor) => {
+                  setContenido(valor as ContenidoReporte);
+                  setReporte(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Entradas y salidas</SelectItem>
+                  <SelectItem value="ENTRADAS">Solo entradas</SelectItem>
+                  <SelectItem value="SALIDAS">Solo salidas</SelectItem>
+                  <SelectItem value="STOCK">Solo stock actual</SelectItem>
                 </SelectContent>
               </Select>
             </div>

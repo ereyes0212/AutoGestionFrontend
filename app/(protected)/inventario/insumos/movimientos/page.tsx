@@ -47,7 +47,10 @@ export default async function MovimientosInsumoPage({
         </Button>
       </div>
 
-      <MovimientosList movimientos={movimientos} />
+      <MovimientosList
+        movimientos={movimientos}
+        puedeCancelar={permisos.includes("crear_movimiento_insumo")}
+      />
     </div>
   );
 }

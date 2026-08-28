@@ -2,8 +2,12 @@ import { TipoMovimientoInsumo } from "../types";
 
 export type TipoReporteInsumo = "GENERAL" | "FECHA" | "PRODUCTO";
 
+/** Qué registros lista el reporte */
+export type ContenidoReporte = "TODOS" | "ENTRADAS" | "SALIDAS" | "STOCK";
+
 export type ReporteFiltrosInsumo = {
   tipo: TipoReporteInsumo;
+  contenido?: ContenidoReporte;
   insumoId?: string;
   desde?: string;
   hasta?: string;
@@ -49,6 +53,7 @@ export type ReporteDetalleInsumo = {
 
 export type ReporteInsumos = {
   tipo: TipoReporteInsumo;
+  contenido: ContenidoReporte;
   titulo: string;
   periodoLabel: string;
   insumoNombre: string | null;

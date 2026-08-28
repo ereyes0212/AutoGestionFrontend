@@ -292,7 +292,8 @@ model Usuarios {
   PasswordResetToken  PasswordResetToken[]
   Mensaje             Mensaje[]
   Participante        Participante[]
-  MovimientoInsumo    MovimientoInsumo[]
+  MovimientoInsumo    MovimientoInsumo[] @relation("MovimientoInsumoRegistrado")
+  MovimientoInsumoCancelado MovimientoInsumo[] @relation("MovimientoInsumoCancelado")
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
 }
@@ -677,15 +678,24 @@ model MovimientoInsumo {
   firmaTokenExpiraAt    DateTime?            @db.DateTime(6)
   firmaKey              String?              @db.VarChar(400)
   firmaFecha            DateTime?            @db.DateTime(6)
-  createAt              DateTime             @default(now()) @db.DateTime(6)
-  updateAt              DateTime             @updatedAt @db.DateTime(6)
+
+  /// Un movimiento cancelado ya revirtió su efecto en el stock y no cuenta en los reportes
+  cancelado         Boolean   @default(false)
+  canceladoAt       DateTime? @db.DateTime(6)
+  canceladoPorId    String?   @db.VarChar(36)
+  motivoCancelacion String?   @db.Text
+
+  createAt DateTime @default(now()) @db.DateTime(6)
+  updateAt DateTime @updatedAt @db.DateTime(6)
 
   insumo              Insumo     @relation(fields: [insumoId], references: [id], onDelete: Cascade)
-  usuario             Usuarios   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  usuario             Usuarios   @relation("MovimientoInsumoRegistrado", fields: [usuarioId], references: [id], onDelete: Restrict)
+  canceladoPor        Usuarios?  @relation("MovimientoInsumoCancelado", fields: [canceladoPorId], references: [id], onDelete: SetNull)
   empleadoSolicitante Empleados? @relation("InsumoSolicitante", fields: [empleadoSolicitanteId], references: [id], onDelete: SetNull)
 
   @@index([insumoId], map: "IX_MovimientoInsumo_insumoId")
   @@index([usuarioId], map: "IX_MovimientoInsumo_usuarioId")
+  @@index([canceladoPorId], map: "IX_MovimientoInsumo_canceladoPorId")
   @@index([empleadoSolicitanteId], map: "IX_MovimientoInsumo_empleadoSolicitanteId")
   @@index([fecha], map: "IX_MovimientoInsumo_fecha")
 }

@@ -125,7 +125,11 @@ export default async function InsumoDetalle({ params }: { params: { id: string }
         </Card>
       </div>
 
-      <MovimientosList movimientos={movimientos} mostrarInsumo={false} />
+      <MovimientosList
+        movimientos={movimientos}
+        mostrarInsumo={false}
+        puedeCancelar={puedeRegistrar}
+      />
     </div>
   );
 }

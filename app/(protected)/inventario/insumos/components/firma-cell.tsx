@@ -35,6 +35,11 @@ export default function FirmaCell({ movimiento }: FirmaCellProps) {
     return <span className="text-muted-foreground">-</span>;
   }
 
+  // Un movimiento cancelado ya no necesita firma
+  if (movimiento.cancelado && !movimiento.firmado) {
+    return <span className="text-muted-foreground">-</span>;
+  }
+
   if (movimiento.firmado) {
     return (
       <div className="flex flex-col gap-1">

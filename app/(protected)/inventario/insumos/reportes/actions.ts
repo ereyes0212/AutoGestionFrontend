@@ -78,12 +78,24 @@ export async function generarReporteInsumos(
     const rango = construirRango(filtros.desde, filtros.hasta);
     const insumoId = filtros.tipo === "PRODUCTO" ? filtros.insumoId : undefined;
 
+    const contenido = filtros.contenido ?? "TODOS";
+
+    // Los movimientos cancelados ya revirtieron su efecto, así que no entran
+    // en ningún total ni listado del reporte.
     const where: {
       insumoId?: string;
       fecha?: { gte?: Date; lte?: Date };
-    } = {};
+      cancelado: boolean;
+    } = { cancelado: false };
     if (insumoId) where.insumoId = insumoId;
     if (rango) where.fecha = rango;
+
+    const whereMovimientos =
+      contenido === "ENTRADAS"
+        ? { ...where, tipo: "ENTRADA" as const }
+        : contenido === "SALIDAS"
+          ? { ...where, tipo: "SALIDA" as const }
+          : where;
 
     // Totales de entradas y salidas por insumo dentro del filtro aplicado
     const agregados = await prisma.movimientoInsumo.groupBy({
@@ -144,15 +156,16 @@ export async function generarReporteInsumos(
       };
     });
 
-    // Los tres tipos de reporte listan el detalle de movimientos, para que
-    // siempre se vea quién solicitó el insumo y su firma.
+    // El detalle de movimientos se lista en los tres tipos de reporte, para que
+    // siempre se vea quién solicitó el insumo y su firma. La opción "Stock
+    // actual" es la única que se queda solo con las existencias.
     const [totalMovimientos, salidasSinFirma] = await Promise.all([
-      prisma.movimientoInsumo.count({ where }),
+      prisma.movimientoInsumo.count({ where: whereMovimientos }),
       prisma.movimientoInsumo.count({ where: { ...where, tipo: "SALIDA", firmaKey: null } }),
     ]);
 
-    const registros = await prisma.movimientoInsumo.findMany({
-      where,
+    const registros = contenido === "STOCK" ? [] : await prisma.movimientoInsumo.findMany({
+      where: whereMovimientos,
       include: {
         insumo: {
           select: {
@@ -210,16 +223,26 @@ export async function generarReporteInsumos(
     const insumoNombre =
       filtros.tipo === "PRODUCTO" ? detalle[0]?.nombre ?? "Producto no encontrado" : null;
 
-    const titulo =
+    const tituloBase =
       filtros.tipo === "GENERAL"
         ? "Reporte general de insumos"
         : filtros.tipo === "FECHA"
           ? "Reporte de insumos por fecha"
           : `Reporte por producto: ${insumoNombre}`;
 
+    const sufijoContenido =
+      contenido === "ENTRADAS"
+        ? " — entradas"
+        : contenido === "SALIDAS"
+          ? " — salidas"
+          : contenido === "STOCK"
+            ? " — stock actual"
+            : "";
+
     const reporte: ReporteInsumos = {
       tipo: filtros.tipo,
-      titulo,
+      contenido,
+      titulo: `${tituloBase}${sufijoContenido}`,
       periodoLabel: periodoLabel(filtros.desde, filtros.hasta),
       insumoNombre,
       generadoEl: formatFecha(new Date()),

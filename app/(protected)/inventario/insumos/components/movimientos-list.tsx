@@ -13,17 +13,21 @@ import {
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { MovimientoInsumo } from "../types";
+import CancelarMovimientoDialog from "./cancelar-movimiento-dialog";
 import FirmaCell from "./firma-cell";
 
 interface MovimientosListProps {
   movimientos: MovimientoInsumo[];
   /** Se oculta la columna de insumo cuando ya se está viendo un insumo */
   mostrarInsumo?: boolean;
+  /** Habilita la acción de cancelar (permiso crear_movimiento_insumo) */
+  puedeCancelar?: boolean;
 }
 
 export default function MovimientosList({
   movimientos,
   mostrarInsumo = true,
+  puedeCancelar = false,
 }: MovimientosListProps) {
   const [filtro, setFiltro] = useState("");
 
@@ -38,6 +42,8 @@ export default function MovimientosList({
         .includes(termino)
     );
   }, [movimientos, filtro]);
+
+  const columnas = 8 + (mostrarInsumo ? 1 : 0) + (puedeCancelar ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -66,20 +72,27 @@ export default function MovimientosList({
               <TableHead>Registró</TableHead>
               <TableHead>Observaciones</TableHead>
               <TableHead>Firma</TableHead>
+              {puedeCancelar && <TableHead>Acciones</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtrados.length ? (
               filtrados.map((movimiento) => (
-                <TableRow key={movimiento.id}>
+                <TableRow key={movimiento.id} className={movimiento.cancelado ? "opacity-60" : ""}>
                   <TableCell className="whitespace-nowrap">{movimiento.fechaLabel}</TableCell>
                   {mostrarInsumo && <TableCell>{movimiento.insumoNombre}</TableCell>}
                   <TableCell>
-                    <Badge variant={movimiento.tipo === "ENTRADA" ? "default" : "secondary"}>
-                      {movimiento.tipo === "ENTRADA" ? "Entrada" : "Salida"}
-                    </Badge>
+                    {movimiento.cancelado ? (
+                      <Badge variant="outline">Cancelado</Badge>
+                    ) : (
+                      <Badge variant={movimiento.tipo === "ENTRADA" ? "default" : "secondary"}>
+                        {movimiento.tipo === "ENTRADA" ? "Entrada" : "Salida"}
+                      </Badge>
+                    )}
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell
+                    className={`whitespace-nowrap ${movimiento.cancelado ? "line-through" : ""}`}
+                  >
                     {movimiento.tipo === "ENTRADA" ? "+" : "-"}
                     {movimiento.cantidadLabel}
                   </TableCell>
@@ -87,16 +100,29 @@ export default function MovimientosList({
                   <TableCell>{movimiento.solicitadoPor}</TableCell>
                   <TableCell>{movimiento.registradoPor}</TableCell>
                   <TableCell className="max-w-[200px] truncate">
-                    {movimiento.observaciones || "-"}
+                    {movimiento.cancelado
+                      ? `Cancelado por ${movimiento.canceladoPor ?? "-"}${
+                          movimiento.motivoCancelacion
+                            ? `: ${movimiento.motivoCancelacion}`
+                            : ""
+                        }`
+                      : movimiento.observaciones || "-"}
                   </TableCell>
                   <TableCell>
                     <FirmaCell movimiento={movimiento} />
                   </TableCell>
+                  {puedeCancelar && (
+                    <TableCell>
+                      {!movimiento.cancelado && (
+                        <CancelarMovimientoDialog movimiento={movimiento} />
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={mostrarInsumo ? 9 : 8} className="h-24 text-center">
+                <TableCell colSpan={columnas} className="h-24 text-center">
                   Sin movimientos registrados.
                 </TableCell>
               </TableRow>
@@ -108,17 +134,26 @@ export default function MovimientosList({
       {/* Móvil */}
       <div className="space-y-3 md:hidden">
         {filtrados.map((movimiento) => (
-          <div key={movimiento.id} className="space-y-2 rounded-lg border p-4 shadow-sm">
+          <div
+            key={movimiento.id}
+            className={`space-y-2 rounded-lg border p-4 shadow-sm ${
+              movimiento.cancelado ? "opacity-60" : ""
+            }`}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="truncate text-base font-semibold">{movimiento.insumoNombre}</h3>
                 <p className="text-xs text-muted-foreground">{movimiento.fechaLabel}</p>
               </div>
-              <Badge variant={movimiento.tipo === "ENTRADA" ? "default" : "secondary"}>
-                {movimiento.tipo === "ENTRADA" ? "Entrada" : "Salida"}
-              </Badge>
+              {movimiento.cancelado ? (
+                <Badge variant="outline">Cancelado</Badge>
+              ) : (
+                <Badge variant={movimiento.tipo === "ENTRADA" ? "default" : "secondary"}>
+                  {movimiento.tipo === "ENTRADA" ? "Entrada" : "Salida"}
+                </Badge>
+              )}
             </div>
-            <p className="text-sm">
+            <p className={`text-sm ${movimiento.cancelado ? "line-through" : ""}`}>
               <span className="text-muted-foreground">Cantidad: </span>
               {movimiento.tipo === "ENTRADA" ? "+" : "-"}
               {movimiento.cantidadLabel} (stock: {movimiento.stockResultante})
@@ -131,13 +166,26 @@ export default function MovimientosList({
               <span className="text-muted-foreground">Registró: </span>
               {movimiento.registradoPor}
             </p>
-            {movimiento.observaciones && (
+            {movimiento.cancelado ? (
               <p className="text-sm">
-                <span className="text-muted-foreground">Observaciones: </span>
-                {movimiento.observaciones}
+                <span className="text-muted-foreground">Cancelado por: </span>
+                {movimiento.canceladoPor ?? "-"}
+                {movimiento.motivoCancelacion ? ` — ${movimiento.motivoCancelacion}` : ""}
               </p>
+            ) : (
+              movimiento.observaciones && (
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Observaciones: </span>
+                  {movimiento.observaciones}
+                </p>
+              )
             )}
-            <FirmaCell movimiento={movimiento} />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <FirmaCell movimiento={movimiento} />
+              {puedeCancelar && !movimiento.cancelado && (
+                <CancelarMovimientoDialog movimiento={movimiento} />
+              )}
+            </div>
           </div>
         ))}
         {filtrados.length === 0 && (

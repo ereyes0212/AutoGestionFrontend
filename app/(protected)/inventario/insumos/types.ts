@@ -49,6 +49,11 @@ export type MovimientoInsumo = {
   firmaFechaLabel: string | null;
   /** Enlace público de firma, solo mientras la firma siga pendiente */
   firmaUrl: string | null;
+  /** Un movimiento cancelado ya revirtió su efecto en el stock */
+  cancelado: boolean;
+  canceladoPor: string | null;
+  canceladoFechaLabel: string | null;
+  motivoCancelacion: string;
 };
 
 export type RegistrarMovimientoInput = {
@@ -59,6 +64,12 @@ export type RegistrarMovimientoInput = {
   enEmpaques?: boolean;
   empleadoSolicitanteId?: string;
   observaciones?: string;
+};
+
+export type CancelarMovimientoResultado = {
+  success: boolean;
+  error?: string;
+  stockResultante?: number;
 };
 
 export type RegistrarMovimientoResultado = {
