@@ -79,6 +79,21 @@ async function main() {
     { nombre: "crear_activo", descripcion: "Permiso para crear los activos" },
     { nombre: "editar_activo", descripcion: "Permiso para editar los activos" },
 
+    //Unidades de insumo
+    { nombre: "ver_unidad_insumo", descripcion: "Permiso para ver las unidades de medida de insumos" },
+    { nombre: "crear_unidad_insumo", descripcion: "Permiso para crear las unidades de medida de insumos" },
+    { nombre: "editar_unidad_insumo", descripcion: "Permiso para editar las unidades de medida de insumos" },
+
+    //Insumos
+    { nombre: "ver_insumos", descripcion: "Permiso para ver los insumos" },
+    { nombre: "crear_insumos", descripcion: "Permiso para crear los insumos" },
+    { nombre: "editar_insumos", descripcion: "Permiso para editar los insumos" },
+
+    //Movimientos de insumos
+    { nombre: "ver_movimientos_insumo", descripcion: "Permiso para ver las entradas y salidas de insumos" },
+    { nombre: "crear_movimiento_insumo", descripcion: "Permiso para registrar entradas y salidas de insumos" },
+    { nombre: "ver_reportes_insumo", descripcion: "Permiso para generar los reportes de insumos" },
+
     // Nota
     { nombre: "ver_notas", descripcion: "Permiso para ver las notas" },
     { nombre: "crear_notas", descripcion: "Permiso para crear las notas" },
@@ -156,7 +171,7 @@ async function main() {
   }
 
   // 6. Crear Empleado
-  let empleado = await prisma.empleados.findFirst({ where: { correo: "erickjosepineda33@gmail.com" } });
+  let empleado = await prisma.empleados.findFirst({ where: { correo: "marta.rapalo@tiempo.hn" } });
   if (!empleado) {
     empleado = await prisma.empleados.create({
       data: {
@@ -197,6 +212,42 @@ async function main() {
       },
     });
     console.log("Usuario Marta Rapalo creado");
+  }
+
+  // 8. Unidades de medida de insumos
+  // Las de consumo son en las que se lleva el stock (unidad, rollo, litro);
+  // las de empaque son las de compra (caja, fardo, paquete).
+  const unidadesInsumo = [
+    { nombre: "Unidad", abreviatura: "und", descripcion: "Pieza individual" },
+    { nombre: "Caja", abreviatura: "cja", descripcion: "Empaque de compra" },
+    { nombre: "Paquete", abreviatura: "pqt", descripcion: "Empaque de compra" },
+    { nombre: "Fardo", abreviatura: "frd", descripcion: "Empaque de compra" },
+    { nombre: "Bolsa", abreviatura: "bls", descripcion: "Empaque de compra" },
+    { nombre: "Rollo", abreviatura: "rll", descripcion: "Papel higiénico, cinta, etc." },
+    { nombre: "Bote", abreviatura: "bte", descripcion: "Envase de jabón, alcohol, etc." },
+    { nombre: "Galón", abreviatura: "gal", descripcion: "Líquidos a granel" },
+    { nombre: "Litro", abreviatura: "lt", descripcion: "Líquidos" },
+    { nombre: "Resma", abreviatura: "rma", descripcion: "500 hojas de papel" },
+    { nombre: "Docena", abreviatura: "doc", descripcion: "12 piezas" },
+    { nombre: "Par", abreviatura: "par", descripcion: "2 piezas (guantes, etc.)" },
+  ];
+
+  for (const u of unidadesInsumo) {
+    const existente = await prisma.unidadInsumo.findFirst({ where: { nombre: u.nombre } });
+    if (!existente) {
+      await prisma.unidadInsumo.create({
+        data: {
+          id: randomUUID(),
+          nombre: u.nombre,
+          abreviatura: u.abreviatura,
+          descripcion: u.descripcion,
+          activo: true,
+        },
+      });
+      console.log(`Unidad de insumo creada: ${u.nombre}`);
+    } else {
+      console.log(`Unidad de insumo existente: ${u.nombre}`);
+    }
   }
 
   console.log("Seed completado exitosamente");

@@ -1,9 +1,15 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
+export type S3BucketConfig = {
+  bucket: string;
+  prefix: string;
+};
+
 type UploadBufferToS3Input = {
   key: string;
   contentType: string;
   body: Buffer;
+  config?: S3BucketConfig;
 };
 
 function isDevelopmentEnvironment() {
@@ -39,7 +45,7 @@ export function getS3Client() {
   return new S3Client({ region });
 }
 
-export function getPrivatePdfBucketConfig() {
+export function getPrivatePdfBucketConfig(): S3BucketConfig {
   const bucket = process.env.AWS_PRIVATE_PDF_BUCKET ?? process.env.AWS_PRIVATE_BUCKET;
   const prefix = process.env.AWS_PRIVATE_PDF_PREFIX ?? process.env.AWS_PRIVATE_PREFIX ?? "";
 
@@ -50,9 +56,24 @@ export function getPrivatePdfBucketConfig() {
   return { bucket, prefix };
 }
 
-export async function uploadBufferToS3({ key, contentType, body }: UploadBufferToS3Input) {
+/**
+ * Ubicación de las firmas de los movimientos de insumos.
+ * Si no se configura AWS_PRIVATE_INSUMOS_PREFIX se usa "insumos/firmas".
+ */
+export function getPrivateInsumosBucketConfig(): S3BucketConfig {
+  const bucket = process.env.AWS_PRIVATE_INSUMOS_BUCKET ?? process.env.AWS_PRIVATE_BUCKET;
+  const prefix = process.env.AWS_PRIVATE_INSUMOS_PREFIX ?? "insumos/firmas";
+
+  if (!bucket) {
+    throw new Error("Falta la variable de entorno AWS_PRIVATE_INSUMOS_BUCKET");
+  }
+
+  return { bucket, prefix };
+}
+
+export async function uploadBufferToS3({ key, contentType, body, config }: UploadBufferToS3Input) {
   const client = getS3Client();
-  const { bucket, prefix } = getPrivatePdfBucketConfig();
+  const { bucket, prefix } = config ?? getPrivatePdfBucketConfig();
   const objectKey = prefix ? `${prefix.replace(/\/$/, "")}/${key}` : key;
 
   await client.send(
@@ -67,9 +88,9 @@ export async function uploadBufferToS3({ key, contentType, body }: UploadBufferT
   return objectKey;
 }
 
-export async function deleteObjectFromS3(key: string) {
+export async function deleteObjectFromS3(key: string, config?: S3BucketConfig) {
   const client = getS3Client();
-  const { bucket } = getPrivatePdfBucketConfig();
+  const { bucket } = config ?? getPrivatePdfBucketConfig();
 
   await client.send(
     new DeleteObjectCommand({
@@ -79,9 +100,9 @@ export async function deleteObjectFromS3(key: string) {
   );
 }
 
-export async function downloadBufferFromS3(key: string) {
+export async function downloadBufferFromS3(key: string, config?: S3BucketConfig) {
   const client = getS3Client();
-  const { bucket } = getPrivatePdfBucketConfig();
+  const { bucket } = config ?? getPrivatePdfBucketConfig();
 
   const response = await client.send(
     new GetObjectCommand({

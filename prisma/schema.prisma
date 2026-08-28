@@ -82,6 +82,7 @@ model Empleados {
   PushSubscription PushSubscription[]
   TareaEmpleado    TareaEmpleado[]
   EventoFactura    EventoFactura[]
+  MovimientoInsumo MovimientoInsumo[] @relation("InsumoSolicitante")
 
   @@index([jefe_id])
   @@index([puesto_id])
@@ -291,6 +292,7 @@ model Usuarios {
   PasswordResetToken  PasswordResetToken[]
   Mensaje             Mensaje[]
   Participante        Participante[]
+  MovimientoInsumo    MovimientoInsumo[]
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
 }
@@ -607,4 +609,83 @@ model TareaEmpleado {
   @@id([tareaId, empleadoId]) // clave compuesta evita duplicados
   @@index([empleadoId])
   @@map("tareas_empleados")
+}
+
+/// ==========================
+/// 5. Insumos (productos consumibles: papel higiénico, jabón, clips, etc.)
+enum TipoMovimientoInsumo {
+  ENTRADA
+  SALIDA
+}
+
+/// Tipo de unidad en la que se maneja el insumo: caja, unidad, bote, etc.
+model UnidadInsumo {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  nombre      String   @db.VarChar(50)
+  abreviatura String?  @db.VarChar(20)
+  descripcion String?  @db.Text
+  activo      Boolean  @db.Bit(1)
+  createAt    DateTime @default(now()) @db.DateTime(6)
+  updateAt    DateTime @updatedAt @db.DateTime(6)
+
+  insumos        Insumo[] @relation("UnidadBase")
+  insumosEmpaque Insumo[] @relation("UnidadEmpaque")
+}
+
+model Insumo {
+  id          String  @id @default(uuid()) @db.VarChar(36)
+  nombre      String  @db.VarChar(150)
+  descripcion String? @db.Text
+
+  /// Unidad de consumo: en esta unidad se lleva el stock y se registran las salidas
+  unidadId String @db.VarChar(36)
+  /// Unidad de compra (caja, fardo). Opcional
+  unidadEmpaqueId String? @db.VarChar(36)
+  /// Unidades de consumo que trae cada empaque (2 cajas de 6 = 12 unidades)
+  cantidadPorEmpaque Int @default(1)
+
+  /// Stock y stock mínimo siempre en unidades de consumo
+  stockActual Int      @default(0)
+  stockMinimo Int      @default(0)
+  activo      Boolean  @db.Bit(1)
+  createAt    DateTime @default(now()) @db.DateTime(6)
+  updateAt    DateTime @updatedAt @db.DateTime(6)
+
+  unidad        UnidadInsumo       @relation("UnidadBase", fields: [unidadId], references: [id], onDelete: Restrict)
+  unidadEmpaque UnidadInsumo?      @relation("UnidadEmpaque", fields: [unidadEmpaqueId], references: [id], onDelete: SetNull)
+  movimientos   MovimientoInsumo[]
+
+  @@index([unidadId], map: "IX_Insumo_unidadId")
+  @@index([unidadEmpaqueId], map: "IX_Insumo_unidadEmpaqueId")
+}
+
+/// Entradas y salidas de stock. Las salidas restan del stock del insumo.
+model MovimientoInsumo {
+  id                    String               @id @default(uuid()) @db.VarChar(36)
+  insumoId              String               @db.VarChar(36)
+  tipo                  TipoMovimientoInsumo
+  /// Cantidad siempre expresada en unidades de consumo
+  cantidad              Int
+  /// Cantidad de empaques tecleada, cuando el movimiento se registró por empaques
+  cantidadEmpaque       Int?
+  stockResultante       Int
+  fecha                 DateTime             @default(now()) @db.DateTime(6)
+  observaciones         String?              @db.Text
+  usuarioId             String               @db.VarChar(36)
+  empleadoSolicitanteId String?              @db.VarChar(36)
+  firmaToken            String?              @unique @db.VarChar(64)
+  firmaTokenExpiraAt    DateTime?            @db.DateTime(6)
+  firmaKey              String?              @db.VarChar(400)
+  firmaFecha            DateTime?            @db.DateTime(6)
+  createAt              DateTime             @default(now()) @db.DateTime(6)
+  updateAt              DateTime             @updatedAt @db.DateTime(6)
+
+  insumo              Insumo     @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+  usuario             Usuarios   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  empleadoSolicitante Empleados? @relation("InsumoSolicitante", fields: [empleadoSolicitanteId], references: [id], onDelete: SetNull)
+
+  @@index([insumoId], map: "IX_MovimientoInsumo_insumoId")
+  @@index([usuarioId], map: "IX_MovimientoInsumo_usuarioId")
+  @@index([empleadoSolicitanteId], map: "IX_MovimientoInsumo_empleadoSolicitanteId")
+  @@index([fecha], map: "IX_MovimientoInsumo_fecha")
 }
