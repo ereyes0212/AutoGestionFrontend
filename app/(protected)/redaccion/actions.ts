@@ -8,6 +8,19 @@ import { sendWebPushNotification } from '@/lib/webpush';
 import { Nota } from "./types";
 import { getNotasAgrupadasHoySimple as getNotasAgrupadasHoySimpleData } from './report-data';
 // Crear una nueva nota
+/**
+ * Empleados a los que les debe sonar la notificación. Se quita al que hizo el
+ * cambio (no tiene sentido avisarle de lo que acaba de hacer) y los repetidos.
+ */
+function destinatariosNota(
+    ids: (string | null | undefined)[],
+    actorEmpleadoId?: string | null
+) {
+    return Array.from(
+        new Set(ids.filter((id): id is string => !!id && id !== actorEmpleadoId))
+    );
+}
+
 export async function createNota({
     creadorEmpleadoId,
     titulo,
@@ -109,7 +122,12 @@ export async function createNota({
 
     // BROADCAST SSE: notifica a clientes conectados en tiempo real
     try {
-        broadcaster.broadcast({ type: "nota_creada", nota: notaFormateada });
+        // Solo les suena a los jefes; el resto recibe el dato para refrescar la lista
+        broadcaster.broadcast({
+            type: "nota_creada",
+            nota: notaFormateada,
+            destinatarios: destinatariosNota(jefeIds, creadorEmpleadoId),
+        });
     } catch (err) {
         // no queremos romper la respuesta principal por un fallo en broadcast
         console.error("Error broadcasting nota_creada:", err);
@@ -151,7 +169,15 @@ export async function tomarNota(id: string) {
 
     // --- Broadcast en tiempo real
     try {
-        broadcaster.broadcast({ type: "nota_tomada", nota: notaExtendida });
+        // Le suena al creador de la nota, no a quien la tomó
+        broadcaster.broadcast({
+            type: "nota_tomada",
+            nota: notaExtendida,
+            destinatarios: destinatariosNota(
+                [notaActualizada.creadorEmpleadoId, notaActualizada.asignadoEmpleadoId],
+                session?.IdEmpleado
+            ),
+        });
     } catch (err) {
         console.error("Error broadcasting nota_tomada:", err);
     }
@@ -241,12 +267,16 @@ export async function aprobarNota(
             empleadoAprobador: notaActualizada.aprobador?.nombre ?? "No asignado",
         };
 
-        // --- Notificación solo si hay asignado
-        const asignadoId = notaActualizada.asignadoEmpleadoId;
-        if (asignadoId) {
+        // --- Notificación al creador y al asignado, nunca a quien cambió el estado
+        const destinatarios = destinatariosNota(
+            [notaActualizada.creadorEmpleadoId, notaActualizada.asignadoEmpleadoId],
+            session?.IdEmpleado
+        );
+
+        if (destinatarios.length > 0) {
             const subs = await prisma.pushSubscription.findMany({
                 where: {
-                    empleadoId: asignadoId,
+                    empleadoId: { in: destinatarios },
                     revoked: false,
                 },
             });
@@ -273,7 +303,12 @@ export async function aprobarNota(
 
         // --- Broadcast en tiempo real (SSE)
         try {
-            broadcaster.broadcast({ type: "nota_actualizada", nota: notaExtendida });
+            // Le suena al creador y al asignado, no al jefe que cambió el estado
+            broadcaster.broadcast({
+                type: "nota_actualizada",
+                nota: notaExtendida,
+                destinatarios,
+            });
         } catch (err) {
             console.error("Error broadcasting nota_actualizada:", err);
         }

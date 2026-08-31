@@ -8,11 +8,18 @@ import NotaListMobile from "./puesto-list-mobile";
 
 interface Props {
     initialNotas: Nota[];
+    /** Empleado de la sesión: solo le suena si es destinatario del evento */
+    empleadoId?: string;
     desde?: string | null;
     hasta?: string | null;
 }
 
-export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: Props) {
+export default function NotasRealtimeWrapper({
+    initialNotas,
+    empleadoId,
+    desde,
+    hasta,
+}: Props) {
     const [notas, setNotas] = useState<Nota[]>(initialNotas ?? []);
     const esRef = useRef<EventSource | null>(null);
     const reconnectRef = useRef(0);
@@ -21,6 +28,11 @@ export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: Pro
     // refs para mantener filtros actualizados dentro de SSE
     const desdeRef = useRef<string | undefined>(desde ?? undefined);
     const hastaRef = useRef<string | undefined>(hasta ?? undefined);
+    const empleadoIdRef = useRef<string | undefined>(empleadoId);
+
+    useEffect(() => {
+        empleadoIdRef.current = empleadoId;
+    }, [empleadoId]);
 
     // Actualizar refs cuando cambian los props
     useEffect(() => {
@@ -89,8 +101,15 @@ export default function NotasRealtimeWrapper({ initialNotas, desde, hasta }: Pro
                         return [nota, ...prev];
                     });
 
-                    // Reproducir audio
-                    if (audioRef.current) {
+                    // La lista se actualiza para todos, pero el sonido es solo
+                    // para los destinatarios del evento (jefe, creador o asignado)
+                    const destinatarios: string[] = Array.isArray(payload.destinatarios)
+                        ? payload.destinatarios
+                        : [];
+                    const meCorresponde =
+                        !!empleadoIdRef.current && destinatarios.includes(empleadoIdRef.current);
+
+                    if (meCorresponde && audioRef.current) {
                         audioRef.current.currentTime = 0;
                         audioRef.current.play().catch(() => { });
                     }

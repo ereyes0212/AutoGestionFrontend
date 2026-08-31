@@ -1,5 +1,5 @@
 // app/puestos/page.tsx (Server Component)
-import { getSessionPermisos } from "@/auth";
+import { getSession, getSessionPermisos } from "@/auth";
 import HeaderComponent from "@/components/HeaderComponent";
 import NoAcceso from "@/components/noAccess";
 import { Pencil } from "lucide-react";
@@ -12,6 +12,8 @@ import DownloadPDFButton from "./components/reportebuttonCompleto";
 export default async function Puestos({ searchParams }: { searchParams?: Record<string, string> }) {
     const permisos = await getSessionPermisos();
     if (!permisos?.includes("ver_notas")) return <NoAcceso />;
+
+    const sesion = await getSession();
 
     const desde = searchParams?.desde;
     const hasta = searchParams?.hasta;
@@ -46,7 +48,7 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
 
             <div>
                 {/* 🔽 Enviamos la lista ya ordenada */}
-                <NotasRealtimeWrapper initialNotas={data} />
+                <NotasRealtimeWrapper initialNotas={data} empleadoId={sesion?.IdEmpleado} />
             </div>
         </div>
     );
