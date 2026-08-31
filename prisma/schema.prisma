@@ -294,6 +294,8 @@ model Usuarios {
   Participante        Participante[]
   MovimientoInsumo    MovimientoInsumo[] @relation("MovimientoInsumoRegistrado")
   MovimientoInsumoCancelado MovimientoInsumo[] @relation("MovimientoInsumoCancelado")
+  PedidoInsumoSolicitado    PedidoInsumo[]     @relation("PedidoInsumoSolicitado")
+  PedidoInsumoRecibido      PedidoInsumo[]     @relation("PedidoInsumoRecibido")
 
   @@index([rol_id], map: "IX_Usuarios_rol_id")
 }
@@ -645,25 +647,59 @@ model Insumo {
   /// Unidades de consumo que trae cada empaque (2 cajas de 6 = 12 unidades)
   cantidadPorEmpaque Int @default(1)
 
-  /// Stock y stock mínimo siempre en unidades de consumo
-  stockActual Int      @default(0)
-  stockMinimo Int      @default(0)
-  activo      Boolean  @db.Bit(1)
-  createAt    DateTime @default(now()) @db.DateTime(6)
-  updateAt    DateTime @updatedAt @db.DateTime(6)
+  activo   Boolean  @db.Bit(1)
+  createAt DateTime @default(now()) @db.DateTime(6)
+  updateAt DateTime @updatedAt @db.DateTime(6)
 
-  unidad        UnidadInsumo       @relation("UnidadBase", fields: [unidadId], references: [id], onDelete: Restrict)
-  unidadEmpaque UnidadInsumo?      @relation("UnidadEmpaque", fields: [unidadEmpaqueId], references: [id], onDelete: SetNull)
+  unidad        UnidadInsumo          @relation("UnidadBase", fields: [unidadId], references: [id], onDelete: Restrict)
+  unidadEmpaque UnidadInsumo?         @relation("UnidadEmpaque", fields: [unidadEmpaqueId], references: [id], onDelete: SetNull)
   movimientos   MovimientoInsumo[]
+  /// El stock vive por ciudad, no en el insumo
+  existencias   StockInsumo[]
+  pedidos       PedidoInsumoDetalle[]
 
   @@index([unidadId], map: "IX_Insumo_unidadId")
   @@index([unidadEmpaqueId], map: "IX_Insumo_unidadEmpaqueId")
+}
+
+/// Bodega: cada ciudad lleva su propio inventario del catálogo común
+model Ciudad {
+  id       String   @id @default(uuid()) @db.VarChar(36)
+  nombre   String   @db.VarChar(100)
+  activo   Boolean  @db.Bit(1)
+  createAt DateTime @default(now()) @db.DateTime(6)
+  updateAt DateTime @updatedAt @db.DateTime(6)
+
+  existencias StockInsumo[]
+  movimientos MovimientoInsumo[]
+  pedidos     PedidoInsumo[]
+}
+
+/// Existencias de un insumo en una ciudad, en unidades de consumo
+model StockInsumo {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  insumoId    String   @db.VarChar(36)
+  ciudadId    String   @db.VarChar(36)
+  stockActual Int      @default(0)
+  stockMinimo Int      @default(0)
+  createAt    DateTime @default(now()) @db.DateTime(6)
+  updateAt    DateTime @updatedAt @db.DateTime(6)
+
+  insumo Insumo @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+  ciudad Ciudad @relation(fields: [ciudadId], references: [id], onDelete: Cascade)
+
+  @@unique([insumoId, ciudadId])
+  @@index([ciudadId], map: "IX_StockInsumo_ciudadId")
 }
 
 /// Entradas y salidas de stock. Las salidas restan del stock del insumo.
 model MovimientoInsumo {
   id                    String               @id @default(uuid()) @db.VarChar(36)
   insumoId              String               @db.VarChar(36)
+  /// Bodega sobre la que se movió el stock
+  ciudadId              String               @db.VarChar(36)
+  /// Entradas generadas al recibir un pedido
+  pedidoId              String?              @db.VarChar(36)
   tipo                  TipoMovimientoInsumo
   /// Cantidad siempre expresada en unidades de consumo
   cantidad              Int
@@ -688,14 +724,81 @@ model MovimientoInsumo {
   createAt DateTime @default(now()) @db.DateTime(6)
   updateAt DateTime @updatedAt @db.DateTime(6)
 
-  insumo              Insumo     @relation(fields: [insumoId], references: [id], onDelete: Cascade)
-  usuario             Usuarios   @relation("MovimientoInsumoRegistrado", fields: [usuarioId], references: [id], onDelete: Restrict)
-  canceladoPor        Usuarios?  @relation("MovimientoInsumoCancelado", fields: [canceladoPorId], references: [id], onDelete: SetNull)
-  empleadoSolicitante Empleados? @relation("InsumoSolicitante", fields: [empleadoSolicitanteId], references: [id], onDelete: SetNull)
+  insumo              Insumo        @relation(fields: [insumoId], references: [id], onDelete: Cascade)
+  ciudad              Ciudad        @relation(fields: [ciudadId], references: [id], onDelete: Restrict)
+  pedido              PedidoInsumo? @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  usuario             Usuarios      @relation("MovimientoInsumoRegistrado", fields: [usuarioId], references: [id], onDelete: Restrict)
+  canceladoPor        Usuarios?     @relation("MovimientoInsumoCancelado", fields: [canceladoPorId], references: [id], onDelete: SetNull)
+  empleadoSolicitante Empleados?    @relation("InsumoSolicitante", fields: [empleadoSolicitanteId], references: [id], onDelete: SetNull)
 
   @@index([insumoId], map: "IX_MovimientoInsumo_insumoId")
+  @@index([ciudadId], map: "IX_MovimientoInsumo_ciudadId")
+  @@index([pedidoId], map: "IX_MovimientoInsumo_pedidoId")
   @@index([usuarioId], map: "IX_MovimientoInsumo_usuarioId")
   @@index([canceladoPorId], map: "IX_MovimientoInsumo_canceladoPorId")
   @@index([empleadoSolicitanteId], map: "IX_MovimientoInsumo_empleadoSolicitanteId")
   @@index([fecha], map: "IX_MovimientoInsumo_fecha")
+}
+
+/// ==========================
+/// 6. Pedidos de compra de insumos
+enum EstadoPedidoInsumo {
+  PENDIENTE
+  RECIBIDO
+  CANCELADO
+}
+
+model PedidoInsumo {
+  id     String @id @default(uuid()) @db.VarChar(36)
+  /// Correlativo visible, para imprimir y darle seguimiento
+  numero Int    @unique
+
+  ciudadId String             @db.VarChar(36)
+  estado   EstadoPedidoInsumo @default(PENDIENTE)
+
+  solicitadoPorId String   @db.VarChar(36)
+  fechaSolicitud  DateTime @default(now()) @db.DateTime(6)
+
+  recibidoPorId  String?   @db.VarChar(36)
+  fechaRecepcion DateTime? @db.DateTime(6)
+
+  observaciones     String? @db.Text
+  motivoCancelacion String? @db.Text
+
+  createAt DateTime @default(now()) @db.DateTime(6)
+  updateAt DateTime @updatedAt @db.DateTime(6)
+
+  ciudad        Ciudad                @relation(fields: [ciudadId], references: [id], onDelete: Restrict)
+  solicitadoPor Usuarios              @relation("PedidoInsumoSolicitado", fields: [solicitadoPorId], references: [id], onDelete: Restrict)
+  recibidoPor   Usuarios?             @relation("PedidoInsumoRecibido", fields: [recibidoPorId], references: [id], onDelete: SetNull)
+  detalles      PedidoInsumoDetalle[]
+  movimientos   MovimientoInsumo[]
+
+  @@index([ciudadId], map: "IX_PedidoInsumo_ciudadId")
+  @@index([estado], map: "IX_PedidoInsumo_estado")
+  @@index([solicitadoPorId], map: "IX_PedidoInsumo_solicitadoPorId")
+  @@index([recibidoPorId], map: "IX_PedidoInsumo_recibidoPorId")
+}
+
+model PedidoInsumoDetalle {
+  id       String @id @default(uuid()) @db.VarChar(36)
+  pedidoId String @db.VarChar(36)
+  insumoId String @db.VarChar(36)
+
+  /// Lo solicitado, en unidades de consumo
+  cantidad Int
+  /// Empaques solicitados, cuando el pedido se hizo por caja
+  cantidadEmpaque Int?
+  /// Lo que realmente llegó, en unidades de consumo
+  cantidadRecibida Int?
+  observacion      String? @db.Text
+
+  createAt DateTime @default(now()) @db.DateTime(6)
+  updateAt DateTime @updatedAt @db.DateTime(6)
+
+  pedido PedidoInsumo @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  insumo Insumo       @relation(fields: [insumoId], references: [id], onDelete: Restrict)
+
+  @@index([pedidoId], map: "IX_PedidoInsumoDetalle_pedidoId")
+  @@index([insumoId], map: "IX_PedidoInsumoDetalle_insumoId")
 }

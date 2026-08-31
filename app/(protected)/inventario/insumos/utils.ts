@@ -41,6 +41,13 @@ export function finDiaHn(dia: string) {
   return new Date(`${dia}T23:59:59.999${OFFSET_HONDURAS}`);
 }
 
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+/** Días completos entre dos fechas; la diferencia no depende de la zona horaria */
+export function diasEntre(desde: Date, hasta: Date) {
+  return Math.max(0, Math.round((hasta.getTime() - desde.getTime()) / MS_POR_DIA));
+}
+
 export function pluralizar(nombre: string, cantidad: number) {
   const limpio = nombre.trim();
   if (!limpio || cantidad === 1) return limpio;

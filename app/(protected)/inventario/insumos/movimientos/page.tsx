@@ -4,13 +4,20 @@ import NoAcceso from "@/components/noAccess";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, History } from "lucide-react";
 import Link from "next/link";
-import { getMovimientos } from "../actions";
+import { getCiudades, getMovimientos } from "../actions";
+import CiudadFiltro from "../components/ciudad-filtro";
 import MovimientosList from "../components/movimientos-list";
 
 export default async function MovimientosInsumoPage({
   searchParams,
 }: {
-  searchParams: { insumoId?: string; tipo?: string; desde?: string; hasta?: string };
+  searchParams: {
+    insumoId?: string;
+    ciudadId?: string;
+    tipo?: string;
+    desde?: string;
+    hasta?: string;
+  };
 }) {
   const permisos = await getSessionPermisos();
 
@@ -23,12 +30,16 @@ export default async function MovimientosInsumoPage({
       ? searchParams.tipo
       : undefined;
 
-  const movimientos = await getMovimientos({
-    insumoId: searchParams.insumoId,
-    tipo,
-    desde: searchParams.desde,
-    hasta: searchParams.hasta,
-  });
+  const [movimientos, ciudades] = await Promise.all([
+    getMovimientos({
+      insumoId: searchParams.insumoId,
+      ciudadId: searchParams.ciudadId,
+      tipo,
+      desde: searchParams.desde,
+      hasta: searchParams.hasta,
+    }),
+    getCiudades(),
+  ]);
 
   return (
     <div className="container mx-auto py-2">
@@ -38,7 +49,13 @@ export default async function MovimientosInsumoPage({
         screenName="Movimientos de insumos"
       />
 
-      <div className="mb-4">
+      <div className="mb-4 space-y-3">
+        <CiudadFiltro
+          ciudades={ciudades}
+          ciudadId={searchParams.ciudadId}
+          basePath="/inventario/insumos/movimientos"
+        />
+
         <Button variant="outline" asChild>
           <Link href="/inventario/insumos" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />

@@ -1,5 +1,20 @@
 import * as z from "zod";
 
+const ExistenciaSchema = z.object({
+  ciudadId: z.string().min(1),
+  ciudadNombre: z.string(),
+  stockMinimo: z.coerce
+    .number({ invalid_type_error: "El stock mínimo debe ser un número" })
+    .int("El stock mínimo debe ser un número entero")
+    .min(0, "El stock mínimo no puede ser negativo"),
+  stockInicial: z.coerce
+    .number({ invalid_type_error: "El stock inicial debe ser un número" })
+    .int("El stock inicial debe ser un número entero")
+    .min(0, "El stock inicial no puede ser negativo")
+    .optional(),
+  stockInicialEnEmpaques: z.boolean().optional(),
+});
+
 export const InsumoSchema = z
   .object({
     id: z.string().optional(),
@@ -11,25 +26,9 @@ export const InsumoSchema = z
       .number({ invalid_type_error: "El contenido por empaque debe ser un número" })
       .int("El contenido por empaque debe ser un número entero")
       .min(1, "El contenido por empaque debe ser al menos 1"),
-    stockMinimo: z.coerce
-      .number({ invalid_type_error: "El stock mínimo debe ser un número" })
-      .int("El stock mínimo debe ser un número entero")
-      .min(0, "El stock mínimo no puede ser negativo"),
-    stockInicial: z.coerce
-      .number({ invalid_type_error: "El stock inicial debe ser un número" })
-      .int("El stock inicial debe ser un número entero")
-      .min(0, "El stock inicial no puede ser negativo")
-      .optional(),
-    stockInicialEnEmpaques: z.boolean().optional(),
+    existencias: z.array(ExistenciaSchema).min(1, "Debe existir al menos una ciudad"),
     activo: z.boolean().optional(),
   })
-  .refine(
-    (data) => !data.stockInicialEnEmpaques || !!data.unidadEmpaqueId,
-    {
-      message: "Para registrar el stock inicial en empaques debe elegir la unidad de empaque",
-      path: ["stockInicialEnEmpaques"],
-    }
-  )
   .refine(
     (data) => !data.unidadEmpaqueId || data.unidadEmpaqueId !== data.unidadId,
     {
@@ -43,6 +42,7 @@ export type InsumoFormValues = z.infer<typeof InsumoSchema>;
 export const MovimientoInsumoSchema = z
   .object({
     insumoId: z.string().min(1, "El insumo es requerido"),
+    ciudadId: z.string().min(1, "La ciudad es requerida"),
     tipo: z.enum(["ENTRADA", "SALIDA"]),
     cantidad: z.coerce
       .number({ invalid_type_error: "La cantidad debe ser un número" })

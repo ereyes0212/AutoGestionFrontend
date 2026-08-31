@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ import { Loader2 } from "lucide-react";
 import { UnidadInsumo } from "../../unidad-insumo/types";
 import { postInsumo, putInsumo } from "../actions";
 import { InsumoFormValues, InsumoSchema } from "../schema";
-import { contenidoEmpaqueLabel, formatCantidad } from "../utils";
+import { contenidoEmpaqueLabel } from "../utils";
 
 /** Radix no acepta SelectItem con value vacío */
 const SIN_EMPAQUE = "SIN_EMPAQUE";
@@ -49,11 +49,11 @@ export function InsumoFormulario({
     defaultValues: initialData,
   });
 
+  const { fields } = useFieldArray({ control: form.control, name: "existencias" });
+
   const unidadId = form.watch("unidadId");
   const unidadEmpaqueId = form.watch("unidadEmpaqueId");
   const cantidadPorEmpaque = Number(form.watch("cantidadPorEmpaque")) || 1;
-  const stockInicial = Number(form.watch("stockInicial")) || 0;
-  const stockInicialEnEmpaques = form.watch("stockInicialEnEmpaques");
 
   const unidadNombre = unidades.find((u) => u.id === unidadId)?.nombre ?? "";
   const empaqueNombre = unidades.find((u) => u.id === unidadEmpaqueId)?.nombre ?? null;
@@ -62,32 +62,27 @@ export function InsumoFormulario({
   const equivalencia = contenidoEmpaqueLabel(cantidadPorEmpaque, unidadNombre, empaqueNombre);
 
   async function onSubmit(data: InsumoFormValues) {
+    const payload = {
+      id: data.id,
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      unidadId: data.unidadId,
+      unidadEmpaqueId: data.unidadEmpaqueId || null,
+      cantidadPorEmpaque: data.cantidadPorEmpaque,
+      activo: data.activo ?? true,
+      existencias: data.existencias.map((existencia) => ({
+        ciudadId: existencia.ciudadId,
+        stockMinimo: existencia.stockMinimo,
+        stockInicial: existencia.stockInicial ?? 0,
+        stockInicialEnEmpaques: existencia.stockInicialEnEmpaques ?? false,
+      })),
+    };
+
     try {
       if (isUpdate) {
-        await putInsumo({
-          id: data.id,
-          nombre: data.nombre,
-          descripcion: data.descripcion,
-          unidadId: data.unidadId,
-          unidadEmpaqueId: data.unidadEmpaqueId || null,
-          cantidadPorEmpaque: data.cantidadPorEmpaque,
-          stockMinimo: data.stockMinimo,
-          stockActual: 0,
-          activo: data.activo,
-        });
+        await putInsumo(payload);
       } else {
-        await postInsumo({
-          nombre: data.nombre,
-          descripcion: data.descripcion,
-          unidadId: data.unidadId,
-          unidadEmpaqueId: data.unidadEmpaqueId || null,
-          cantidadPorEmpaque: data.cantidadPorEmpaque,
-          stockMinimo: data.stockMinimo,
-          stockActual: 0,
-          stockInicial: data.stockInicial ?? 0,
-          stockInicialEnEmpaques: data.stockInicialEnEmpaques ?? false,
-          activo: data.activo ?? true,
-        });
+        await postInsumo(payload);
       }
 
       toast({
@@ -166,8 +161,7 @@ export function InsumoFormulario({
                   </SelectContent>
                 </Select>
                 <FormDescription>
-                  En esta unidad se lleva el stock y se registran las salidas (unidad, rollo,
-                  bote).
+                  En esta unidad se lleva el stock y se registran las salidas.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -185,10 +179,7 @@ export function InsumoFormulario({
                   onValueChange={(valor) => {
                     const nuevo = valor === SIN_EMPAQUE ? "" : valor;
                     field.onChange(nuevo);
-                    if (!nuevo) {
-                      form.setValue("cantidadPorEmpaque", 1);
-                      form.setValue("stockInicialEnEmpaques", false);
-                    }
+                    if (!nuevo) form.setValue("cantidadPorEmpaque", 1);
                   }}
                 >
                   <FormControl>
@@ -235,81 +226,93 @@ export function InsumoFormulario({
               )}
             />
           )}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="stockMinimo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stock mínimo</FormLabel>
-                <FormControl>
-                  <Input type="number" min={0} placeholder="0" {...field} />
-                </FormControl>
-                <FormDescription>
-                  En unidades de consumo{unidadNombre ? ` (${unidadNombre.toLowerCase()})` : ""}.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Existencias por ciudad */}
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold">Existencias por ciudad</h3>
+            <p className="text-xs text-muted-foreground">
+              Cada bodega lleva su propio stock mínimo
+              {!isUpdate ? " y su stock inicial" : ""}.
+            </p>
+          </div>
 
-          {!isUpdate && (
-            <>
-              <FormField
-                control={form.control}
-                name="stockInicial"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock inicial</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} placeholder="0" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Se registrará como una entrada en el historial.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="space-y-3">
+            {fields.map((campo, indice) => (
+              <div
+                key={campo.id}
+                className="grid grid-cols-1 gap-3 rounded-md border p-3 sm:grid-cols-4"
+              >
+                <div className="flex items-end">
+                  <span className="text-sm font-medium">
+                    {form.getValues(`existencias.${indice}.ciudadNombre`)}
+                  </span>
+                </div>
 
-              {manejaEmpaque && (
                 <FormField
                   control={form.control}
-                  name="stockInicialEnEmpaques"
+                  name={`existencias.${indice}.stockMinimo`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>El stock inicial está en</FormLabel>
-                      <Select
-                        value={field.value ? "EMPAQUES" : "UNIDADES"}
-                        onValueChange={(valor) => field.onChange(valor === "EMPAQUES")}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="UNIDADES">
-                            {unidadNombre || "Unidades de consumo"}
-                          </SelectItem>
-                          <SelectItem value="EMPAQUES">{empaqueNombre}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {stockInicialEnEmpaques && stockInicial > 0
-                          ? `Ingresarán ${formatCantidad(
-                              stockInicial * cantidadPorEmpaque,
-                              unidadNombre
-                            )} al stock.`
-                          : "Elija si la cantidad de arriba está en empaques o en unidades."}
-                      </FormDescription>
+                      <FormLabel>Stock mínimo</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-            </>
-          )}
+
+                {!isUpdate && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name={`existencias.${indice}.stockInicial`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Stock inicial</FormLabel>
+                          <FormControl>
+                            <Input type="number" min={0} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {manejaEmpaque && (
+                      <FormField
+                        control={form.control}
+                        name={`existencias.${indice}.stockInicialEnEmpaques`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>El inicial está en</FormLabel>
+                            <Select
+                              value={field.value ? "EMPAQUES" : "UNIDADES"}
+                              onValueChange={(valor) => field.onChange(valor === "EMPAQUES")}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="UNIDADES">
+                                  {unidadNombre || "Unidades"}
+                                </SelectItem>
+                                <SelectItem value="EMPAQUES">{empaqueNombre}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {isUpdate && (

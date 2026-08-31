@@ -36,14 +36,14 @@ export default function MovimientosList({
     if (!termino) return movimientos;
 
     return movimientos.filter((m) =>
-      [m.insumoNombre, m.solicitadoPor, m.registradoPor, m.observaciones, m.tipo]
+      [m.insumoNombre, m.ciudadNombre, m.solicitadoPor, m.registradoPor, m.observaciones, m.tipo]
         .join(" ")
         .toLowerCase()
         .includes(termino)
     );
   }, [movimientos, filtro]);
 
-  const columnas = 8 + (mostrarInsumo ? 1 : 0) + (puedeCancelar ? 1 : 0);
+  const columnas = 9 + (mostrarInsumo ? 1 : 0) + (puedeCancelar ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -65,6 +65,7 @@ export default function MovimientosList({
             <TableRow>
               <TableHead>Fecha</TableHead>
               {mostrarInsumo && <TableHead>Insumo</TableHead>}
+              <TableHead>Ciudad</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead>Cantidad</TableHead>
               <TableHead>Stock resultante</TableHead>
@@ -81,6 +82,7 @@ export default function MovimientosList({
                 <TableRow key={movimiento.id} className={movimiento.cancelado ? "opacity-60" : ""}>
                   <TableCell className="whitespace-nowrap">{movimiento.fechaLabel}</TableCell>
                   {mostrarInsumo && <TableCell>{movimiento.insumoNombre}</TableCell>}
+                  <TableCell>{movimiento.ciudadNombre}</TableCell>
                   <TableCell>
                     {movimiento.cancelado ? (
                       <Badge variant="outline">Cancelado</Badge>
@@ -113,7 +115,9 @@ export default function MovimientosList({
                   </TableCell>
                   {puedeCancelar && (
                     <TableCell>
-                      {!movimiento.cancelado && (
+                      {movimiento.cancelado ? null : movimiento.firmado ? (
+                        <span className="text-xs text-muted-foreground">Firmado</span>
+                      ) : (
                         <CancelarMovimientoDialog movimiento={movimiento} />
                       )}
                     </TableCell>
@@ -143,7 +147,9 @@ export default function MovimientosList({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="truncate text-base font-semibold">{movimiento.insumoNombre}</h3>
-                <p className="text-xs text-muted-foreground">{movimiento.fechaLabel}</p>
+                <p className="text-xs text-muted-foreground">
+                  {movimiento.ciudadNombre} · {movimiento.fechaLabel}
+                </p>
               </div>
               {movimiento.cancelado ? (
                 <Badge variant="outline">Cancelado</Badge>
@@ -182,7 +188,7 @@ export default function MovimientosList({
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <FirmaCell movimiento={movimiento} />
-              {puedeCancelar && !movimiento.cancelado && (
+              {puedeCancelar && !movimiento.cancelado && !movimiento.firmado && (
                 <CancelarMovimientoDialog movimiento={movimiento} />
               )}
             </div>

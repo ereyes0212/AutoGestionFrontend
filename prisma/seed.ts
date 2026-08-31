@@ -94,6 +94,15 @@ async function main() {
     { nombre: "crear_movimiento_insumo", descripcion: "Permiso para registrar entradas y salidas de insumos" },
     { nombre: "ver_reportes_insumo", descripcion: "Permiso para generar los reportes de insumos" },
 
+    //Pedidos de insumos
+    { nombre: "ver_pedidos_insumo", descripcion: "Permiso para ver los pedidos de insumos" },
+    { nombre: "crear_pedidos_insumo", descripcion: "Permiso para crear y cancelar pedidos de insumos" },
+    { nombre: "recibir_pedidos_insumo", descripcion: "Permiso para marcar como recibidos los pedidos de insumos" },
+
+    //Ciudades
+    { nombre: "ver_ciudades", descripcion: "Permiso para ver las ciudades con inventario" },
+    { nombre: "crear_ciudades", descripcion: "Permiso para crear y editar las ciudades" },
+
     // Nota
     { nombre: "ver_notas", descripcion: "Permiso para ver las notas" },
     { nombre: "crear_notas", descripcion: "Permiso para crear las notas" },
@@ -247,6 +256,24 @@ async function main() {
       console.log(`Unidad de insumo creada: ${u.nombre}`);
     } else {
       console.log(`Unidad de insumo existente: ${u.nombre}`);
+    }
+  }
+
+  // 9. Ciudades con bodega (mismos ids que usa la migración)
+  const ciudades = [
+    { id: "11111111-1111-1111-1111-111111111111", nombre: "Tegucigalpa" },
+    { id: "22222222-2222-2222-2222-222222222222", nombre: "San Pedro Sula" },
+  ];
+
+  for (const c of ciudades) {
+    const existente = await prisma.ciudad.findFirst({ where: { nombre: c.nombre } });
+    if (!existente) {
+      await prisma.ciudad.create({
+        data: { id: c.id, nombre: c.nombre, activo: true },
+      });
+      console.log(`Ciudad creada: ${c.nombre}`);
+    } else {
+      console.log(`Ciudad existente: ${c.nombre}`);
     }
   }
 

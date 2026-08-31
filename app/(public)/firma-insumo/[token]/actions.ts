@@ -30,6 +30,7 @@ export async function getMovimientoParaFirma(token: string): Promise<MovimientoP
           unidadEmpaque: { select: { nombre: true } },
         },
       },
+      ciudad: { select: { nombre: true } },
       usuario: {
         select: {
           usuario: true,
@@ -48,6 +49,7 @@ export async function getMovimientoParaFirma(token: string): Promise<MovimientoP
   return {
     id: movimiento.id,
     insumoNombre: movimiento.insumo.nombre,
+    ciudadNombre: movimiento.ciudad.nombre,
     unidadNombre: movimiento.insumo.unidad.nombre,
     cantidad: movimiento.cantidad,
     cantidadLabel: cantidadMovimientoLabel(

@@ -51,6 +51,13 @@ export default function InsumoListMobile({ insumos }: InsumoListProps) {
             {insumo.equivalenciaStock && (
               <p className="text-xs text-gray-500">≈ {insumo.equivalenciaStock}</p>
             )}
+            {insumo.existencias.length > 1 && (
+              <p className="text-xs text-gray-500">
+                {insumo.existencias
+                  .map((e) => `${e.ciudadNombre}: ${e.stockActual}`)
+                  .join(" · ")}
+              </p>
+            )}
             {insumo.contenidoLabel && (
               <p className="text-xs text-gray-500">{insumo.contenidoLabel}</p>
             )}

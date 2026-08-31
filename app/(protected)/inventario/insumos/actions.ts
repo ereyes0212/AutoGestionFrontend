@@ -7,6 +7,8 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import {
   CancelarMovimientoResultado,
+  Ciudad,
+  ExistenciaInsumoInput,
   Insumo,
   MovimientoInsumo,
   RegistrarMovimientoInput,
@@ -42,9 +44,22 @@ export async function buildFirmaUrl(token: string) {
   return host ? `${protocolo}://${host}/firma-insumo/${token}` : `/firma-insumo/${token}`;
 }
 
+/**
+ * Ciudades donde hay bodega
+ */
+export async function getCiudades(soloActivas = true): Promise<Ciudad[]> {
+  const records = await prisma.ciudad.findMany({
+    where: soloActivas ? { activo: true } : undefined,
+    orderBy: { nombre: "asc" },
+  });
+
+  return records.map((r) => ({ id: r.id, nombre: r.nombre, activo: r.activo }));
+}
+
 type MovimientoRecord = {
   id: string;
   insumoId: string;
+  ciudadId: string;
   tipo: "ENTRADA" | "SALIDA";
   cantidad: number;
   cantidadEmpaque: number | null;
@@ -64,6 +79,8 @@ type MovimientoRecord = {
     unidad: { nombre: string };
     unidadEmpaque: { nombre: string } | null;
   };
+  ciudad: { nombre: string };
+  pedido: { numero: number } | null;
   usuario: { usuario: string; Empleados: { nombre: string; apellido: string } | null };
   canceladoPor: { usuario: string; Empleados: { nombre: string; apellido: string } | null } | null;
   empleadoSolicitante: { nombre: string; apellido: string } | null;
@@ -86,6 +103,8 @@ const movimientoInclude = {
       unidadEmpaque: { select: { nombre: true } },
     },
   },
+  ciudad: { select: { nombre: true } },
+  pedido: { select: { numero: true } },
   usuario: {
     select: {
       usuario: true,
@@ -114,6 +133,8 @@ async function mapMovimiento(r: MovimientoRecord): Promise<MovimientoInsumo> {
     id: r.id,
     insumoId: r.insumoId,
     insumoNombre: r.insumo.nombre,
+    ciudadId: r.ciudadId,
+    ciudadNombre: r.ciudad.nombre,
     unidadNombre: r.insumo.unidad.nombre,
     unidadEmpaqueNombre,
     tipo: r.tipo,
@@ -141,24 +162,62 @@ async function mapMovimiento(r: MovimientoRecord): Promise<MovimientoInsumo> {
     canceladoPor: nombreUsuario(r.canceladoPor),
     canceladoFechaLabel: r.canceladoAt ? formatFecha(r.canceladoAt) : null,
     motivoCancelacion: r.motivoCancelacion ?? "",
+    pedidoNumero: r.pedido?.numero ?? null,
   };
 }
 
-function mapInsumo(r: {
+const insumoInclude = {
+  unidad: { select: { nombre: true, abreviatura: true } },
+  unidadEmpaque: { select: { nombre: true } },
+  existencias: { include: { ciudad: { select: { nombre: true } } } },
+} as const;
+
+type InsumoRecord = {
   id: string;
   nombre: string;
   descripcion: string | null;
   unidadId: string;
   unidadEmpaqueId: string | null;
   cantidadPorEmpaque: number;
-  stockActual: number;
-  stockMinimo: number;
   activo: boolean;
-  unidad?: { nombre: string; abreviatura: string | null } | null;
-  unidadEmpaque?: { nombre: string } | null;
-}): Insumo {
-  const unidadNombre = r.unidad?.nombre ?? "";
+  unidad: { nombre: string; abreviatura: string | null };
+  unidadEmpaque: { nombre: string } | null;
+  existencias: {
+    ciudadId: string;
+    stockActual: number;
+    stockMinimo: number;
+    ciudad: { nombre: string };
+  }[];
+};
+
+/**
+ * @param ciudadId cuando viene, el stock mostrado es el de esa ciudad;
+ * si no, se consolidan todas las bodegas.
+ */
+function mapInsumo(r: InsumoRecord, ciudadId?: string): Insumo {
+  const unidadNombre = r.unidad.nombre;
   const unidadEmpaqueNombre = r.unidadEmpaque?.nombre ?? null;
+
+  const existencias = r.existencias
+    .map((e) => ({
+      ciudadId: e.ciudadId,
+      ciudadNombre: e.ciudad.nombre,
+      stockActual: e.stockActual,
+      stockMinimo: e.stockMinimo,
+      bajoStock: e.stockActual <= e.stockMinimo,
+      equivalenciaStock: equivalenciaEmpaques(
+        e.stockActual,
+        r.cantidadPorEmpaque,
+        unidadNombre,
+        unidadEmpaqueNombre
+      ),
+    }))
+    .sort((a, b) => a.ciudadNombre.localeCompare(b.ciudadNombre));
+
+  const alcance = ciudadId ? existencias.filter((e) => e.ciudadId === ciudadId) : existencias;
+
+  const stockActual = alcance.reduce((suma, e) => suma + e.stockActual, 0);
+  const stockMinimo = alcance.reduce((suma, e) => suma + e.stockMinimo, 0);
 
   return {
     id: r.id,
@@ -167,20 +226,22 @@ function mapInsumo(r: {
     unidadId: r.unidadId,
     unidadEmpaqueId: r.unidadEmpaqueId,
     cantidadPorEmpaque: r.cantidadPorEmpaque,
-    stockActual: r.stockActual,
-    stockMinimo: r.stockMinimo,
     activo: r.activo,
     unidadNombre,
-    unidadAbreviatura: r.unidad?.abreviatura ?? "",
+    unidadAbreviatura: r.unidad.abreviatura ?? "",
     unidadEmpaqueNombre,
-    bajoStock: r.stockActual <= r.stockMinimo,
     contenidoLabel: contenidoEmpaqueLabel(
       r.cantidadPorEmpaque,
       unidadNombre,
       unidadEmpaqueNombre
     ),
+    existencias,
+    stockActual,
+    stockMinimo,
+    // Consolidado: alcanza con que una bodega esté baja para encender la alerta
+    bajoStock: alcance.some((e) => e.bajoStock),
     equivalenciaStock: equivalenciaEmpaques(
-      r.stockActual,
+      stockActual,
       r.cantidadPorEmpaque,
       unidadNombre,
       unidadEmpaqueNombre
@@ -188,52 +249,49 @@ function mapInsumo(r: {
   };
 }
 
-const insumoInclude = {
-  unidad: { select: { nombre: true, abreviatura: true } },
-  unidadEmpaque: { select: { nombre: true } },
-} as const;
-
 /**
  * Obtener todos los insumos
  */
-export async function getInsumos(): Promise<Insumo[]> {
+export async function getInsumos(ciudadId?: string): Promise<Insumo[]> {
   const records = await prisma.insumo.findMany({
     include: insumoInclude,
     orderBy: { nombre: "asc" },
   });
-  return records.map(mapInsumo);
+  return records.map((r) => mapInsumo(r, ciudadId));
 }
 
 /**
  * Obtener los insumos activos
  */
-export async function getInsumosActivos(): Promise<Insumo[]> {
+export async function getInsumosActivos(ciudadId?: string): Promise<Insumo[]> {
   const records = await prisma.insumo.findMany({
     where: { activo: true },
     include: insumoInclude,
     orderBy: { nombre: "asc" },
   });
-  return records.map(mapInsumo);
+  return records.map((r) => mapInsumo(r, ciudadId));
 }
 
 /**
  * Obtener un insumo por ID
  */
-export async function getInsumoById(id: string): Promise<Insumo | null> {
+export async function getInsumoById(id: string, ciudadId?: string): Promise<Insumo | null> {
   const r = await prisma.insumo.findUnique({
     where: { id },
     include: insumoInclude,
   });
   if (!r) return null;
-  return mapInsumo(r);
+  return mapInsumo(r, ciudadId);
 }
 
 /**
- * Crear un nuevo insumo. Si se indica un stock inicial se registra como
- * una entrada para que quede en el historial.
+ * Crear un insumo con sus existencias por ciudad. El stock inicial de cada
+ * ciudad se registra como entrada para que quede en el historial.
  */
 export async function postInsumo(
-  data: Insumo & { stockInicial?: number; stockInicialEnEmpaques?: boolean }
+  data: Omit<Insumo, "existencias" | "stockActual" | "stockMinimo" | "bajoStock"> & {
+    existencias: ExistenciaInsumoInput[];
+  }
 ): Promise<Insumo> {
   const session = await getSession();
   if (!session?.IdUser) {
@@ -242,11 +300,6 @@ export async function postInsumo(
 
   const unidadEmpaqueId = data.unidadEmpaqueId || null;
   const cantidadPorEmpaque = unidadEmpaqueId ? Math.max(1, data.cantidadPorEmpaque) : 1;
-
-  const tecleado = data.stockInicial && data.stockInicial > 0 ? data.stockInicial : 0;
-  const enEmpaques = !!data.stockInicialEnEmpaques && !!unidadEmpaqueId;
-  const stockInicial = enEmpaques ? tecleado * cantidadPorEmpaque : tecleado;
-
   const id = randomUUID();
 
   const r = await prisma.$transaction(async (tx) => {
@@ -258,30 +311,45 @@ export async function postInsumo(
         unidadId: data.unidadId,
         unidadEmpaqueId,
         cantidadPorEmpaque,
-        stockActual: stockInicial,
-        stockMinimo: data.stockMinimo,
         activo: data.activo ?? true,
       },
-      include: insumoInclude,
     });
 
-    if (stockInicial > 0) {
-      await tx.movimientoInsumo.create({
+    for (const existencia of data.existencias) {
+      const tecleado =
+        existencia.stockInicial && existencia.stockInicial > 0 ? existencia.stockInicial : 0;
+      const enEmpaques = !!existencia.stockInicialEnEmpaques && !!unidadEmpaqueId;
+      const stockInicial = enEmpaques ? tecleado * cantidadPorEmpaque : tecleado;
+
+      await tx.stockInsumo.create({
         data: {
           id: randomUUID(),
           insumoId: insumo.id,
-          tipo: "ENTRADA",
-          cantidad: stockInicial,
-          cantidadEmpaque: enEmpaques ? tecleado : null,
-          stockResultante: stockInicial,
-          fecha: new Date(),
-          observaciones: "Stock inicial",
-          usuarioId: session.IdUser,
+          ciudadId: existencia.ciudadId,
+          stockActual: stockInicial,
+          stockMinimo: existencia.stockMinimo,
         },
       });
+
+      if (stockInicial > 0) {
+        await tx.movimientoInsumo.create({
+          data: {
+            id: randomUUID(),
+            insumoId: insumo.id,
+            ciudadId: existencia.ciudadId,
+            tipo: "ENTRADA",
+            cantidad: stockInicial,
+            cantidadEmpaque: enEmpaques ? tecleado : null,
+            stockResultante: stockInicial,
+            fecha: new Date(),
+            observaciones: "Stock inicial",
+            usuarioId: session.IdUser,
+          },
+        });
+      }
     }
 
-    return insumo;
+    return tx.insumo.findUniqueOrThrow({ where: { id: insumo.id }, include: insumoInclude });
   });
 
   revalidatePath("/inventario/insumos");
@@ -290,24 +358,46 @@ export async function postInsumo(
 }
 
 /**
- * Actualizar un insumo existente. El stock no se modifica aquí, solo
- * mediante entradas y salidas.
+ * Actualizar un insumo y el stock mínimo de cada ciudad. El stock actual solo
+ * se mueve con entradas y salidas.
  */
-export async function putInsumo(data: Insumo): Promise<Insumo> {
+export async function putInsumo(
+  data: Omit<Insumo, "existencias" | "stockActual" | "stockMinimo" | "bajoStock"> & {
+    existencias: ExistenciaInsumoInput[];
+  }
+): Promise<Insumo> {
   const unidadEmpaqueId = data.unidadEmpaqueId || null;
 
-  const r = await prisma.insumo.update({
-    where: { id: data.id! },
-    data: {
-      nombre: data.nombre,
-      descripcion: data.descripcion || null,
-      unidadId: data.unidadId,
-      unidadEmpaqueId,
-      cantidadPorEmpaque: unidadEmpaqueId ? Math.max(1, data.cantidadPorEmpaque) : 1,
-      stockMinimo: data.stockMinimo,
-      activo: data.activo,
-    },
-    include: insumoInclude,
+  const r = await prisma.$transaction(async (tx) => {
+    await tx.insumo.update({
+      where: { id: data.id! },
+      data: {
+        nombre: data.nombre,
+        descripcion: data.descripcion || null,
+        unidadId: data.unidadId,
+        unidadEmpaqueId,
+        cantidadPorEmpaque: unidadEmpaqueId ? Math.max(1, data.cantidadPorEmpaque) : 1,
+        activo: data.activo,
+      },
+    });
+
+    for (const existencia of data.existencias) {
+      await tx.stockInsumo.upsert({
+        where: {
+          insumoId_ciudadId: { insumoId: data.id!, ciudadId: existencia.ciudadId },
+        },
+        create: {
+          id: randomUUID(),
+          insumoId: data.id!,
+          ciudadId: existencia.ciudadId,
+          stockActual: 0,
+          stockMinimo: existencia.stockMinimo,
+        },
+        update: { stockMinimo: existencia.stockMinimo },
+      });
+    }
+
+    return tx.insumo.findUniqueOrThrow({ where: { id: data.id! }, include: insumoInclude });
   });
 
   revalidatePath("/inventario/insumos");
@@ -317,8 +407,8 @@ export async function putInsumo(data: Insumo): Promise<Insumo> {
 }
 
 /**
- * Registrar una entrada o salida de stock. La cantidad puede venir en
- * empaques (2 cajas de 6 = 12 unidades); el stock siempre se lleva en
+ * Registrar una entrada o salida de stock en una ciudad. La cantidad puede
+ * venir en empaques (2 cajas de 6 = 12 unidades); el stock siempre se lleva en
  * unidades de consumo y las salidas se restan automáticamente.
  */
 export async function registrarMovimiento(
@@ -327,6 +417,10 @@ export async function registrarMovimiento(
   const session = await getSession();
   if (!session?.IdUser) {
     return { success: false, error: "No autorizado" };
+  }
+
+  if (!input.ciudadId) {
+    return { success: false, error: "Debe indicar la ciudad" };
   }
 
   if (!Number.isInteger(input.cantidad) || input.cantidad <= 0) {
@@ -360,24 +454,35 @@ export async function registrarMovimiento(
         ? input.cantidad * insumo.cantidadPorEmpaque
         : input.cantidad;
 
+      const existencia = await tx.stockInsumo.findUnique({
+        where: { insumoId_ciudadId: { insumoId: input.insumoId, ciudadId: input.ciudadId } },
+      });
+
+      const stockActual = existencia?.stockActual ?? 0;
       const nuevoStock =
-        input.tipo === "ENTRADA"
-          ? insumo.stockActual + cantidadBase
-          : insumo.stockActual - cantidadBase;
+        input.tipo === "ENTRADA" ? stockActual + cantidadBase : stockActual - cantidadBase;
 
       if (nuevoStock < 0) {
-        throw new Error(`No hay stock suficiente. Disponible: ${insumo.stockActual}`);
+        throw new Error(`No hay stock suficiente. Disponible: ${stockActual}`);
       }
 
-      await tx.insumo.update({
-        where: { id: insumo.id },
-        data: { stockActual: nuevoStock },
+      await tx.stockInsumo.upsert({
+        where: { insumoId_ciudadId: { insumoId: input.insumoId, ciudadId: input.ciudadId } },
+        create: {
+          id: randomUUID(),
+          insumoId: input.insumoId,
+          ciudadId: input.ciudadId,
+          stockActual: nuevoStock,
+          stockMinimo: 0,
+        },
+        update: { stockActual: nuevoStock },
       });
 
       await tx.movimientoInsumo.create({
         data: {
           id: movimientoId,
-          insumoId: insumo.id,
+          insumoId: input.insumoId,
+          ciudadId: input.ciudadId,
           tipo: input.tipo,
           cantidad: cantidadBase,
           cantidadEmpaque: input.enEmpaques ? input.cantidad : null,
@@ -414,10 +519,9 @@ export async function registrarMovimiento(
 }
 
 /**
- * Cancela un movimiento y revierte su efecto en el stock: una entrada
- * cancelada resta lo que había sumado y una salida cancelada devuelve el
- * producto. El movimiento queda en el historial marcado como cancelado y
- * su enlace de firma pendiente deja de servir.
+ * Cancela un movimiento y revierte su efecto en el stock de su ciudad: una
+ * entrada cancelada resta lo que había sumado y una salida cancelada devuelve
+ * el producto. Un movimiento firmado no se puede cancelar.
  */
 export async function cancelarMovimiento(
   movimientoId: string,
@@ -436,7 +540,15 @@ export async function cancelarMovimiento(
     const { stockResultante, insumoId } = await prisma.$transaction(async (tx) => {
       const movimiento = await tx.movimientoInsumo.findUnique({
         where: { id: movimientoId },
-        select: { id: true, insumoId: true, tipo: true, cantidad: true, cancelado: true },
+        select: {
+          id: true,
+          insumoId: true,
+          ciudadId: true,
+          tipo: true,
+          cantidad: true,
+          cancelado: true,
+          firmaKey: true,
+        },
       });
 
       if (!movimiento) {
@@ -447,26 +559,50 @@ export async function cancelarMovimiento(
         throw new Error("El movimiento ya fue cancelado");
       }
 
-      const insumo = await tx.insumo.findUnique({ where: { id: movimiento.insumoId } });
-      if (!insumo) {
-        throw new Error("El insumo no existe");
+      // La firma es el respaldo de la entrega: si ya firmaron, el movimiento
+      // no se puede deshacer.
+      if (movimiento.firmaKey) {
+        throw new Error("No se puede cancelar un movimiento que ya fue firmado");
       }
+
+      const existencia = await tx.stockInsumo.findUnique({
+        where: {
+          insumoId_ciudadId: {
+            insumoId: movimiento.insumoId,
+            ciudadId: movimiento.ciudadId,
+          },
+        },
+      });
+
+      const stockActual = existencia?.stockActual ?? 0;
 
       // Se revierte el efecto original del movimiento
       const nuevoStock =
         movimiento.tipo === "ENTRADA"
-          ? insumo.stockActual - movimiento.cantidad
-          : insumo.stockActual + movimiento.cantidad;
+          ? stockActual - movimiento.cantidad
+          : stockActual + movimiento.cantidad;
 
       if (nuevoStock < 0) {
         throw new Error(
-          `No se puede cancelar: el stock quedaría negativo. Disponible: ${insumo.stockActual}`
+          `No se puede cancelar: el stock quedaría negativo. Disponible: ${stockActual}`
         );
       }
 
-      await tx.insumo.update({
-        where: { id: insumo.id },
-        data: { stockActual: nuevoStock },
+      await tx.stockInsumo.upsert({
+        where: {
+          insumoId_ciudadId: {
+            insumoId: movimiento.insumoId,
+            ciudadId: movimiento.ciudadId,
+          },
+        },
+        create: {
+          id: randomUUID(),
+          insumoId: movimiento.insumoId,
+          ciudadId: movimiento.ciudadId,
+          stockActual: nuevoStock,
+          stockMinimo: 0,
+        },
+        update: { stockActual: nuevoStock },
       });
 
       await tx.movimientoInsumo.update({
@@ -482,7 +618,7 @@ export async function cancelarMovimiento(
         },
       });
 
-      return { stockResultante: nuevoStock, insumoId: insumo.id };
+      return { stockResultante: nuevoStock, insumoId: movimiento.insumoId };
     });
 
     revalidatePath("/inventario/insumos");
@@ -502,9 +638,12 @@ export async function cancelarMovimiento(
 /**
  * Historial de movimientos de un insumo
  */
-export async function getMovimientosByInsumo(insumoId: string): Promise<MovimientoInsumo[]> {
+export async function getMovimientosByInsumo(
+  insumoId: string,
+  ciudadId?: string
+): Promise<MovimientoInsumo[]> {
   const records = await prisma.movimientoInsumo.findMany({
-    where: { insumoId },
+    where: { insumoId, ...(ciudadId ? { ciudadId } : {}) },
     include: movimientoInclude,
     orderBy: { fecha: "desc" },
   });
@@ -517,17 +656,20 @@ export async function getMovimientosByInsumo(insumoId: string): Promise<Movimien
  */
 export async function getMovimientos(filtros?: {
   insumoId?: string;
+  ciudadId?: string;
   tipo?: "ENTRADA" | "SALIDA";
   desde?: string;
   hasta?: string;
 }): Promise<MovimientoInsumo[]> {
   const where: {
     insumoId?: string;
+    ciudadId?: string;
     tipo?: "ENTRADA" | "SALIDA";
     fecha?: { gte?: Date; lte?: Date };
   } = {};
 
   if (filtros?.insumoId) where.insumoId = filtros.insumoId;
+  if (filtros?.ciudadId) where.ciudadId = filtros.ciudadId;
   if (filtros?.tipo) where.tipo = filtros.tipo;
   if (filtros?.desde || filtros?.hasta) {
     where.fecha = {};
@@ -559,11 +701,15 @@ export async function regenerarEnlaceFirma(
 
   const movimiento = await prisma.movimientoInsumo.findUnique({
     where: { id: movimientoId },
-    select: { id: true, firmaKey: true },
+    select: { id: true, firmaKey: true, cancelado: true },
   });
 
   if (!movimiento) {
     return { success: false, error: "El movimiento no existe" };
+  }
+
+  if (movimiento.cancelado) {
+    return { success: false, error: "El movimiento fue cancelado" };
   }
 
   if (movimiento.firmaKey) {

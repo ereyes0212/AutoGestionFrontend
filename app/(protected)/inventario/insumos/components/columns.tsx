@@ -62,6 +62,13 @@ export const columns: ColumnDef<Insumo>[] = [
           {insumo.equivalenciaStock && (
             <p className="text-xs text-muted-foreground">≈ {insumo.equivalenciaStock}</p>
           )}
+          {insumo.existencias.length > 1 && (
+            <p className="text-xs text-muted-foreground">
+              {insumo.existencias
+                .map((e) => `${e.ciudadNombre}: ${e.stockActual}`)
+                .join(" · ")}
+            </p>
+          )}
         </div>
       );
     },

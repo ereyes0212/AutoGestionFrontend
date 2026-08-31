@@ -1,5 +1,22 @@
 export type TipoMovimientoInsumo = "ENTRADA" | "SALIDA";
 
+export type Ciudad = {
+  id: string;
+  nombre: string;
+  activo?: boolean;
+};
+
+/** Existencias de un insumo en una ciudad */
+export type ExistenciaInsumo = {
+  ciudadId: string;
+  ciudadNombre: string;
+  stockActual: number;
+  stockMinimo: number;
+  bajoStock: boolean;
+  /** "2 cajas y 3 unidades" */
+  equivalenciaStock: string | null;
+};
+
 export type Insumo = {
   id?: string;
   nombre: string;
@@ -10,23 +27,36 @@ export type Insumo = {
   unidadEmpaqueId: string | null;
   /** Unidades de consumo que trae cada empaque */
   cantidadPorEmpaque: number;
-  stockActual: number;
-  stockMinimo: number;
   activo?: boolean;
   unidadNombre?: string;
   unidadAbreviatura?: string;
   unidadEmpaqueNombre?: string | null;
-  bajoStock?: boolean;
   /** "1 caja = 6 unidades" */
   contenidoLabel?: string | null;
-  /** "2 cajas y 3 unidades" */
+
+  /** Existencias por ciudad */
+  existencias: ExistenciaInsumo[];
+  /** Stock del alcance consultado: una ciudad, o la suma de todas */
+  stockActual: number;
+  stockMinimo: number;
+  bajoStock: boolean;
   equivalenciaStock?: string | null;
+};
+
+/** Lo que el formulario define para cada ciudad */
+export type ExistenciaInsumoInput = {
+  ciudadId: string;
+  stockMinimo: number;
+  stockInicial?: number;
+  stockInicialEnEmpaques?: boolean;
 };
 
 export type MovimientoInsumo = {
   id: string;
   insumoId: string;
   insumoNombre: string;
+  ciudadId: string;
+  ciudadNombre: string;
   unidadNombre: string;
   unidadEmpaqueNombre: string | null;
   tipo: TipoMovimientoInsumo;
@@ -54,22 +84,19 @@ export type MovimientoInsumo = {
   canceladoPor: string | null;
   canceladoFechaLabel: string | null;
   motivoCancelacion: string;
+  /** Número del pedido que originó la entrada */
+  pedidoNumero: number | null;
 };
 
 export type RegistrarMovimientoInput = {
   insumoId: string;
+  ciudadId: string;
   tipo: TipoMovimientoInsumo;
   /** Cantidad tecleada: empaques si enEmpaques es true, unidades de consumo si no */
   cantidad: number;
   enEmpaques?: boolean;
   empleadoSolicitanteId?: string;
   observaciones?: string;
-};
-
-export type CancelarMovimientoResultado = {
-  success: boolean;
-  error?: string;
-  stockResultante?: number;
 };
 
 export type RegistrarMovimientoResultado = {
@@ -80,10 +107,17 @@ export type RegistrarMovimientoResultado = {
   stockResultante?: number;
 };
 
+export type CancelarMovimientoResultado = {
+  success: boolean;
+  error?: string;
+  stockResultante?: number;
+};
+
 /** Datos que se muestran en la pantalla pública de firma */
 export type MovimientoParaFirma = {
   id: string;
   insumoNombre: string;
+  ciudadNombre: string;
   unidadNombre: string;
   cantidad: number;
   cantidadLabel: string;

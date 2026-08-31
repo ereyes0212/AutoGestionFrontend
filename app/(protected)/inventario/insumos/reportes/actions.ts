@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import {
   cantidadMovimientoLabel,
   contenidoEmpaqueLabel,
+  diasEntre,
   equivalenciaEmpaques,
   finDiaHn,
   formatDiaHn,
@@ -21,6 +22,7 @@ import {
 
 /** Tope de filas de detalle que se listan en un reporte */
 const MAX_MOVIMIENTOS_REPORTE = 2000;
+
 
 /** Fechas del reporte siempre en hora de Honduras (UTC-6) */
 const formatFecha = formatFechaHn;
@@ -74,28 +76,41 @@ export async function generarReporteInsumos(
     return { success: false, error: "La fecha inicial no puede ser mayor a la final" };
   }
 
+  if (
+    filtros.contenido &&
+    !filtros.contenido.entradas &&
+    !filtros.contenido.salidas &&
+    !filtros.contenido.insumos
+  ) {
+    return { success: false, error: "Seleccione al menos entradas, salidas o insumos" };
+  }
+
   try {
     const rango = construirRango(filtros.desde, filtros.hasta);
     const insumoId = filtros.tipo === "PRODUCTO" ? filtros.insumoId : undefined;
 
-    const contenido = filtros.contenido ?? "TODOS";
+    const contenido = filtros.contenido ?? { entradas: true, salidas: true, insumos: true };
+    const listaMovimientos = contenido.entradas || contenido.salidas;
 
     // Los movimientos cancelados ya revirtieron su efecto, así que no entran
     // en ningún total ni listado del reporte.
     const where: {
       insumoId?: string;
+      ciudadId?: string;
       fecha?: { gte?: Date; lte?: Date };
       cancelado: boolean;
     } = { cancelado: false };
     if (insumoId) where.insumoId = insumoId;
+    if (filtros.ciudadId) where.ciudadId = filtros.ciudadId;
     if (rango) where.fecha = rango;
 
+    // Si se pidió un solo tipo, el detalle se acota a ese tipo
     const whereMovimientos =
-      contenido === "ENTRADAS"
-        ? { ...where, tipo: "ENTRADA" as const }
-        : contenido === "SALIDAS"
-          ? { ...where, tipo: "SALIDA" as const }
-          : where;
+      contenido.entradas && contenido.salidas
+        ? where
+        : contenido.entradas
+          ? { ...where, tipo: "ENTRADA" as const }
+          : { ...where, tipo: "SALIDA" as const };
 
     // Totales de entradas y salidas por insumo dentro del filtro aplicado
     const agregados = await prisma.movimientoInsumo.groupBy({
@@ -120,19 +135,69 @@ export async function generarReporteInsumos(
         ? {}
         : { id: insumoId ? insumoId : { in: Array.from(totalesPorInsumo.keys()) } };
 
-    const insumos = await prisma.insumo.findMany({
-      where: insumosWhere,
-      include: {
-        unidad: { select: { nombre: true } },
-        unidadEmpaque: { select: { nombre: true } },
-      },
-      orderBy: { nombre: "asc" },
-    });
+    // Fechas de compra por insumo: sirven para saber cuántos días duró cada
+    // compra y sacar el promedio del período.
+    const entradasPorInsumo = new Map<string, Date[]>();
+
+    if (contenido.insumos) {
+      const compras = await prisma.movimientoInsumo.findMany({
+        where: { ...where, tipo: "ENTRADA" },
+        select: { insumoId: true, fecha: true },
+        orderBy: { fecha: "asc" },
+      });
+
+      for (const compra of compras) {
+        const fechas = entradasPorInsumo.get(compra.insumoId) ?? [];
+        fechas.push(compra.fecha);
+        entradasPorInsumo.set(compra.insumoId, fechas);
+      }
+    }
+
+    // Referencia para "días desde la última compra": hoy, o el fin del rango
+    // si el reporte mira un período ya cerrado.
+    const referencia = filtros.hasta
+      ? new Date(Math.min(finDiaHn(filtros.hasta).getTime(), Date.now()))
+      : new Date();
+
+    const insumos = contenido.insumos
+      ? await prisma.insumo.findMany({
+          where: insumosWhere,
+          include: {
+            unidad: { select: { nombre: true } },
+            unidadEmpaque: { select: { nombre: true } },
+            existencias: { include: { ciudad: { select: { nombre: true } } } },
+          },
+          orderBy: { nombre: "asc" },
+        })
+      : [];
 
     const detalle: ReporteDetalleInsumo[] = insumos.map((insumo) => {
       const totales = totalesPorInsumo.get(insumo.id) ?? { entradas: 0, salidas: 0 };
       const unidadEmpaqueNombre = insumo.unidadEmpaque?.nombre ?? null;
+      const compras = entradasPorInsumo.get(insumo.id) ?? [];
+      const ultimaEntrada = compras.length ? compras[compras.length - 1] : null;
+
+      // Existencias del alcance: una ciudad o todas las bodegas
+      const existencias = filtros.ciudadId
+        ? insumo.existencias.filter((e) => e.ciudadId === filtros.ciudadId)
+        : insumo.existencias;
+      const stockActual = existencias.reduce((suma, e) => suma + e.stockActual, 0);
+      const stockMinimo = existencias.reduce((suma, e) => suma + e.stockMinimo, 0);
+
+      // Cada compra "dura" hasta la siguiente: el promedio de esos intervalos
+      // es lo que dura un abastecimiento.
+      const intervalos: number[] = [];
+      for (let i = 1; i < compras.length; i++) {
+        intervalos.push(diasEntre(compras[i - 1], compras[i]));
+      }
+
       return {
+        cantidadEntradas: compras.length,
+        ultimaEntradaLabel: ultimaEntrada ? formatDiaHn(ultimaEntrada) : null,
+        diasDesdeUltimaEntrada: ultimaEntrada ? diasEntre(ultimaEntrada, referencia) : null,
+        promedioDiasEntreEntradas: intervalos.length
+          ? Math.round(intervalos.reduce((suma, dias) => suma + dias, 0) / intervalos.length)
+          : null,
         insumoId: insumo.id,
         nombre: insumo.nombre,
         unidadNombre: insumo.unidad.nombre,
@@ -142,14 +207,17 @@ export async function generarReporteInsumos(
           unidadEmpaqueNombre
         ),
         equivalenciaStock: equivalenciaEmpaques(
-          insumo.stockActual,
+          stockActual,
           insumo.cantidadPorEmpaque,
           insumo.unidad.nombre,
           unidadEmpaqueNombre
         ),
-        stockActual: insumo.stockActual,
-        stockMinimo: insumo.stockMinimo,
-        bajoStock: insumo.stockActual <= insumo.stockMinimo,
+        existenciasLabel: existencias
+          .map((e) => `${e.ciudad.nombre}: ${e.stockActual}`)
+          .join(" · "),
+        stockActual,
+        stockMinimo,
+        bajoStock: existencias.some((e) => e.stockActual <= e.stockMinimo),
         activo: insumo.activo,
         entradas: totales.entradas,
         salidas: totales.salidas,
@@ -164,7 +232,7 @@ export async function generarReporteInsumos(
       prisma.movimientoInsumo.count({ where: { ...where, tipo: "SALIDA", firmaKey: null } }),
     ]);
 
-    const registros = contenido === "STOCK" ? [] : await prisma.movimientoInsumo.findMany({
+    const registros = !listaMovimientos ? [] : await prisma.movimientoInsumo.findMany({
       where: whereMovimientos,
       include: {
         insumo: {
@@ -174,6 +242,7 @@ export async function generarReporteInsumos(
             unidadEmpaque: { select: { nombre: true } },
           },
         },
+        ciudad: { select: { nombre: true } },
         usuario: {
           select: {
             usuario: true,
@@ -190,6 +259,7 @@ export async function generarReporteInsumos(
       id: r.id,
       fechaLabel: formatFecha(r.fecha),
       insumoNombre: r.insumo.nombre,
+      ciudadNombre: r.ciudad.nombre,
       unidadNombre: r.insumo.unidad.nombre,
       tipo: r.tipo,
       cantidad: r.cantidad,
@@ -212,16 +282,30 @@ export async function generarReporteInsumos(
       firmaFechaLabel: r.firmaFecha ? formatFecha(r.firmaFecha) : null,
     }));
 
-    const totalEntradas = detalle.reduce((suma, fila) => suma + fila.entradas, 0);
-    const totalSalidas = detalle.reduce((suma, fila) => suma + fila.salidas, 0);
+    // Se calculan sobre los agregados, no sobre el detalle, porque la tabla de
+    // existencias puede no estar incluida en el reporte.
+    let totalEntradas = 0;
+    let totalSalidas = 0;
+    for (const totales of Array.from(totalesPorInsumo.values())) {
+      totalEntradas += totales.entradas;
+      totalSalidas += totales.salidas;
+    }
 
     const usuario = await prisma.usuarios.findUnique({
       where: { id: session.IdUser },
       select: { usuario: true, Empleados: { select: { nombre: true, apellido: true } } },
     });
 
+    // El detalle puede venir vacío si no se pidió la tabla de existencias
     const insumoNombre =
-      filtros.tipo === "PRODUCTO" ? detalle[0]?.nombre ?? "Producto no encontrado" : null;
+      filtros.tipo === "PRODUCTO"
+        ? detalle[0]?.nombre ??
+          (await prisma.insumo.findUnique({
+            where: { id: insumoId },
+            select: { nombre: true },
+          }))?.nombre ??
+          "Producto no encontrado"
+        : null;
 
     const tituloBase =
       filtros.tipo === "GENERAL"
@@ -230,14 +314,23 @@ export async function generarReporteInsumos(
           ? "Reporte de insumos por fecha"
           : `Reporte por producto: ${insumoNombre}`;
 
+    const secciones = [
+      contenido.entradas ? "entradas" : null,
+      contenido.salidas ? "salidas" : null,
+      contenido.insumos ? "existencias" : null,
+    ].filter(Boolean);
+
     const sufijoContenido =
-      contenido === "ENTRADAS"
-        ? " — entradas"
-        : contenido === "SALIDAS"
-          ? " — salidas"
-          : contenido === "STOCK"
-            ? " — stock actual"
-            : "";
+      secciones.length === 3 ? "" : ` — ${secciones.join(" y ")}`;
+
+    const ciudadNombre = filtros.ciudadId
+      ? (
+          await prisma.ciudad.findUnique({
+            where: { id: filtros.ciudadId },
+            select: { nombre: true },
+          })
+        )?.nombre ?? null
+      : null;
 
     const reporte: ReporteInsumos = {
       tipo: filtros.tipo,
@@ -245,6 +338,7 @@ export async function generarReporteInsumos(
       titulo: `${tituloBase}${sufijoContenido}`,
       periodoLabel: periodoLabel(filtros.desde, filtros.hasta),
       insumoNombre,
+      ciudadNombre,
       generadoEl: formatFecha(new Date()),
       generadoPor: usuario?.Empleados
         ? `${usuario.Empleados.nombre} ${usuario.Empleados.apellido}`

@@ -13,7 +13,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,7 +35,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { registrarMovimiento } from "../actions";
 import { MovimientoInsumoFormValues, MovimientoInsumoSchema } from "../schema";
-import { Insumo, TipoMovimientoInsumo } from "../types";
+import { Ciudad, Insumo, TipoMovimientoInsumo } from "../types";
 import { formatCantidad } from "../utils";
 import FirmaLink from "./firma-link";
 
@@ -49,16 +48,21 @@ export type EmpleadoOpcion = {
 interface MovimientoDialogProps {
   tipo: TipoMovimientoInsumo;
   insumos: Insumo[];
+  ciudades: Ciudad[];
   empleados: EmpleadoOpcion[];
   /** Cuando se abre desde el detalle de un insumo, el insumo queda fijo */
   insumoFijoId?: string;
+  /** Ciudad preseleccionada (la del filtro de la pantalla) */
+  ciudadInicialId?: string;
 }
 
 export default function MovimientoDialog({
   tipo,
   insumos,
+  ciudades,
   empleados,
   insumoFijoId,
+  ciudadInicialId,
 }: MovimientoDialogProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -69,6 +73,7 @@ export default function MovimientoDialog({
 
   const valoresIniciales: MovimientoInsumoFormValues = {
     insumoId: insumoFijoId ?? "",
+    ciudadId: ciudadInicialId ?? ciudades[0]?.id ?? "",
     tipo,
     cantidad: 1,
     enEmpaques: false,
@@ -82,8 +87,12 @@ export default function MovimientoDialog({
   });
 
   const insumoSeleccionado = insumos.find((i) => i.id === form.watch("insumoId"));
+  const ciudadId = form.watch("ciudadId");
   const enEmpaques = form.watch("enEmpaques");
   const cantidad = Number(form.watch("cantidad")) || 0;
+
+  const existencia = insumoSeleccionado?.existencias.find((e) => e.ciudadId === ciudadId);
+  const stockCiudad = existencia?.stockActual ?? 0;
 
   const manejaEmpaque = !!insumoSeleccionado?.unidadEmpaqueId;
   const cantidadBase = enEmpaques
@@ -93,6 +102,7 @@ export default function MovimientoDialog({
   async function onSubmit(data: MovimientoInsumoFormValues) {
     const resultado = await registrarMovimiento({
       insumoId: data.insumoId,
+      ciudadId: data.ciudadId,
       tipo,
       cantidad: data.cantidad,
       enEmpaques: data.enEmpaques,
@@ -151,8 +161,8 @@ export default function MovimientoDialog({
           <DialogTitle>{esSalida ? "Registrar salida" : "Registrar entrada"}</DialogTitle>
           <DialogDescription>
             {esSalida
-              ? "La cantidad se restará automáticamente del stock del insumo."
-              : "La cantidad se sumará al stock del insumo."}
+              ? "La cantidad se restará automáticamente del stock de la ciudad."
+              : "La cantidad se sumará al stock de la ciudad."}
           </DialogDescription>
         </DialogHeader>
 
@@ -166,42 +176,64 @@ export default function MovimientoDialog({
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="insumoId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Insumo</FormLabel>
-                    <Select
-                      onValueChange={(valor) => {
-                        field.onChange(valor);
-                        form.setValue("enEmpaques", false);
-                      }}
-                      defaultValue={field.value}
-                      disabled={!!insumoFijoId}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un insumo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {insumos.map((insumo) => (
-                          <SelectItem key={insumo.id} value={insumo.id!}>
-                            {insumo.nombre} ({insumo.stockActual} {insumo.unidadNombre})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {insumoSeleccionado?.contenidoLabel && (
-                      <FormDescription>{insumoSeleccionado.contenidoLabel}</FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="ciudadId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ciudad</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona la ciudad" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ciudades.map((ciudad) => (
+                            <SelectItem key={ciudad.id} value={ciudad.id}>
+                              {ciudad.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="insumoId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Insumo</FormLabel>
+                      <Select
+                        onValueChange={(valor) => {
+                          field.onChange(valor);
+                          form.setValue("enEmpaques", false);
+                        }}
+                        defaultValue={field.value}
+                        disabled={!!insumoFijoId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un insumo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {insumos.map((insumo) => (
+                            <SelectItem key={insumo.id} value={insumo.id!}>
+                              {insumo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="cantidad"
@@ -250,6 +282,9 @@ export default function MovimientoDialog({
 
               {insumoSeleccionado && (
                 <div className="rounded-md border bg-muted/40 p-3 text-sm">
+                  {insumoSeleccionado.contenidoLabel && (
+                    <p className="text-muted-foreground">{insumoSeleccionado.contenidoLabel}</p>
+                  )}
                   <p>
                     <span className="text-muted-foreground">Movimiento: </span>
                     {esSalida ? "-" : "+"}
@@ -259,16 +294,13 @@ export default function MovimientoDialog({
                       : ""}
                   </p>
                   <p>
-                    <span className="text-muted-foreground">Stock actual: </span>
-                    {formatCantidad(
-                      insumoSeleccionado.stockActual,
-                      insumoSeleccionado.unidadNombre ?? ""
-                    )}
+                    <span className="text-muted-foreground">
+                      Stock en {existencia?.ciudadNombre ?? "la ciudad"}:{" "}
+                    </span>
+                    {formatCantidad(stockCiudad, insumoSeleccionado.unidadNombre ?? "")}
                     <span className="text-muted-foreground"> → quedaría: </span>
                     {formatCantidad(
-                      esSalida
-                        ? insumoSeleccionado.stockActual - cantidadBase
-                        : insumoSeleccionado.stockActual + cantidadBase,
+                      esSalida ? stockCiudad - cantidadBase : stockCiudad + cantidadBase,
                       insumoSeleccionado.unidadNombre ?? ""
                     )}
                   </p>

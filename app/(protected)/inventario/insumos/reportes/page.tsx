@@ -4,7 +4,7 @@ import NoAcceso from "@/components/noAccess";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileBarChart } from "lucide-react";
 import Link from "next/link";
-import { getInsumos } from "../actions";
+import { getCiudades, getInsumos } from "../actions";
 import ReporteInsumosComponent from "./components/reporte-insumos";
 
 export default async function ReportesInsumosPage() {
@@ -17,7 +17,7 @@ export default async function ReportesInsumosPage() {
     return <NoAcceso />;
   }
 
-  const insumos = await getInsumos();
+  const [insumos, ciudades] = await Promise.all([getInsumos(), getCiudades()]);
 
   return (
     <div className="container mx-auto py-2">
@@ -36,7 +36,7 @@ export default async function ReportesInsumosPage() {
         </Button>
       </div>
 
-      <ReporteInsumosComponent insumos={insumos} />
+      <ReporteInsumosComponent insumos={insumos} ciudades={ciudades} />
     </div>
   );
 }

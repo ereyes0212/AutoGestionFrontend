@@ -39,6 +39,10 @@ export default async function FirmaInsumoPage({ params }: { params: { token: str
                 <dd className="font-medium text-right">{movimiento.cantidadLabel}</dd>
               </div>
               <div className="flex justify-between gap-4">
+                <dt className="text-gray-500">Ciudad</dt>
+                <dd className="font-medium text-right">{movimiento.ciudadNombre}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
                 <dt className="text-gray-500">Solicitado por</dt>
                 <dd className="font-medium text-right">{movimiento.solicitadoPor}</dd>
               </div>
