@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Nota } from "../types";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import NotaListMobile from "./puesto-list-mobile";
 
@@ -12,6 +12,8 @@ interface Props {
     empleadoId?: string;
     desde?: string | null;
     hasta?: string | null;
+    /** Permiso "cambiar_estado_notas": habilita la acción de rechazar */
+    puedeCambiarEstado?: boolean;
 }
 
 export default function NotasRealtimeWrapper({
@@ -19,7 +21,9 @@ export default function NotasRealtimeWrapper({
     empleadoId,
     desde,
     hasta,
+    puedeCambiarEstado = false,
 }: Props) {
+    const columns = useMemo(() => getColumns(puedeCambiarEstado), [puedeCambiarEstado]);
     const [notas, setNotas] = useState<Nota[]>(initialNotas ?? []);
     const esRef = useRef<EventSource | null>(null);
     const reconnectRef = useRef(0);

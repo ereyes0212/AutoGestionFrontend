@@ -15,7 +15,7 @@ import {
 import { Nota } from "../types";
 import { ActionsCell } from "./actionCell";
 import { EstadoCell } from "./EstadCell";
-export const columns: ColumnDef<Nota>[] = [
+export const getColumns = (puedeCambiarEstado = false): ColumnDef<Nota>[] => [
   {
     accessorKey: "titulo",
     header: ({ column }) => (
@@ -217,7 +217,9 @@ export const columns: ColumnDef<Nota>[] = [
   {
     id: "actions",
     header: "Acciones",
-    cell: ({ row }) => <ActionsCell nota={row.original} />,
+    cell: ({ row }) => (
+      <ActionsCell nota={row.original} puedeCambiarEstado={puedeCambiarEstado} />
+    ),
   },
 
 ];

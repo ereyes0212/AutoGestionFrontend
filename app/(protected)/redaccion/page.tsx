@@ -48,7 +48,11 @@ export default async function Puestos({ searchParams }: { searchParams?: Record<
 
             <div>
                 {/* 🔽 Enviamos la lista ya ordenada */}
-                <NotasRealtimeWrapper initialNotas={data} empleadoId={sesion?.IdEmpleado} />
+                <NotasRealtimeWrapper
+                    initialNotas={data}
+                    empleadoId={sesion?.IdEmpleado}
+                    puedeCambiarEstado={permisos.includes("cambiar_estado_notas")}
+                />
             </div>
         </div>
     );

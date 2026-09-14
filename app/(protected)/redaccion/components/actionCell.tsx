@@ -12,12 +12,22 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -26,12 +36,20 @@ import React from "react";
 import { aprobarNota, finalizarNota } from "../actions";
 import type { Nota } from "../types";
 
-export function ActionsCell({ nota }: { nota: Nota }) {
+export function ActionsCell({
+    nota,
+    puedeCambiarEstado = false,
+}: {
+    nota: Nota;
+    puedeCambiarEstado?: boolean;
+}) {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = React.useState(false);
     const [openFinalizar, setOpenFinalizar] = React.useState(false);
     const [openAprobar, setOpenAprobar] = React.useState(false);
+    const [openRechazar, setOpenRechazar] = React.useState(false);
+    const [feedback, setFeedback] = React.useState("");
 
     const handleFinalizar = async () => {
         setLoading(true);
@@ -98,6 +116,39 @@ export function ActionsCell({ nota }: { nota: Nota }) {
         }
     };
 
+    const handleRechazar = async () => {
+        setLoading(true);
+        try {
+            // el feedback es opcional: si queda vacío se guarda null
+            const res = await aprobarNota(nota.id!, "RECHAZADA", feedback.trim() || null);
+            if (!res?.ok) {
+                toast({
+                    title: "No se pudo rechazar",
+                    description: res?.error ?? "Ocurrió un error al rechazar",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            toast({
+                title: "Nota rechazada",
+                description: "La nota fue rechazada correctamente.",
+            });
+
+            setFeedback("");
+            setOpenRechazar(false);
+            router.refresh();
+        } catch (err: any) {
+            toast({
+                title: "Error al rechazar",
+                description: String(err?.message ?? err),
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             <DropdownMenu>
@@ -134,6 +185,18 @@ export function ActionsCell({ nota }: { nota: Nota }) {
                     >
                         Aprobar
                     </DropdownMenuItem>
+
+                    {puedeCambiarEstado && (
+                        <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600"
+                            onSelect={(event) => {
+                                event.preventDefault();
+                                setOpenRechazar(true);
+                            }}
+                        >
+                            Rechazar
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -172,6 +235,53 @@ export function ActionsCell({ nota }: { nota: Nota }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Dialog Rechazar (solo con permiso cambiar_estado_notas) */}
+            <Dialog
+                open={openRechazar}
+                onOpenChange={(open) => {
+                    if (loading) return;
+                    setOpenRechazar(open);
+                    if (!open) setFeedback("");
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Rechazar nota</DialogTitle>
+                        <DialogDescription>
+                            Podés dejar un feedback para el creador de la nota. Esta acción cambiará su estado a <strong>DESCARTADA</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="feedback-rechazo">Feedback (opcional)</Label>
+                        <Textarea
+                            id="feedback-rechazo"
+                            placeholder="Escribí el motivo del rechazo (podés dejarlo vacío)"
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            rows={4}
+                            disabled={loading}
+                        />
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setOpenRechazar(false);
+                                setFeedback("");
+                            }}
+                            disabled={loading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button variant="destructive" onClick={handleRechazar} disabled={loading}>
+                            {loading ? "Procesando..." : "Rechazar"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
