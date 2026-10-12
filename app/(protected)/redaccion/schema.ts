@@ -8,6 +8,14 @@ export const NotaEstadoEnum = z.enum([
   'RECHAZADA'
 ]);
 
+// Tipo de revisión que asigna el jefe al aprobar (igual a Prisma)
+export const NotaTipoRevisionEnum = z.enum([
+  'PUBLICAR_SIN_REVISION',
+  'REVISA_EDITOR',
+  'REVISA_JEFE'
+]);
+export type NotaTipoRevision = z.infer<typeof NotaTipoRevisionEnum>;
+
 // Schema Zod para Nota (coincide con Prisma)
 export const NotaSchema = z.object({
   id: z.string().optional(),
@@ -18,6 +26,7 @@ export const NotaSchema = z.object({
   aprobadorEmpleadoId: z.string().nullable().optional(),// String? @db.VarChar(36)
   fuente: z.string().max(250).optional().nullable(),   // String? @db.VarChar(250)
   estado: NotaEstadoEnum,
+  tipoRevision: NotaTipoRevisionEnum.nullable().optional(), // NotaTipoRevision?
   descripcion: z.string().min(1, 'La descripción es requerida'), // String @db.LongText
   titulo: z.string().min(1, 'El título es requerido').max(250),
   fellback: z.string().nullable().optional(),          // String? @db.LongText

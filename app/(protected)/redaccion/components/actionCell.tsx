@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MoreHorizontal } from "lucide-react";
@@ -34,7 +35,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { aprobarNota, finalizarNota } from "../actions";
+import type { NotaTipoRevision } from "../schema";
 import type { Nota } from "../types";
+import { tipoRevisionOptions } from "./TipoRevisionCell";
 
 export function ActionsCell({
     nota,
@@ -50,6 +53,7 @@ export function ActionsCell({
     const [openAprobar, setOpenAprobar] = React.useState(false);
     const [openRechazar, setOpenRechazar] = React.useState(false);
     const [feedback, setFeedback] = React.useState("");
+    const [tipoRevision, setTipoRevision] = React.useState<NotaTipoRevision | "">(nota.tipoRevision ?? "");
 
     const handleFinalizar = async () => {
         setLoading(true);
@@ -85,9 +89,10 @@ export function ActionsCell({
     };
 
     const handleAprobar = async () => {
+        if (!tipoRevision) return;
         setLoading(true);
         try {
-            const res = await aprobarNota(nota.id!, "APROBADA", null);
+            const res = await aprobarNota(nota.id!, "APROBADA", null, tipoRevision);
             // seguir el mismo patrón de respuesta que finalizarNota
             if (!res?.ok) {
                 toast({
@@ -218,23 +223,56 @@ export function ActionsCell({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Dialog Aprobar */}
-            <AlertDialog open={openAprobar} onOpenChange={setOpenAprobar}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Aprobar nota</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            ¿Confirmás aprobar esta nota? Esta acción cambiará su estado a <strong>APROBADA</strong>.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setOpenAprobar(false)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleAprobar} disabled={loading}>
-                            {loading ? "Procesando..." : "Confirmar"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Dialog Aprobar: el jefe elige el tipo de revisión */}
+            <Dialog
+                open={openAprobar}
+                onOpenChange={(open) => {
+                    if (loading) return;
+                    setOpenAprobar(open);
+                    if (!open) setTipoRevision(nota.tipoRevision ?? "");
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Aprobar nota</DialogTitle>
+                        <DialogDescription>
+                            Selecciona el tipo de revisión. Esta acción cambiará su estado a <strong>APROBADA</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="tipo-revision">Tipo de revisión</Label>
+                        <Select
+                            value={tipoRevision}
+                            onValueChange={(v) => setTipoRevision(v as NotaTipoRevision)}
+                            disabled={loading}
+                        >
+                            <SelectTrigger id="tipo-revision" className="w-full">
+                                <SelectValue placeholder="Selecciona el tipo de revisión" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {tipoRevisionOptions.map(([value, info]) => (
+                                    <SelectItem key={value} value={value}>
+                                        <span className="flex items-center gap-2">
+                                            <span className={`h-3 w-3 rounded-full ${info.dot}`} />
+                                            {info.label}
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenAprobar(false)} disabled={loading}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleAprobar} disabled={loading || !tipoRevision}>
+                            {loading ? "Procesando..." : "Aprobar"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Dialog Rechazar (solo con permiso cambiar_estado_notas) */}
             <Dialog

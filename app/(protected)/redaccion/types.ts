@@ -7,6 +7,7 @@ export type Nota = {
   esPrioridad?: boolean;
   esUltimaHora?: boolean;
   estado: 'PENDIENTE' | 'APROBADA' | 'FINALIZADA' | 'RECHAZADA';
+  tipoRevision?: 'PUBLICAR_SIN_REVISION' | 'REVISA_EDITOR' | 'REVISA_JEFE' | null;
   titulo: string;
   fuente: string | null;
   fellback?: string | null;

@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@radix-ui/react-select";
 import { aprobarNota, createNota, finalizarNota, tomarNota, updateNota } from "../actions";
 import { NotaSchema } from "../schema";
+import { tipoRevisionOptions } from "./TipoRevisionCell";
 
 type NotaFormValues = z.infer<typeof NotaSchema>;
 
@@ -93,8 +94,14 @@ export function NotaFormulario({
         }
 
         if (canChangeEstado) {
+          // Para aprobar, el jefe tiene que elegir el tipo de revisión
+          if (data.estado === "APROBADA" && !data.tipoRevision) {
+            form.setError("tipoRevision", { message: "Selecciona el tipo de revisión para aprobar la nota." });
+            return;
+          }
+
           // JEFE: cambia estado/fellback y luego actualiza título/descripcion si hace falta
-          await aprobarNota(data.id, data.estado, data.fellback || null);
+          await aprobarNota(data.id, data.estado, data.fellback || null, data.tipoRevision ?? null);
 
           // Actualizar título/descripcion si cambiaron (evita sobreescribir campos nulos)
           const tituloParaActualizar = data.titulo?.trim();
@@ -109,6 +116,8 @@ export function NotaFormulario({
               ...(descripcionParaActualizar !== undefined ? { descripcion: descripcionParaActualizar ?? null } : {}),
               ...(data.esPrioridad !== undefined ? { esPrioridad: data.esPrioridad } : {}),
               ...(data.esUltimaHora !== undefined ? { esUltimaHora: data.esUltimaHora } : {}),
+              // si la nota ya estaba aprobada, aprobarNota no la toca; así se puede cambiar el tipo igual
+              ...(data.tipoRevision ? { tipoRevision: data.tipoRevision } : {}),
             });
           }
 
@@ -320,6 +329,37 @@ export function NotaFormulario({
                 </FormItem>
               )}
             />
+
+            {(estado === "APROBADA" || estado === "FINALIZADA") && (
+              <FormField
+                control={form.control}
+                name="tipoRevision"
+                render={({ field }) => (
+                  <FormItem className="mt-2">
+                    <FormLabel>Tipo de revisión</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""} disabled={!canChangeEstado}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecciona el tipo de revisión" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tipoRevisionOptions.map(([value, info]) => (
+                            <SelectItem key={value} value={value}>
+                              <span className="flex items-center gap-2">
+                                <span className={`h-3 w-3 rounded-full ${info.dot}`} />
+                                {info.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>Obligatorio al aprobar la nota.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

@@ -524,12 +524,20 @@ enum NotaEstado {
   RECHAZADA
 }
 
+/// Tipo de revisión que asigna el jefe al aprobar una nota
+enum NotaTipoRevision {
+  PUBLICAR_SIN_REVISION
+  REVISA_EDITOR
+  REVISA_JEFE
+}
+
 model Nota {
   id                  String     @id @default(uuid()) @db.VarChar(36)
   creadorEmpleadoId   String     @db.VarChar(36)
   asignadoEmpleadoId  String?    @db.VarChar(36)
   aprobadorEmpleadoId String?    @db.VarChar(36)
   estado              NotaEstado
+  tipoRevision        NotaTipoRevision?
   titulo              String     @db.VarChar(250)
   esPrioridad         Boolean    @default(false)
   esUltimaHora        Boolean    @default(false)

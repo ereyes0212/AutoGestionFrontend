@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { Nota } from "../types";
+import { tipoRevisionMap } from "./TipoRevisionCell";
 
 interface NotaListMobileProps {
     notas: Nota[];
@@ -74,6 +75,12 @@ export default function NotaListMobile({ notas }: NotaListMobileProps) {
                                             >
                                                 {estadoMap[nota.estado as keyof typeof estadoMap].label}
                                             </Badge>
+
+                                            {nota.tipoRevision && (
+                                                <Badge className={`text-xs w-fit ${tipoRevisionMap[nota.tipoRevision].color}`}>
+                                                    {tipoRevisionMap[nota.tipoRevision].label}
+                                                </Badge>
+                                            )}
 
                                             {/* Icono de prioridad */}
                                             {nota.esPrioridad && (

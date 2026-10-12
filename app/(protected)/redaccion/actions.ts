@@ -6,6 +6,7 @@ import { getSession, getSessionPermisos } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendWebPushNotification } from '@/lib/webpush';
 import { Nota } from "./types";
+import type { NotaTipoRevision } from "./schema";
 import { getNotasAgrupadasHoySimple as getNotasAgrupadasHoySimpleData } from './report-data';
 // Crear una nueva nota
 /**
@@ -190,7 +191,7 @@ export async function tomarNota(id: string) {
 
 export async function updateNota(
     id: string,
-    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean; esUltimaHora?: boolean, fellback?: string | null }
+    data: { titulo?: string; descripcion?: string | null; fuente?: string | null, esPrioridad?: boolean; esUltimaHora?: boolean, fellback?: string | null; tipoRevision?: NotaTipoRevision | null }
 ): Promise<Nota> {
     try {
         const updatePayload: Record<string, any> = {};
@@ -200,6 +201,7 @@ export async function updateNota(
         if (data.fuente !== undefined) updatePayload.fuente = data.fuente ?? null;
         if (data.esUltimaHora !== undefined) updatePayload.esUltimaHora = data.esUltimaHora ?? null;
         if (data.esPrioridad !== undefined) updatePayload.esPrioridad = data.esPrioridad;
+        if (data.tipoRevision !== undefined) updatePayload.tipoRevision = data.tipoRevision;
 
         const nota = await prisma.nota.update({
             where: { id },
@@ -223,10 +225,16 @@ export async function updateNota(
 export async function aprobarNota(
     id: string,
     estado: 'APROBADA' | 'RECHAZADA' | 'PENDIENTE' | 'FINALIZADA',
-    fellback: string | null
+    fellback: string | null,
+    tipoRevision?: NotaTipoRevision | null
 ): Promise<ActionResult> {
     try {
         if (!id) return { ok: false, error: "Falta id de nota", code: "MISSING_ID", status: 400 };
+
+        // Al aprobar, el jefe debe indicar el tipo de revisión
+        if (estado === "APROBADA" && !tipoRevision) {
+            return { ok: false, error: "Selecciona el tipo de revisión para aprobar la nota", code: "MISSING_TIPO_REVISION", status: 400 };
+        }
 
         const session = await getSession();
         if (!session) return { ok: false, error: "No autenticado", code: "NO_SESSION", status: 401 };
@@ -251,6 +259,7 @@ export async function aprobarNota(
                 estado,
                 aprobadorEmpleadoId: session?.IdEmpleado,
                 fellback,
+                ...(estado === "APROBADA" ? { tipoRevision } : {}),
             },
             include: {
                 creador: true,

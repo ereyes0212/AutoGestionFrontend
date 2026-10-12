@@ -15,6 +15,7 @@ import {
 import { Nota } from "../types";
 import { ActionsCell } from "./actionCell";
 import { EstadoCell } from "./EstadCell";
+import { TipoRevisionCell } from "./TipoRevisionCell";
 export const getColumns = (puedeCambiarEstado = false): ColumnDef<Nota>[] => [
   {
     accessorKey: "titulo",
@@ -214,6 +215,22 @@ export const getColumns = (puedeCambiarEstado = false): ColumnDef<Nota>[] => [
     cell: ({ row }) => <EstadoCell estado={row.original.estado} feedback={row.original.fellback || ''} esPrioridad={row.original.esPrioridad} esUltimaHora={row.original.esUltimaHora} />,
   }
   ,
+  {
+    accessorKey: "tipoRevision",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() =>
+          column.toggleSorting(column.getIsSorted() === "asc")
+        }
+        className="text-left"
+      >
+        Revisión
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <TipoRevisionCell tipoRevision={row.original.tipoRevision} />,
+  },
   {
     id: "actions",
     header: "Acciones",
