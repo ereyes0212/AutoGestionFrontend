@@ -34,11 +34,28 @@ export function parseTimeToTodayDate(time: string): Date {
   return now;
 }
 
+/**
+ * Convierte una fecha de calendario guardada como instante (p. ej. la de
+ * nacimiento) en ese mismo día a medianoche local, para mostrarla con `format`,
+ * `toLocaleDateString` o `getMonth` sin que cambie según la zona horaria.
+ *
+ * El día se lee en UTC porque la carga masiva guarda a las 00:00 UTC y el
+ * formulario a las 06:00 UTC, y ambas caen en el día correcto en UTC.
+ *
+ * Debe aplicarse una sola vez y en el mismo lado donde se muestra: el resultado
+ * es hora local, así que cambiaría de día al pasar del servidor al navegador.
+ */
+export function fechaCalendario(fecha: Date | string): Date {
+  const instante = new Date(fecha)
+  return new Date(instante.getUTCFullYear(), instante.getUTCMonth(), instante.getUTCDate())
+}
+
 export const calcularEdad = (birthDate: Date): number => {
+  const nacimiento = fechaCalendario(birthDate)
   const today = new Date()
-  const age = today.getFullYear() - birthDate.getFullYear()
-  const monthDiff = today.getMonth() - birthDate.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  const age = today.getFullYear() - nacimiento.getFullYear()
+  const monthDiff = today.getMonth() - nacimiento.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < nacimiento.getDate())) {
     return age - 1
   }
   return age

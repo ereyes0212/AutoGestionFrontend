@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { Empleado } from "../type";
-import { calcularEdad } from "@/lib/utils";
+import { calcularEdad, fechaCalendario } from "@/lib/utils";
 
 export const columns: ColumnDef<Empleado>[] = [
 
@@ -59,7 +59,7 @@ export const columns: ColumnDef<Empleado>[] = [
       const edad = calcularEdad(fecha);
   
       // Formatear fecha
-      const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+      const fechaFormateada = fechaCalendario(fecha).toLocaleDateString('es-ES', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',

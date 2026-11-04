@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, fechaCalendario } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -52,7 +52,11 @@ export function EmpleadoFormulario({
 
   const form = useForm<z.infer<typeof EmpleadoSchema>>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues: initialData || {},
+    // Al crear, la fecha por defecto es "ahora" y no una fecha de calendario guardada.
+    defaultValues:
+      isUpdate && initialData
+        ? { ...initialData, fechaNacimiento: fechaCalendario(initialData.fechaNacimiento) }
+        : initialData || {},
   });
 
   const { formState } = form;

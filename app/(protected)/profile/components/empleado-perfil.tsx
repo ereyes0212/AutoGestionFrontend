@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Mail, Phone } from "lucide-react"
-import { calcularEdad, calculateServiceDuration } from "../../../../lib/utils"
+import { calcularEdad, calculateServiceDuration, fechaCalendario } from "../../../../lib/utils"
 import type { Employee } from "../type"
 import FirmaManager from "./firma-manager"
 
@@ -74,7 +74,7 @@ export default function EmployeeProfile({ employee }: EmployeeProfileProps) {
 
                                 <dt className="font-medium text-muted-foreground">Fecha de Nacimiento:</dt>
                                 <dd>
-                                    {format(new Date(employee.fechaNacimiento), "dd 'de' MMMM 'de' yyyy", {
+                                    {format(fechaCalendario(employee.fechaNacimiento), "dd 'de' MMMM 'de' yyyy", {
                                         locale: es,
                                     })}
                                 </dd>
