@@ -83,6 +83,7 @@ model Empleados {
   TareaEmpleado    TareaEmpleado[]
   EventoFactura    EventoFactura[]
   MovimientoInsumo MovimientoInsumo[] @relation("InsumoSolicitante")
+  VideosCreados    Video[]            @relation("VideosCreados")
 
   @@index([jefe_id])
   @@index([puesto_id])
@@ -809,4 +810,37 @@ model PedidoInsumoDetalle {
 
   @@index([pedidoId], map: "IX_PedidoInsumoDetalle_pedidoId")
   @@index([insumoId], map: "IX_PedidoInsumoDetalle_insumoId")
+}
+
+// ─── Videos (módulo de videos para tiempo.hn) ────────────────────────────────
+
+enum VideoEstado {
+  SUBIENDO
+  EN_COLA
+  PROCESANDO
+  LISTO
+  ERROR
+}
+
+model Video {
+  id                String      @id @db.VarChar(36)
+  titulo            String      @db.VarChar(200)
+  estado            VideoEstado @default(SUBIENDO)
+  nombreOriginal    String      @db.VarChar(255)
+  tamanoBytes       BigInt
+  claveOriginal     String      @db.VarChar(512)
+  duracionSeg       Int?
+  ancho             Int?
+  alto              Int?
+  intentos          Int         @default(0)
+  errorMensaje      String?     @db.Text
+  creadorEmpleadoId String      @db.VarChar(36)
+  creadoAt          DateTime    @default(now()) @db.DateTime(6)
+  actualizadoAt     DateTime    @updatedAt @db.DateTime(6)
+
+  creador Empleados @relation("VideosCreados", fields: [creadorEmpleadoId], references: [id])
+
+  @@index([estado])
+  @@index([creadoAt])
+  @@index([creadorEmpleadoId])
 }

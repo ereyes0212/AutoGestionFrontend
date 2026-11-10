@@ -15,7 +15,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, MessageCircleMore, Package, ReceiptText, Settings, UserIcon, UserRoundCheck, UsersIcon } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, File, FileCheck2, Files, LayersIcon, ListOrderedIcon, LucideFilePen, MessageCircleMore, Package, ReceiptText, Settings, UserIcon, UserRoundCheck, UsersIcon, Video } from 'lucide-react';
 import Link from "next/link";
 import ToggleThemeButton from "../components/button-theme";
 import { NavUser } from "./nav-user";
@@ -110,6 +110,12 @@ const items = [
     url: "/redaccion",
     icon: LucideFilePen,
     permiso: "ver_notas",
+  },
+  {
+    title: "Videos",
+    url: "/videos",
+    icon: Video,
+    permiso: "ver_videos",
   },
 
   {

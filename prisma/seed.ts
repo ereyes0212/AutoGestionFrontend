@@ -116,7 +116,12 @@ async function main() {
     { nombre: "ver_facturas_jefe", descripcion: "Permiso para ver todas las facturas y filtrarlas" },
 
     { nombre: "ver_mensajes", descripcion: "Permiso para ver el modulo de mensajes" },
-    { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" }
+    { nombre: "crear_grupo", descripcion: "Permiso para crear grupos de mensajes" },
+
+    // Videos
+    { nombre: "ver_videos", descripcion: "Permiso para ver el modulo de videos y copiar el codigo para insertar" },
+    { nombre: "subir_videos", descripcion: "Permiso para subir videos y reintentar los que fallaron" },
+    { nombre: "eliminar_videos", descripcion: "Permiso para eliminar videos" },
 
   ];
 
