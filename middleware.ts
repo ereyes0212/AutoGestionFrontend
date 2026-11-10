@@ -31,6 +31,7 @@ export const config = {
         "/usuarios/:path*",
         "/solicitudes/:path*",
         "/voucher-pago/:path*",
+        "/videos/:path*",
         "/reset-password",
     ],
 };

@@ -11,6 +11,17 @@ const nextConfig = {
     preloadEntriesOnStart: false,
     optimizePackageImports: ['lucide-react', 'date-fns'],
     cpus: 2,
+    // instrumentation.ts: retoma la cola de conversión de videos al arrancar
+    instrumentationHook: true,
+    // ffmpeg-static / ffprobe-static resuelven la ruta del binario con __dirname: no se deben empaquetar
+    serverComponentsExternalPackages: ['ffmpeg-static', 'ffprobe-static'],
+    // Incluir los binarios en el build standalone (en producción también se puede usar FFMPEG_PATH/FFPROBE_PATH)
+    outputFileTracingIncludes: {
+      '/**/*': [
+        './node_modules/ffmpeg-static/ffmpeg',
+        './node_modules/ffprobe-static/bin/linux/x64/ffprobe',
+      ],
+    },
   },
   typescript: {
     ignoreBuildErrors: true,
